@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="1.0.0" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.2-alpha" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.beautifulsoup" version="3.2.1"/>
@@ -8,17 +8,12 @@
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
 	</extension>
-	<!--<extension point="xbmc.python.module" library="lib" />-->
 	<extension point="xbmc.addon.metadata">
-		<summary>Videos for subscribers: Globo Play and Globosat Play</summary>
-		<description>
-            Globo Play, Globosat Play and SexyHot Play on Kodi.
-
-            AVISO: antes de poder assistir aos vídeos do globosat play, você deve acessar a página web, aceitar a política de uso do serviço e criar um perfil. Este addon selecionará automaticamente o primeiro da lista.
-    	</description>
+		<summary>Globo Play, Globosat Play and Premium Channels on Kodi</summary>
+		<description>Brazilian video streaming services for subscribers</description>
 		<platform>all</platform>
 		<license>GPL3</license>
-		<source>https://bitbucket.org/vitorhirota/repository.brazilian.xbmc-addons</source>
+		<source>https://github.com/olavopeixoto/plugin.video.brplay</source>
 		<assets>
 			<icon>icon.png</icon>
 			<fanart>fanart.jpg</fanart>
