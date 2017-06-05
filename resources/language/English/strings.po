@@ -1,0 +1,61 @@
+# Addon Name: BR Play
+# Addon id: plugin.video.brplay
+# Addon Provider: brplayer
+msgid ""
+msgstr ""
+
+msgctxt "#31200"
+msgid "Globosat Play"
+msgstr ""
+
+msgctxt "#31110"
+msgid "User"
+msgstr ""
+
+msgctxt "#31120"
+msgid "Password"
+msgstr ""
+
+msgctxt "#31210"
+msgid "TV Provider"
+msgstr ""
+
+msgctxt "#31100"
+msgid "Globo Play"
+msgstr ""
+
+msgctxt "#31111"
+msgid "Affiliate"
+msgstr ""
+
+msgctxt "#31003"
+msgid "Proxy"
+msgstr ""
+
+
+msgctxt "#32003"
+msgid "Authentication Error. Invalid user or password."
+msgstr ""
+
+
+msgctxt "#32001"
+msgid "Live TV"
+msgstr ""
+
+msgctxt "#32002"
+msgid "On Demand"
+msgstr ""
+
+
+msgctxt "#32004"
+msgid "Live"
+msgstr ""
+
+
+msgctxt "#32310"
+msgid "General"
+msgstr ""
+
+msgctxt "#32346"
+msgid "Accounts"
+msgstr ""
