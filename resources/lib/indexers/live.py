@@ -16,14 +16,30 @@ class Live:
     def __init__(self):
         self.systime = (datetime.datetime.utcnow()).strftime('%Y%m%d%H%M%S%f')
 
+    def __isGlobosatAvailable(self):
+        username = control.setting('globosat_username')
+        password = control.setting('globosat_password')
+
+        return username and password and username.strip() != '' and password.strip() != ''
+
+    def __isGloboplayAvailable(self):
+        username = control.setting('globoplay_username')
+        password = control.setting('globoplay_password')
+
+        return username and password and username.strip() != '' and password.strip() != ''
+
     def get_channels(self):
 
         live = []
 
-        threads = [
-            workers.Thread(self.appendResult, globoplay.Indexer().get_live_channels, live),
-            workers.Thread(self.appendResult, globosat.Indexer().get_live, live)
-        ]
+        threads = []
+
+        if self.__isGloboplayAvailable():
+            threads.append(workers.Thread(self.appendResult, globoplay.Indexer().get_live_channels, live))
+
+        if self.__isGlobosatAvailable():
+            threads.append(workers.Thread(self.appendResult, globosat.Indexer().get_live, live))
+
         [i.start() for i in threads]
         [i.join() for i in threads]
 

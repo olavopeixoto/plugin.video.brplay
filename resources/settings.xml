@@ -2,7 +2,7 @@
 <settings>
 	<category label="32310">
 		<setting type="lsep" label="31003" />
-		<setting id="proxy_url" type="text" label="URL" default="http://proxy.asound.org:8888" />
+		<setting id="proxy_url" type="text" label="URL" />
 		<setting type="sep" />
 		<setting type="lsep" label="GloboPlay"></setting>
 		<setting id="globo_play_full_videos" type="bool" label="Show Full Videos Only" default="true" />

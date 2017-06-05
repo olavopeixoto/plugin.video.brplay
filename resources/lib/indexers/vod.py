@@ -32,11 +32,29 @@ class Vod:
 
     def __get_vod_channels(self):
 
-        channels = globosat.Indexer().get_vod()
-        channels += globoplay.Indexer().get_vod()
+        channels = []
+
+        if self.__isGlobosatAvailable():
+            channels += globosat.Indexer().get_vod()
+
+        if self.__isGloboplayAvailable():
+             channels += globoplay.Indexer().get_vod()
+
         channels = sorted(channels, key=lambda k: k['name'])
 
         return channels
+
+    def __isGlobosatAvailable(self):
+        username = control.setting('globosat_username')
+        password = control.setting('globosat_password')
+
+        return username and password and username.strip() != '' and password.strip() != ''
+
+    def __isGloboplayAvailable(self):
+        username = control.setting('globoplay_username')
+        password = control.setting('globoplay_password')
+
+        return username and password and username.strip() != '' and password.strip() != ''
 
     def get_channel_programs(self, channel_id):
         programs = cache.get(globosat.Indexer().get_channel_programs, 1, channel_id)

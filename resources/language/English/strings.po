@@ -63,3 +63,23 @@ msgstr ""
 msgctxt "#32010"
 msgid "Search"
 msgstr ""
+
+msgctxt "#32056"
+msgid "Are you sure?"
+msgstr ""
+
+msgctxt "#32057"
+msgid "Process Complete"
+msgstr ""
+
+msgctxt "#32502"
+msgid "Resume from %s"
+msgstr ""
+
+msgctxt "#32503"
+msgid "Resume"
+msgstr ""
+
+msgctxt "#32072"
+msgid "Refresh"
+msgstr ""

@@ -17,6 +17,9 @@ def get_authorized_channels():
     username = control.setting('globosat_username')
     password = control.setting('globosat_password')
 
+    if not username or not password or username == '' or password == '':
+        return []
+
     authenticator = getattr(auth, provider)()
     token, sessionKey = authenticator.get_token(username, password)
 

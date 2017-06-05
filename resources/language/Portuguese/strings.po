@@ -60,3 +60,23 @@ msgstr "Contas"
 msgctxt "#32010"
 msgid "Search"
 msgstr "Busca"
+
+msgctxt "#32056"
+msgid "Are you sure?"
+msgstr "Tem certeza?"
+
+msgctxt "#32057"
+msgid "Process Complete"
+msgstr "Processo Concluído"
+
+msgctxt "#32502"
+msgid "Resume from %s"
+msgstr "Continuar a partir de %s"
+
+msgctxt "#32503"
+msgid "Resume"
+msgstr "Continuar"
+
+msgctxt "#32072"
+msgid "Refresh"
+msgstr "Atualizar"
