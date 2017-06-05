@@ -223,10 +223,14 @@ class Vod:
 
         results = []
 
-        threads = [
-            workers.Thread(self.add_search_results, globoplay.Indexer().search, results, q, page),
-            workers.Thread(self.add_search_results, globosat.Indexer().search, results, q, page)
-        ]
+        threads = []
+
+        if self.__isGloboplayAvailable():
+            threads.append(workers.Thread(self.add_search_results, globoplay.Indexer().search, results, q, page))
+
+        if self.__isGlobosatAvailable():
+            threads.append(workers.Thread(self.add_search_results, globosat.Indexer().search, results, q, page))
+
         [i.start() for i in threads]
         [i.join() for i in threads]
 
