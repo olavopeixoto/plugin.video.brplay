@@ -56,7 +56,9 @@ def get_basic_live_channels():
                     'title': transmission['title'],
                     'thumb': 'https://live-thumbs.video.globo.com/univ24ha/snapshot/',
                     'plot': None,
-                    'duration': None
+                    'duration': None,
+                    'brplayprovider': 'globosat',
+                    'playable': 'true'
                     }
 
             item.update(simulcast_data)

@@ -56,3 +56,7 @@ msgstr "Geral"
 msgctxt "#32346"
 msgid "Accounts"
 msgstr "Contas"
+
+msgctxt "#32010"
+msgid "Search"
+msgstr "Busca"

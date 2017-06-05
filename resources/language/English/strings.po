@@ -59,3 +59,7 @@ msgstr ""
 msgctxt "#32346"
 msgid "Accounts"
 msgstr ""
+
+msgctxt "#32010"
+msgid "Search"
+msgstr ""
