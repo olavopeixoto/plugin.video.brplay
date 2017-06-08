@@ -42,7 +42,7 @@ class Player(xbmc.Player):
 
         query_string = query_string % {
             'hash': signed_hashes[0],
-            'key': 'html5',
+            'key': 'app',
             'openClosed': 'F',
             'user': info['user'] if info['subscriber_only'] else ''
         }

@@ -39,11 +39,11 @@ msgstr "Erro na authenticação. Usuário ou senha inválidos."
 
 msgctxt "#32001"
 msgid "Live TV"
-msgstr "TV AoVivo"
+msgstr "Canais Ao Vivo"
 
 msgctxt "#32002"
 msgid "On Demand"
-msgstr "On Demand"
+msgstr "Canais On Demand"
 
 msgctxt "#32004"
 msgid "Live"

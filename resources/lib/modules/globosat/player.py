@@ -3,9 +3,9 @@ import re
 import sys
 
 import auth
+from resources.lib.modules import util
 from resources.lib.modules import client
 from resources.lib.modules import control
-from resources.lib.modules.util import get_signed_hashes
 
 
 class Player:
@@ -22,13 +22,13 @@ class Player:
 
             title = info['channel']
 
-            signed_hashes = get_signed_hashes(info['hash'])
+            signed_hashes = util.get_signed_hashes(info['hash'])
 
             query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
 
             query_string = query_string % {
                 'hash': signed_hashes[0],
-                'key': 'html5',
+                'key': 'app',
                 'openClosed': 'F' if info['subscriber_only'] else 'A',
                 'user': info['user'] if info['subscriber_only'] else ''
             }
