@@ -72,7 +72,7 @@ class auth:
 
         # provider authentication
         try:
-            r3 = self._provider_auth(url, urlparse.parse_qs(qs), username, password)
+            r3 = self._provider_auth(url, urlparse.parse_qs(qs), username, password, r2.text)
         except Exception as e:
             self.error(str(e))
             return {}
@@ -200,32 +200,24 @@ class auth:
 class net(auth):
     PROVIDER_ID = 64
 
-    def _provider_auth(self, url, qs, username, password):
+    def _provider_auth(self, url, qs, username, password, html):
         qs.update({
-            '_submit.x': '115',
-            '_submit.y': '20',
-            'externalSystemName': 'none',
+            '_submit.x': '126',
+            '_submit.y': '18',
+            '_submit': 'entrar',
+            'username': username,
             'password': password,
             'passwordHint': '',
-            'selectedSecurityType': 'public',
-            'username': username,
+            'Auth_method': 'UP',
         })
-        url = 'https://idm.netcombo.com.br/IDM/SamlAuthnServlet'
-        req = self.session.post(url, data=qs, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
-        ipt_values_regex = r'%s=["\'](.*)["\'] '
-        try:
-            action = re.findall(ipt_values_regex % 'action', req.text)[0]
-            value = re.findall(ipt_values_regex[:-1] % 'value', req.text)[0]
-            # self.debug('action: %s, value: %s' % (action, value))
-        except IndexError:
-            raise Exception('Invalid user name or password.')
-        return self.session.post(action, data={'SAMLResponse': value}, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
+        url = 'https://auth.netcombo.com.br/login'
+        return self.session.post(url, data=qs, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
 
 
 class tv_oi(auth):
     PROVIDER_ID = 66
 
-    def _provider_auth(self, url, qs, username, password):
+    def _provider_auth(self, url, qs, username, password, html):
 
         url += '?sid=0'
         # prepare auth
@@ -251,10 +243,11 @@ class tv_oi(auth):
         except:
             raise Exception('Invalid user name or password.')
 
+
 class sky(auth):
     PROVIDER_ID = 80
 
-    def _provider_auth(self, url, qs, username, password):
+    def _provider_auth(self, url, qs, username, password, html):
         qs.update({
             'login': username,
             'senha': password,
@@ -268,16 +261,17 @@ class sky(auth):
 
         raise Exception('Invalid user name or password.')
 
+
 class vivo(auth):
     PROVIDER_ID = 147
 
-    def _provider_auth(self, url, qs):
-        cpf = self.username
+    def _provider_auth(self, url, qs, username, password, html):
+        cpf = username
         if len(cpf) == 11:
             cpf = "%s.%s.%s-%s" % ( cpf[0:3], cpf[3:6], cpf[6:9], cpf[9:11] )
         qs.update({
             'user_Doc': cpf,
-            'password': self.password,
+            'password': password,
             'password_fake': None,
         })
         req = self.session.post(url, data=qs, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
@@ -285,10 +279,11 @@ class vivo(auth):
         ret_req = self.session.get(nova_url, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
         return ret_req
 
+
 class claro(auth):
     PROVIDER_ID = 123
 
-    def _provider_auth(self, url, qs, username, password):
+    def _provider_auth(self, url, qs, username, password, html):
         qs.update({
             'cpf': username,
             'senha': password,
@@ -302,10 +297,11 @@ class claro(auth):
             raise Exception('Invalid user name or password.')
         return req
 
+
 class globosat_guest(auth):
     PROVIDER_ID = 50
 
-    def _provider_auth(self, url, qs, username, password):
+    def _provider_auth(self, url, qs, username, password, html):
         qs.update({
             'login': username,
             'senha': password,
@@ -318,3 +314,35 @@ class globosat_guest(auth):
         except IndexError:
             raise Exception('Invalid user name or password.')
         return req
+
+
+#incomplete
+class multiplay(auth):
+    PROVIDER_ID = 63
+
+    def _provider_auth(self, url, qs, username, password, html):
+
+        token_regex = re.match(r'<input type="hidden" name="_token" value="([^"]+)">', html)
+
+        token = token_regex.groups()[0]
+        data = {
+            '_token': token,
+            'username': username,
+            'password': password
+        }
+
+        return self.session.post(url, data=data, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
+
+
+#incomplete
+class orm_cabo(auth):
+    PROVIDER_ID = 138
+
+    def _provider_auth(self, url, qs, username, password, html):
+
+        data = {
+            'cpf': username,
+            'senha': password
+        }
+
+        return self.session.post(url, data=data, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
