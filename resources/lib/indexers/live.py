@@ -188,5 +188,8 @@ class Live:
 
         control.addItems(syshandle, list_items)
         control.category(handle=syshandle, category="Live")
-        control.content(syshandle, 'LiveTV')
+
+        content = 'LiveTV' if control.isJarvis else 'episodes'
+
+        control.content(syshandle, content)
         control.directory(syshandle, cacheToDisc=False)

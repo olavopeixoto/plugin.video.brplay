@@ -162,6 +162,14 @@ metacacheFile = os.path.join(dataPath, 'meta.5.db')
 
 cacheFile = os.path.join(dataPath, 'cache.db')
 
+isJarvis = infoLabel("System.BuildVersion").startswith("16.")
+
+isKrypton = infoLabel("System.BuildVersion").startswith("17.")
+
+
+def getKodiVersion():
+    return infoLabel("System.BuildVersion").split(' ')[0]
+
 
 def addonIcon():
     art = artPath()

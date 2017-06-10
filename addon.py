@@ -3,6 +3,7 @@
 import json
 import sys
 import urlparse
+import resources.lib.modules.control as control
 
 params = dict(urlparse.parse_qsl(sys.argv[2].replace('?','')))
 
