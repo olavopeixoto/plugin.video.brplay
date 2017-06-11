@@ -69,6 +69,56 @@ class Vod:
             extras = cache.get(globoplay.Indexer().get_extra_categories, 1)
             self.category_directory(categories, extras)
 
+    def get_extras(self):
+        from resources.lib.modules.globosat import scraper_vod
+        tracks = cache.get(scraper_vod.get_tracks, 1)
+
+        sysaddon = sys.argv[0]
+        syshandle = int(sys.argv[1])
+        provider = 'globosat'
+
+        url = '%s?action=openfeatured&provider=%s' % (sysaddon, provider)
+
+        label = 'Destaques'
+
+        item = control.item(label=label)
+
+        item.setProperty('IsPlayable', "false")
+        item.setInfo(type='video', infoLabels={'title': label})
+
+        control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        for track in tracks:
+            url = '%s?action=openextra&provider=%s&id=%s&kind=%s' % (sysaddon, provider, track['id'], track['kind'])
+
+            label = track['title']
+
+            item = control.item(label=label)
+
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels={'title': label})
+
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+
+        control.content(syshandle, 'files')
+        control.directory(syshandle, cacheToDisc=False)
+
+    def get_track(self, id, kind='episode'):
+        from resources.lib.modules.globosat import scraper_vod
+        videos = cache.get(scraper_vod.get_track_list, 1, id)
+
+        if kind == 'programs':
+            self.programs_directory(videos)
+        else:
+            self.episodes_directory(videos, provider='globosat')
+
+    def get_featured(self):
+        from resources.lib.modules.globosat import scraper_vod
+        featured = cache.get(scraper_vod.get_featured, 1)
+        self.episodes_directory(featured, provider='globosat')
+
     def get_programs_by_categories(self, category):
         categories = cache.get(globoplay.Indexer().get_category_programs, 1, category)
         self.programs_directory(categories)
@@ -353,6 +403,7 @@ class Vod:
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
         for video in items:
+                # label = video['label'] if 'label' in video else video['title']
                 label = video['title']
                 meta = video
                 meta.update({'overlay': 6})
@@ -369,6 +420,8 @@ class Vod:
                 fanart = meta['fanart'] if 'fanart' in meta else GLOBO_FANART
 
                 clearlogo = meta['clearlogo'] if 'clearlogo' in meta else None
+
+                poster = meta['poster'] if 'poster' in meta and not poster else poster
 
                 art = {'thumb': video['thumb'], 'poster': poster, 'fanart': fanart, 'clearlogo': clearlogo}
 
@@ -442,7 +495,7 @@ class Vod:
 
         for index, program in enumerate(items):
 
-                label = program['name']
+                label = program['name'] if 'name' in program else program['title'] if 'title' in program else ''
 
                 is_music_video = 'kind' in program and program['kind'] == 'shows'
                 is_movie = 'kind' in program and program['kind'] == 'movies'

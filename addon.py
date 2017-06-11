@@ -3,178 +3,202 @@
 import json
 import sys
 import urlparse
-import resources.lib.modules.control as control
+import buggalo
 
-params = dict(urlparse.parse_qsl(sys.argv[2].replace('?','')))
+buggalo.GMAIL_RECIPIENT = 'brplayissues@gmail.com'
 
-#Parameters
-action = params.get('action')
+try:
 
-id_globo_videos = params.get('id_globo_videos')
+    params = dict(urlparse.parse_qsl(sys.argv[2].replace('?','')))
 
-id_cms = params.get('id_cms')
+    #Parameters
+    action = params.get('action')
 
-slug = params.get('slug')
+    id_globo_videos = params.get('id_globo_videos')
 
-letter = params.get('letter')
+    id_cms = params.get('id_cms')
 
-id_sexyhot = params.get('id_sexyhot')
+    id = params.get('id')
 
-meta = params.get('meta')
+    kind = params.get('kind')
 
-provider = params.get('provider')
+    slug = params.get('slug')
 
-metaJson = json.loads(meta) if meta != None else None
-isFolder = params.get('isFolder')
+    letter = params.get('letter')
 
-url = params.get('url')
+    id_sexyhot = params.get('id_sexyhot')
 
-page = params.get('page')
+    meta = params.get('meta')
 
-q = params.get('q')
+    provider = params.get('provider')
 
-category = params.get('category')
+    metaJson = json.loads(meta) if meta != None else None
+    isFolder = params.get('isFolder')
 
-program_id = params.get('program_id')
+    url = params.get('url')
 
-date = params.get('date')
+    page = params.get('page')
 
-poster = params.get('poster')
+    q = params.get('q')
 
-#Actions
+    category = params.get('category')
 
-if action == None:
-    from resources.lib.indexers import navigator
-    navigator.navigator().root()
+    program_id = params.get('program_id')
 
-elif action == 'clear':
-    from resources.lib.indexers import navigator
-    navigator.navigator().clearCache()
+    date = params.get('date')
 
-elif action == 'login':
-    from resources.lib.indexers import navigator
-    navigator.navigator().cacheAuth()
+    poster = params.get('poster')
 
-elif action == 'refresh':
-    from resources.lib.modules import control
-    control.refresh()
+    #Actions
 
-elif action == 'searchMenu':
-    from resources.lib.indexers import navigator
-    navigator.navigator().searchMenu()
+    if action == None:
+        from resources.lib.indexers import navigator
+        navigator.navigator().root()
 
-elif action == 'search':
-    from resources.lib.indexers import navigator
-    navigator.navigator().search(q, page)
+    elif action == 'clear':
+        from resources.lib.indexers import navigator
+        navigator.navigator().clearCache()
 
+    elif action == 'login':
+        from resources.lib.indexers import navigator
+        navigator.navigator().cacheAuth()
 
-elif action == 'liveChannels':
-    from resources.lib.indexers import live
-    live.Live().get_channels()
+    elif action == 'refresh':
+        from resources.lib.modules import control
+        control.refresh()
 
-elif action == 'vodChannels':
-    from resources.lib.indexers import vod
-    vod.Vod().get_vod_channels()
+    elif action == 'searchMenu':
+        from resources.lib.indexers import navigator
+        navigator.navigator().searchMenu()
 
+    elif action == 'search':
+        from resources.lib.indexers import navigator
+        navigator.navigator().search(q, page)
 
-###GLOBOSAT PLAY
+    elif action == 'extra':
+        from resources.lib.indexers import vod
 
-#PREMIER FC
-elif action == 'playlive' and isFolder == True or isFolder == 'True':
-    from resources.lib.indexers import live
-    live.Live().getSubitems(metaJson)
-
-#LIVE CHANNELS
-elif action == 'playlive' and provider == 'globosat':
-    from resources.lib.modules.globosat import player
-    player.Player().playlive(id_globo_videos, meta)
-
-#VOD CHANNELS
-elif action == 'openchannel' and provider == 'globosat':
-    from resources.lib.indexers import vod
-    if slug == 'combate':
-        vod.Vod().get_channel_categories(slug=slug)
-    elif id_cms:
-        vod.Vod().get_channel_programs(channel_id=id_cms)
-
-elif action == 'openvideos' and provider == 'globosat':
-    from resources.lib.indexers import vod
-    page = page or 1
-    vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globosat')
-
-elif action == 'playvod' and provider == 'globosat':
-    from resources.lib.modules.globosat import player
-
-    player.Player().playlive(id_globo_videos, meta)
-
-elif action == 'opencategory' and provider == 'combate':
-    from resources.lib.indexers import vod
-    vod.Vod().get_events_by_categories(category)
-
-elif action == 'openevent' and provider == 'combate':
-    from resources.lib.indexers import vod
-    vod.Vod().get_event_videos(category, url)
-
-elif action == 'openfighters':
-    from resources.lib.indexers import vod
-    vod.Vod().get_fighters(letter)
-
-elif action == 'openfighter':
-    from resources.lib.indexers import vod
-    vod.Vod().get_fighter_videos(slug, page)
+        vod.Vod().get_extras()
 
 
-###GLOBO PLAY
+    elif action == 'liveChannels':
+        from resources.lib.indexers import live
+        live.Live().get_channels()
 
-elif action == 'playlive' and provider == 'globoplay':
-    from resources.lib.modules.globoplay import player
-
-    player.Player().play(id_globo_videos, meta)
-
-elif action == 'openchannel' and provider == 'globoplay':
-    from resources.lib.indexers import vod
-    vod.Vod().get_channel_categories()
-
-elif action == 'openextra' and provider == 'globoplay':
-    from resources.lib.indexers import vod
-    vod.Vod().get_videos_by_category(category, int(page or 1), poster)
-
-elif action == 'opencategory' and provider == 'globoplay':
-    from resources.lib.indexers import vod
-    vod.Vod().get_programs_by_categories(category)
-
-elif action == 'openvideos' and provider == 'globoplay' and date:
-    from resources.lib.indexers import vod
-    vod.Vod().get_videos_by_program_date(program_id, date, poster)
-
-elif action == 'openvideos' and provider == 'globoplay':
-    from resources.lib.indexers import vod
-    page = page or 1
-    vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay')
-
-elif action == 'showdates' and provider == 'globoplay':
-    from resources.lib.indexers import vod
-    page = page or 1
-    vod.Vod().get_program_dates(program_id, poster)
-
-elif action == 'playvod' and provider == 'globoplay':
-    from resources.lib.modules.globoplay import player
-    player.Player().play(id_globo_videos, meta)
+    elif action == 'vodChannels':
+        from resources.lib.indexers import vod
+        vod.Vod().get_vod_channels()
 
 
-###SEXY HOT
+    ###GLOBOSAT PLAY
 
-elif action == 'openchannel' and provider == 'sexyhot':
-    from resources.lib.modules.sexyhotplay import indexer
+    #PREMIER FC
+    elif action == 'playlive' and isFolder == True or isFolder == 'True':
+        from resources.lib.indexers import live
+        live.Live().getSubitems(metaJson)
 
-    indexer.indexer().get_categories()
+    #LIVE CHANNELS
+    elif action == 'playlive' and provider == 'globosat':
+        from resources.lib.modules.globosat import player
+        player.Player().playlive(id_globo_videos, meta)
 
-elif action == 'getVideos' and provider == 'sexyhot':
-    from resources.lib.modules.sexyhotplay import indexer
+    #VOD CHANNELS
+    elif action == 'openchannel' and provider == 'globosat':
+        from resources.lib.indexers import vod
+        if slug == 'combate':
+            vod.Vod().get_channel_categories(slug=slug)
+        elif id_cms:
+            vod.Vod().get_channel_programs(channel_id=id_cms)
 
-    indexer.indexer().get_videos(url)
+    elif action == 'openvideos' and provider == 'globosat':
+        from resources.lib.indexers import vod
+        page = page or 1
+        vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globosat')
 
-elif action == 'playvod' and provider == 'sexyhot':
-    from resources.lib.modules.sexyhotplay import player
+    elif action == 'playvod' and provider == 'globosat':
+        from resources.lib.modules.globosat import player
 
-    player.player().playVod(id_sexyhot, meta)
+        player.Player().playlive(id_globo_videos, meta)
+
+    elif action == 'opencategory' and provider == 'combate':
+        from resources.lib.indexers import vod
+        vod.Vod().get_events_by_categories(category)
+
+    elif action == 'openevent' and provider == 'combate':
+        from resources.lib.indexers import vod
+        vod.Vod().get_event_videos(category, url)
+
+    elif action == 'openfighters':
+        from resources.lib.indexers import vod
+        vod.Vod().get_fighters(letter)
+
+    elif action == 'openfighter':
+        from resources.lib.indexers import vod
+        vod.Vod().get_fighter_videos(slug, page)
+
+    elif action == 'openfeatured' and provider == 'globosat':
+        from resources.lib.indexers import vod
+        vod.Vod().get_featured()
+
+    elif action == 'openextra' and provider == 'globosat':
+        from resources.lib.indexers import vod
+        vod.Vod().get_track(id, kind)
+
+
+    ###GLOBO PLAY
+
+    elif action == 'playlive' and provider == 'globoplay':
+        from resources.lib.modules.globoplay import player
+
+        player.Player().play(id_globo_videos, meta)
+
+    elif action == 'openchannel' and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        vod.Vod().get_channel_categories()
+
+    elif action == 'openextra' and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        vod.Vod().get_videos_by_category(category, int(page or 1), poster)
+
+    elif action == 'opencategory' and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        vod.Vod().get_programs_by_categories(category)
+
+    elif action == 'openvideos' and provider == 'globoplay' and date:
+        from resources.lib.indexers import vod
+        vod.Vod().get_videos_by_program_date(program_id, date, poster)
+
+    elif action == 'openvideos' and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        page = page or 1
+        vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay')
+
+    elif action == 'showdates' and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        page = page or 1
+        vod.Vod().get_program_dates(program_id, poster)
+
+    elif action == 'playvod' and provider == 'globoplay':
+        from resources.lib.modules.globoplay import player
+        player.Player().play(id_globo_videos, meta)
+
+
+    ###SEXY HOT
+
+    elif action == 'openchannel' and provider == 'sexyhot':
+        from resources.lib.modules.sexyhotplay import indexer
+
+        indexer.indexer().get_categories()
+
+    elif action == 'getVideos' and provider == 'sexyhot':
+        from resources.lib.modules.sexyhotplay import indexer
+
+        indexer.indexer().get_videos(url)
+
+    elif action == 'playvod' and provider == 'sexyhot':
+        from resources.lib.modules.sexyhotplay import player
+
+        player.player().playVod(id_sexyhot, meta)
+
+except Exception:
+    buggalo.onExceptionRaised()

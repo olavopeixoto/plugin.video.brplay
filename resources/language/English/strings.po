@@ -32,11 +32,9 @@ msgctxt "#31003"
 msgid "Proxy"
 msgstr ""
 
-
 msgctxt "#32003"
 msgid "Authentication Error. Invalid user or password."
 msgstr ""
-
 
 msgctxt "#32001"
 msgid "Live TV"
@@ -46,11 +44,9 @@ msgctxt "#32002"
 msgid "On Demand"
 msgstr ""
 
-
 msgctxt "#32004"
 msgid "Live"
 msgstr ""
-
 
 msgctxt "#32310"
 msgid "General"
@@ -82,4 +78,8 @@ msgstr ""
 
 msgctxt "#32072"
 msgid "Refresh"
+msgstr ""
+
+msgctxt "#32080"
+msgid "Featured"
 msgstr ""

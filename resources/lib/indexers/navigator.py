@@ -19,6 +19,7 @@ class navigator:
     def root(self):
         self.addDirectoryItem(32001, 'liveChannels', 'live.png', 'DefaultLive.png')
         self.addDirectoryItem(32002, 'vodChannels', 'ondemand.png', 'DefaultOnDemand.png')
+        self.addDirectoryItem(32080, 'extra', 'featured.png', 'DefaultMovies.png')
         self.addDirectoryItem(32010, 'searchMenu', 'search.png', 'DefaultMovies.png')
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)

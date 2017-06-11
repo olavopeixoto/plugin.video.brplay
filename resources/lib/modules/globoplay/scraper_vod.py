@@ -270,7 +270,9 @@ def get_globo_programs():
 def get_program_dates(program_id):
 
     headers = {'Accept-Encoding': 'gzip'}
-    days = client.request(GLOBOPLAY_DAYS % int(program_id), headers=headers)['days']
+    days = client.request(GLOBOPLAY_DAYS % int(program_id), headers=headers)
+
+    days = days['days'] if days and 'days' in days else []
 
     return days
 
@@ -329,8 +331,6 @@ def get_globo_episodes(program_id, page=1):
         sevenDays = len(days)
     else:
         sevenDays = page+6 if len(days) > page+6 else len(days)
-
-    control.log("get_globo_episodes: len(days): %s | page: %s | sevenDays: %s" % (len(days), page, sevenDays))
 
     headers = {'Accept-Encoding': 'gzip'}
     data = client.request(GLOBOPLAY_VIDEOS_RANGE % (int(program_id), days[sevenDays-1], days[page-1], video_page_size), headers=headers)
