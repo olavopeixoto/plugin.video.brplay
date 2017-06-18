@@ -173,13 +173,12 @@ class Live:
 
             startdate = util.strptime_workaround(channel['dateadded'], '%Y-%m-%d %H:%M:%S') if 'dateadded' in channel else None
 
-            if control.isJarvis:
-                offset = float(util.get_total_seconds(datetime.datetime.now() - startdate)) if startdate else 0
-                item.setProperty('resumetime', str(offset))
+            offset = float(util.get_total_seconds(datetime.datetime.now() - startdate)) if startdate else 0
+            item.setProperty('resumetime', str(offset))
 
-                if 'duration' in channel and channel['duration'] is not None:
-                    duration = float(meta['duration'])
-                    item.setProperty('totaltime', str(duration))
+            if 'duration' in channel and channel['duration'] is not None:
+                duration = float(meta['duration'])
+                item.setProperty('totaltime', str(duration))
 
             list_items.append((url, item, isFolder))
 
@@ -190,7 +189,7 @@ class Live:
         control.addItems(syshandle, list_items)
         control.category(handle=syshandle, category="Live")
 
-        content = 'LiveTV' if control.isJarvis else 'tvshows'
+        content = 'LiveTV' if control.isJarvis else 'episodes'
 
         control.content(syshandle, content)
         control.directory(syshandle, cacheToDisc=False)
