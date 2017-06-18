@@ -421,9 +421,9 @@ class Vod:
 
                 clearlogo = meta['clearlogo'] if 'clearlogo' in meta else None
 
-                poster = meta['poster'] if 'poster' in meta and not poster else poster
+                poster = meta['poster'] if 'poster' in meta else poster
 
-                art = {'thumb': video['thumb'], 'poster': poster, 'fanart': fanart, 'clearlogo': clearlogo}
+                art = {'thumb': meta['thumb'], 'poster': poster, 'fanart': fanart, 'clearlogo': clearlogo}
 
                 item.setProperty('Fanart_Image', fanart)
 

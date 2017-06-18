@@ -75,7 +75,7 @@ try:
         from resources.lib.indexers import navigator
         navigator.navigator().search(q, page)
 
-    elif action == 'extra':
+    elif action == 'featured':
         from resources.lib.indexers import vod
 
         vod.Vod().get_extras()
