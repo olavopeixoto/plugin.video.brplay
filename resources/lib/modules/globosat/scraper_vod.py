@@ -125,12 +125,13 @@ def search(term, page=1):
     return videos, next_page, total
 
 
-def get_featured():
+def get_featured(channel_id=None):
     headers = {
             'Accept-Encoding': 'gzip',
             'Authorization': GLOBOSAT_API_AUTHORIZATION
        }
-    featured_list = client.request(GLOBOSAT_FEATURED, headers=headers)
+    channel_filter = '?channel_id=%s' % channel_id if channel_id else ''
+    featured_list = client.request(GLOBOSAT_FEATURED + channel_filter, headers=headers)
 
     results = featured_list['results']
 
@@ -140,39 +141,59 @@ def get_featured():
 
     videos = []
 
-    for item in featured_list['results']:
+    for item in results:
 
         media = item['media']
 
-        video = {
-            'id': item['id_globo_videos'],
-            'label': media['channel']['title'] + ' - ' + item['title'] + ' - ' + media['title'],
-            'title': media['title'],
-            'tvshowtitle': item['title'],
-            'studio': media['channel']['title'],
-            'plot': media['description'],
-            'tagline': item['subtitle'],
-            'duration': float(media['duration_in_milliseconds']) / 1000.0,
-            'logo': media['program']['logo_image'],
-            'clearlogo': media['program']['logo_image'],
-            'poster': media['program']['poster_image'],
-            'thumb': media['thumb_image'],
-            'fanart': media['background_image_tv_cropped'],
-            'mediatype': 'episode',
-            'brplayprovider': 'globosat'
-        }
+        if media:
+            video = {
+                'id': item['id_globo_videos'],
+                'label': media['channel']['title'] + ' - ' + item['title'] + ' - ' + media['title'],
+                'title': media['title'],
+                'tvshowtitle': item['title'],
+                'studio': media['channel']['title'],
+                'plot': media['description'],
+                'tagline': item['subtitle'],
+                'duration': float(media['duration_in_milliseconds']) / 1000.0,
+                'logo': media['program']['logo_image'] if 'program' in media and media['program'] else item['channel']['color_logo'],
+                'clearlogo': media['program']['logo_image'] if 'program' in media and media['program'] else item['channel']['color_logo'],
+                'poster': media['program']['poster_image'] if 'program' in media and media['program'] else media['card_image'],
+                'thumb': media['thumb_image'],
+                'fanart': media['background_image_tv_cropped'] if 'program' in media and media['program'] else media['background_image'],
+                'mediatype': 'episode',
+                'brplayprovider': 'globosat'
+            }
+        else:
+            video = {
+                'id': item['id_globo_videos'],
+                'label': item['channel']['title'] + ' - ' + item['title'],
+                'title': item['title'],
+                'tvshowtitle': item['title'],
+                'studio': item['channel']['title'],
+                'plot': item['subtitle'],
+                #'tagline': item['subtitle'],
+                #'duration': float(media['duration_in_milliseconds']) / 1000.0,
+                #'logo': media['program']['logo_image'],
+                #'clearlogo': media['program']['logo_image'],
+                #'poster': media['program']['poster_image'],
+                'thumb': item['background_image'],
+                'fanart': item['background_image'],
+                'mediatype': 'episode',
+                'brplayprovider': 'globosat'
+            }
 
         videos.append(video)
 
     return videos
 
 
-def get_tracks():
+def get_tracks(channel_id=None):
     headers = {
         'Accept-Encoding': 'gzip',
         'Authorization': GLOBOSAT_API_AUTHORIZATION
     }
-    tracks_response = client.request(GLOBOSAT_TRACKS, headers=headers)
+    channel_filter = '?channel_id=%s' % channel_id if channel_id else ''
+    tracks_response = client.request(GLOBOSAT_TRACKS + channel_filter, headers=headers)
 
     results = tracks_response['results']
 
@@ -206,7 +227,7 @@ def get_track_list(id):
 
     videos = []
 
-    for item in track_list['results']:
+    for item in results:
 
         media = item['media']
         if media:
@@ -219,9 +240,9 @@ def get_track_list(id):
                 'plot': media['description'],
                 'tagline': media['subtitle'],
                 'duration': float(media['duration_in_milliseconds']) / 1000.0,
-                'logo': media['program']['logo_image'] if 'program' in media and media['program'] else None,
-                'clearlogo': media['program']['logo_image'] if 'program' in media and media['program'] else None,
-                'poster': media['program']['poster_image'] if 'program' in media and media['program'] else None,
+                'logo': media['program']['logo_image'] if 'program' in media and media['program'] else media['channel']['color_logo'],
+                'clearlogo': media['program']['logo_image'] if 'program' in media and media['program'] else media['channel']['color_logo'],
+                'poster': media['program']['poster_image'] if 'program' in media and media['program'] else media['card_image'],
                 'thumb': media['thumb_image'],
                 'fanart': media['background_image_tv_cropped'],
                 'mediatype': 'episode',
