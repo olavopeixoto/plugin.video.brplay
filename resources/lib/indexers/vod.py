@@ -191,9 +191,9 @@ class Vod:
         episodes, nextpage, total_pages, days = cache.get(globoplay.Indexer().get_videos_by_program, 1, program_id, page)
         self.episodes_directory(episodes, program_id, nextpage, total_pages, days=days, poster=poster, provider=provider)
 
-    def get_videos_by_program_date(self, program_id, date, poster=None):
+    def get_videos_by_program_date(self, program_id, date, poster=None, provider=None):
         episodes = cache.get(globoplay.Indexer().get_videos_by_program_date, 1, program_id, date)
-        self.episodes_directory(episodes, program_id, poster=poster)
+        self.episodes_directory(episodes, program_id, poster=poster, provider=provider)
 
     def get_fighters(self, letter):
         fighters = cache.get(globosat.Indexer().get_fighters, 1, letter)
@@ -237,7 +237,7 @@ class Vod:
         videos, next_page, total_pages = cache.get(globosat.Indexer().get_fighter_videos, 1, slug, page)
         self.episodes_directory(videos, next_page=next_page, total_pages=total_pages, next_action='openfighter&slug=%s' % slug, provider='globosat')
 
-    def get_program_dates(self, program_id, poster=None):
+    def get_program_dates(self, program_id, poster=None, provider='globoplay'):
         days = globoplay.Indexer().get_program_dates(program_id)
 
         if days == None or len(days) == 0: control.idle() ; sys.exit()
@@ -252,7 +252,7 @@ class Vod:
             meta.update({'overlay': 6})
             meta.update({'title': label})
 
-            url = '%s?action=openvideos&provider=%s&program_id=%s&date=%s' % (sysaddon, 'globoplay', program_id, day)
+            url = '%s?action=openvideos&provider=%s&program_id=%s&date=%s' % (sysaddon, provider, program_id, day)
 
             item = control.item(label=label)
 
@@ -385,7 +385,7 @@ class Vod:
             meta.update({'overlay': 6})
             meta.update({'title': label})
 
-            url = '%s?action=showdates&provider=%s&program_id=%s&category=%s' % (sysaddon, 'globoplay', program_id, program_id)
+            url = '%s?action=showdates&provider=%s&program_id=%s&category=%s' % (sysaddon, provider, program_id, program_id)
 
             item = control.item(label=label)
 

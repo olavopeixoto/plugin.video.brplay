@@ -89,6 +89,16 @@ try:
         from resources.lib.indexers import vod
         vod.Vod().get_vod_channels()
 
+    ## COMMON
+    elif action == 'showdates':
+        from resources.lib.indexers import vod
+        page = page or 1
+        vod.Vod().get_program_dates(program_id, poster, provider)
+
+    elif action == 'openvideos' and date:
+        from resources.lib.indexers import vod
+        vod.Vod().get_videos_by_program_date(program_id, date, poster, provider)
+
 
     ###GLOBOSAT PLAY
 
@@ -164,19 +174,10 @@ try:
         from resources.lib.indexers import vod
         vod.Vod().get_programs_by_categories(category)
 
-    elif action == 'openvideos' and provider == 'globoplay' and date:
-        from resources.lib.indexers import vod
-        vod.Vod().get_videos_by_program_date(program_id, date, poster)
-
     elif action == 'openvideos' and provider == 'globoplay':
         from resources.lib.indexers import vod
         page = page or 1
         vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay')
-
-    elif action == 'showdates' and provider == 'globoplay':
-        from resources.lib.indexers import vod
-        page = page or 1
-        vod.Vod().get_program_dates(program_id, poster)
 
     elif action == 'playvod' and provider == 'globoplay':
         from resources.lib.modules.globoplay import player
