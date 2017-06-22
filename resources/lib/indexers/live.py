@@ -171,15 +171,12 @@ class Live:
 
             item.setContentLookup(False)
 
-            startdate = util.strptime_workaround(channel['dateadded'], '%Y-%m-%d %H:%M:%S') if 'dateadded' in channel else None
-
-            if control.isJarvis:
+            if 'duration' in channel and channel['duration'] is not None:
+                duration = float(meta['duration'])
+                startdate = util.strptime_workaround(channel['dateadded'], '%Y-%m-%d %H:%M:%S') if 'dateadded' in channel else None
                 offset = float(util.get_total_seconds(datetime.datetime.now() - startdate)) if startdate else 0
-                item.setProperty('resumetime', str(offset))
-
-                if 'duration' in channel and channel['duration'] is not None:
-                    duration = float(meta['duration'])
-                    item.setProperty('totaltime', str(duration))
+                item.setProperty('Progress', str((offset / duration) * 100) if duration else str(0))
+                item.setProperty('totaltime', str(duration))
 
             list_items.append((url, item, isFolder))
 
