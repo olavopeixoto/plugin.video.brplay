@@ -146,6 +146,8 @@ log = xbmc.log
 
 skinPath = xbmc.translatePath('special://skin/')
 
+tempPath = xbmc.translatePath('special://temp/')
+
 addonPath = xbmc.translatePath(addonInfo('path'))
 
 dataPath = xbmc.translatePath(addonInfo('profile')).decode('utf-8')
@@ -165,6 +167,8 @@ cacheFile = os.path.join(dataPath, 'cache.db')
 isJarvis = infoLabel("System.BuildVersion").startswith("16.")
 
 isKrypton = infoLabel("System.BuildVersion").startswith("17.")
+
+cookieFile = os.path.join(tempPath, 'cookies.dat')
 
 
 def getKodiVersion():

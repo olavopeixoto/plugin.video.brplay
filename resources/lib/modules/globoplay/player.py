@@ -3,8 +3,8 @@ import re
 import sys
 
 import xbmc
-
 import auth
+from resources.lib.modules import hlshelper
 from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules.util import get_signed_hashes
@@ -61,17 +61,7 @@ class Player(xbmc.Player):
         poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
-        # playlist, cookies = m3u8.load(url)
-        #
-        # control.log("PLAYLIST[0].bandwidth: %s" % repr(playlist.playlists[0].stream_info.bandwidth))
-        # control.log("PLAYLIST[0].uri: %s" % repr(playlist.playlists[0].absolute_uri))
-        # control.log("PLAYLIST[0].cookies: %s" % repr(cookies))
-        #
-        # cookies_str = urllib.urlencode(cookies.get_dict()).replace('&', '; ') + ';'
-        #
-        # url = playlist.playlists[0].absolute_uri + '|Cookie=' + urllib.quote(cookies_str)
-
-        # control.log("FINAL URL: %s" % url)
+        url = hlshelper.pickBandwidth(url)
 
         item = control.item(path=url)
 
@@ -83,7 +73,7 @@ class Player(xbmc.Player):
 
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
 
-        item.setContentLookup(False)
+        # item.setContentLookup(False)
 
         # control.player.play(url, item)
         control.resolve(syshandle, True, item)
@@ -123,6 +113,8 @@ class Player(xbmc.Player):
     #         control.log("UPDATING META TO: %s" % repr(meta))
     #         item.setInfo(type='video', infoLabels=meta)
     #         xbmc.sleep(60000)
+
+
 
     def __getVideoInfo(self, id):
 

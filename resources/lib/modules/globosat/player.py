@@ -6,6 +6,7 @@ import auth
 from resources.lib.modules import util
 from resources.lib.modules import client
 from resources.lib.modules import control
+from resources.lib.modules import hlshelper
 
 
 class Player:
@@ -56,12 +57,18 @@ class Player:
             poster = meta['poster'] if 'poster' in meta else control.addonPoster()
             thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
+            url = hlshelper.pickBandwidth(url)
+
             item = control.item(path=url)
             item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
             item.setProperty('IsPlayable', 'true')
             item.setInfo(type='Video', infoLabels=meta)
 
             item.setContentLookup(False)
+
+            # cookielib.MozillaCookieJar("mycookies.txt")
+
+            # playlist = client.request(url)
 
             control.resolve(int(sys.argv[1]), True, item)
         except:
