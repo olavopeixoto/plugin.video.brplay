@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import re
 import sys
@@ -6,6 +8,27 @@ import auth
 from resources.lib.modules import util
 from resources.lib.modules import client
 from resources.lib.modules import control
+from resources.lib.modules import hlshelper
+
+from resources.lib.hlsproxy.proxyplayer import ProxyPlayer
+
+
+def get_max_bandwidth():
+    bandwidth_setting = control.setting('bandwidth')
+
+    max_bandwidth = 99999999999999
+    if bandwidth_setting in ['Auto','Manual']:
+        configured_limit = control.getBandwidthLimit()
+        return configured_limit if configured_limit > 0 else max_bandwidth
+
+    if bandwidth_setting == 'Max':
+        return max_bandwidth
+
+    if bandwidth_setting == 'Medium':
+        return 1264000
+
+    if bandwidth_setting == 'Low':
+        return 0
 
 
 class Player:
@@ -14,58 +37,77 @@ class Player:
 
     def playlive(self, id, meta):
         if id == None: return
-        try:
-            info = self.__getVideoInfo(id)
+        # try:
+        info = self.__getVideoInfo(id)
 
-            if info['encrypted'] == 'true':
-                control.infoDialog(control.lang(31200).encode('utf-8'), heading=str("Content is DRM encrypted it won't play in Kodi at this moment"), icon='Wr')
+        # if info['encrypted'] == 'true':
+        #     control.infoDialog(control.lang(31200).encode('utf-8'), heading=str("Content is DRM encrypted it won't play in Kodi at this moment"), icon='Wr')
 
-            title = info['channel']
+        title = info['channel']
 
-            signed_hashes = util.get_signed_hashes(info['hash'])
+        signed_hashes = util.get_signed_hashes(info['hash'])
 
-            query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
+        query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
 
-            query_string = query_string % {
-                'hash': signed_hashes[0],
-                'key': 'app',
-                'openClosed': 'F' if info['subscriber_only'] else 'A',
-                'user': info['user'] if info['subscriber_only'] else ''
-            }
+        query_string = query_string % {
+            'hash': signed_hashes[0],
+            'key': 'app',
+            'openClosed': 'F' if info['subscriber_only'] else 'A',
+            'user': info['user'] if info['subscriber_only'] else ''
+        }
 
-            url = '?'.join([info['url'], query_string])
+        url = '?'.join([info['url'], query_string])
 
-            control.log("live media url: %s" % url)
+        control.log("live media url: %s" % url)
 
-            try: meta = json.loads(meta)
-            except: meta = {
-                "playcount": 0,
-                "overlay": 6,
-                "title": title,
-                "thumb": info["thumbUri"],
-                "mediatype": "video",
-                "aired": info["exhibited_at"]
-            }
+        try: meta = json.loads(meta)
+        except: meta = {
+            "playcount": 0,
+            "overlay": 6,
+            "title": title,
+            "thumb": info["thumbUri"],
+            "mediatype": "video",
+            "aired": info["exhibited_at"]
+        }
 
-            meta.update({
-                "genre": info["category"],
-                "plot": info["title"],
-                "plotoutline": info["title"]
-            });
+        meta.update({
+            "genre": info["category"],
+            "plot": info["title"],
+            "plotoutline": info["title"]
+        });
 
-            poster = meta['poster'] if 'poster' in meta else control.addonPoster()
-            thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
+        poster = meta['poster'] if 'poster' in meta else control.addonPoster()
+        thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
-            item = control.item(path=url)
-            item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
-            item.setProperty('IsPlayable', 'true')
-            item.setInfo(type='Video', infoLabels=meta)
+        # dummy_url, m3u8, cookies, bandwidth_index = hlshelper.pickBandwidth(url)
+        # url, playlist, cookies, maxbitrate = hlshelper.pickBandwidth(url)
 
-            item.setContentLookup(False)
+        control.log("Resolved URL: %s" % repr(url))
 
-            control.resolve(int(sys.argv[1]), True, item)
-        except:
-            pass
+        self.isLive = 'livefeed' in meta and meta['livefeed'] == 'true'
+
+        if not self.isLive or control.isJarvis:
+            self.url = hlshelper.pickBandwidth(url)
+            mime_type = None
+        else:
+            maxbandwidth=get_max_bandwidth()
+            player = ProxyPlayer()
+            self.url, mime_type = player.play(url, title, maxbitrate=maxbandwidth)
+
+        item = control.item(path=self.url)
+        item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
+        item.setProperty('IsPlayable', 'true')
+        item.setInfo(type='Video', infoLabels=meta)
+
+        if mime_type:
+            item.setMimeType(mime_type)
+
+        item.setContentLookup(False)
+
+        control.resolve(int(sys.argv[1]), True, item)
+
+        # except:
+        #     pass
 
     def __getVideoInfo(self, id):
 

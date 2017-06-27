@@ -19,6 +19,14 @@ from resources.lib.modules import workers
 
 
 def request(url, close=True, redirect=True, error=False, proxy=None, post=None, headers=None, mobile=False, XHR=False, limit=None, referer=None, cookie=None, output='', timeout='30'):
+
+    # if not proxy:
+    #     proxy = control.setting('proxy_url')
+    #     proxy = None if proxy == None or proxy == '' else {
+    #         'http': proxy,
+    #         'https': proxy,
+    #     }
+
     try:
         handlers = []
 

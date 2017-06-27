@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.5" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.7" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.beautifulsoup" version="3.2.1"/>
@@ -22,6 +22,11 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>- Newly release addon</news>
+		<news>0.0.7
+- Experimental Krypton live streaming support
+- Internal bandwidth limiter
+- Removed resume point from live streaming
+- Added Featured globosat content section
+        </news>
 	</extension>
 </addon>
