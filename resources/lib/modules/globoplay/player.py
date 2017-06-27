@@ -25,6 +25,23 @@ class Player(xbmc.Player):
         self.url = None
         self.item = None
 
+    def get_max_bandwidth(self):
+        bandwidth_setting = control.setting('bandwidth')
+
+        max_bandwidth = 99999999999999
+        if bandwidth_setting in ['Auto', 'Manual']:
+            configured_limit = control.getBandwidthLimit()
+            return configured_limit if configured_limit > 0 else max_bandwidth
+
+        if bandwidth_setting == 'Max':
+            return max_bandwidth
+
+        if bandwidth_setting == 'Medium':
+            return 1264000
+
+        if bandwidth_setting == 'Low':
+            return 0
+
     def play(self, id, meta):
 
         if id == None: return
@@ -79,8 +96,9 @@ class Player(xbmc.Player):
             self.url = hlshelper.pickBandwidth(url)
             mime_type = None
         else:
+            maxbandwidth = self.get_max_bandwidth()
             player = ProxyPlayer()
-            self.url, mime_type = player.play(url, title, maxbitrate=999999999999999)
+            self.url, mime_type = player.play(url, title, maxbitrate=maxbandwidth)
 
         item = control.item(path=self.url)
         item.setInfo(type='video', infoLabels=meta)

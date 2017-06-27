@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import urlparse,os,sys
+import urlparse,os,sys,json
 
 import xbmc,xbmcaddon,xbmcplugin,xbmcgui,xbmcvfs
 
@@ -179,6 +179,11 @@ def addonIcon():
     art = artPath()
     if not (art == None): return os.path.join(art, 'icon.png')
     return addonInfo('icon')
+
+def getBandwidthLimit():
+    json_result = xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.GetSettingValue","params":{"setting":"network.bandwidth"},"id":1}')
+    data_object = json.loads(json_result)
+    return data_object['result']['value']
 
 
 def addonThumb():

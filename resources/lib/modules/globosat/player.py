@@ -13,6 +13,24 @@ from resources.lib.modules import hlshelper
 from resources.lib.hlsproxy.proxyplayer import ProxyPlayer
 
 
+def get_max_bandwidth():
+    bandwidth_setting = control.setting('bandwidth')
+
+    max_bandwidth = 99999999999999
+    if bandwidth_setting in ['Auto','Manual']:
+        configured_limit = control.getBandwidthLimit()
+        return configured_limit if configured_limit > 0 else max_bandwidth
+
+    if bandwidth_setting == 'Max':
+        return max_bandwidth
+
+    if bandwidth_setting == 'Medium':
+        return 1264000
+
+    if bandwidth_setting == 'Low':
+        return 0
+
+
 class Player:
     def __init__(self):
         pass
@@ -22,8 +40,8 @@ class Player:
         # try:
         info = self.__getVideoInfo(id)
 
-        if info['encrypted'] == 'true':
-            control.infoDialog(control.lang(31200).encode('utf-8'), heading=str("Content is DRM encrypted it won't play in Kodi at this moment"), icon='Wr')
+        # if info['encrypted'] == 'true':
+        #     control.infoDialog(control.lang(31200).encode('utf-8'), heading=str("Content is DRM encrypted it won't play in Kodi at this moment"), icon='Wr')
 
         title = info['channel']
 
@@ -72,8 +90,9 @@ class Player:
             self.url = hlshelper.pickBandwidth(url)
             mime_type = None
         else:
+            maxbandwidth=get_max_bandwidth()
             player = ProxyPlayer()
-            self.url, mime_type = player.play(url, title, maxbitrate=999999999999999)
+            self.url, mime_type = player.play(url, title, maxbitrate=maxbandwidth)
 
         item = control.item(path=self.url)
         item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})

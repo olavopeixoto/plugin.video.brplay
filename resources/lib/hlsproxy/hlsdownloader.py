@@ -152,7 +152,7 @@ def get_url(url, timeout=15, returnres=False, stream=False):
         proxies={}
 
         if gproxy:
-            proxies= { "http": "http://" + gproxy, "https": "http://" + gproxy }
+            proxies= { "http": gproxy, "https": gproxy }
 
         #import random
         #headers['User-Agent'] =headers['User-Agent'] + str(int(random.random()*100000))

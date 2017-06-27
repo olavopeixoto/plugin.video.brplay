@@ -236,6 +236,7 @@ class hlsProxy():
         #MyHandler.protocol_version = "HTTP/1.1"
         ProxyHandler.protocol_version = "HTTP/1.1"
 
+        httpd = None
         try:
             httpd = server_class((HOST_NAME, port), ProxyHandler)
 
