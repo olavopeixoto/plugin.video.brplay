@@ -125,7 +125,7 @@ def get_premiere_live_channels():
             'clearlogo': PREMIERE_LOGO,
             'fanart': PREMIERE_FANART,
             'thumb': PREMIERE_FANART,
-        })]
+        }, offline)]
 
     if len(live_games) > 1:
         title = '%s jogos programados' % len(live_games)
