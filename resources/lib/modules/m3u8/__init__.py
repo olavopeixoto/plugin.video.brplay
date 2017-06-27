@@ -16,18 +16,18 @@ def loads(content):
     '''
     return M3U8(content)
 
-def load(uri):
+def load(uri, cookies=None):
     '''
     Retrieves the content from a given URI and returns a M3U8 object.
     Raises ValueError if invalid content or IOError if request fails.
     '''
     if is_url(uri):
-        return _load_from_uri(uri)
+        return _load_from_uri(uri, cookies)
     else:
         return _load_from_file(uri)
 
-def _load_from_uri(uri):
-    response = requests.get(uri) #content = urlopen(uri).read().strip()
+def _load_from_uri(uri, cookies):
+    response = requests.get(uri, cookies=cookies) #content = urlopen(uri).read().strip()
     content = response.content.strip()
     parsed_url = urlparse.urlparse(uri)
     prefix = parsed_url.scheme + '://' + parsed_url.netloc

@@ -1,12 +1,12 @@
-import xbmcgui
+import xbmcgui,xbmc
 
 from resources.lib.modules import control
 import urllib, resources.lib.modules.m3u8 as m3u8
 
-# try:
-#     import http.cookiejar as cookielib
-# except:
-#     import cookielib
+try:
+    import http.cookiejar as cookielib
+except:
+    import cookielib
 
 def pickBandwidth(url):
 
@@ -21,6 +21,7 @@ def pickBandwidth(url):
 
     bandwidth_options = []
     for index, playlist_item in enumerate(playlist.playlists):
+        # xbmc.log("BANDWIDTH: %s | URL: %s" % (str(playlist.playlists[index].stream_info.bandwidth), playlist.playlists[index].absolute_uri), level=xbmc.LOGNOTICE)
         bandwidth_options.append({
             'index': index,
             'bandwidth': str(playlist.playlists[index].stream_info.bandwidth)
@@ -45,14 +46,14 @@ def pickBandwidth(url):
             bandwidth = 1
 
     cookies_str = urllib.urlencode(cookies.get_dict()).replace('&', '; ') + ';'
-    url = '%s|Cookie=%s' % (playlist.playlists[bandwidth].absolute_uri, cookies_str)
-    control.log("FINAL URL: %s" % url)
+    url = '%s|Cookie=%s' % (playlist.playlists[bandwidth_options[bandwidth]['index']].absolute_uri, cookies_str)
+    xbmc.log("FINAL URL: %s" % url, level=xbmc.LOGNOTICE)
 
-    # if control.isJarvis:
-    #     cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
-    #     cookie_jar.clear()
-    #     for cookie in cookies:
-    #         cookie_jar.set_cookie(cookie)
-    #     cookie_jar.save(control.cookieFile, None, None)
+    if control.isJarvis:
+        cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
+        cookie_jar.clear()
+        for cookie in cookies:
+            cookie_jar.set_cookie(cookie)
+        cookie_jar.save(control.cookieFile, None, None)
 
     return url

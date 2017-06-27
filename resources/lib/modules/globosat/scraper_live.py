@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import os, datetime
+import os, datetime, time
 from resources.lib.modules import control
 from resources.lib.modules import client
 from resources.lib.modules import util
-import auth
 
 GLOBOSAT_URL = 'http://globosatplay.globo.com'
 GLOBOSAT_API_URL = 'http://api.vod.globosat.tv/globosatplay'
@@ -54,7 +53,7 @@ def get_basic_live_channels():
                     'name': transmission['title'],
                     'studio': transmission['title'],
                     'title': transmission['title'],
-                    'thumb': 'https://live-thumbs.video.globo.com/univ24ha/snapshot/',
+                    'thumb': 'https://live-thumbs.video.globo.com/univ24ha/snapshot/?v=' + str(int(time.time())),
                     'plot': None,
                     'duration': None,
                     'brplayprovider': 'globosat',
@@ -74,7 +73,8 @@ def get_basic_live_channels():
                     'id': transmission['items'][0]['id_globo_videos'],
                     'channel_id': transmission['id_channel'],
                     'brplayprovider': 'globosat',
-                    'thumb': item['thumb'] + ('?t=%s' % timestamp) if 'thumb' in item and item['thumb'] is not None else None
+                    'thumb': item['thumb'] if 'thumb' in item and item['thumb'] is not None else None,
+                    'livefeed': 'true'
                     })
 
             live.append(item)
@@ -177,11 +177,11 @@ def get_premiere_games(meta):
         #offlineText = u' (' + game['data'] + u')' if offline else u''
         #tvshowtitle = game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')'
         #plot =  game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')' + u'. ' + game['data']
-        live.append(__get_game_data(game, livemeta))
+        live.append(__get_game_data(game, livemeta, offline))
 
     return live
 
-def __get_game_data(game, meta):
+def __get_game_data(game, meta, offline):
     meta.update({
         'name': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
         'label2': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
@@ -198,7 +198,8 @@ def __get_game_data(game, meta):
         'tvshowtitle': game['time_mandante']['sigla'] + u' x ' + game['time_visitante']['sigla'],
         'title': game['campeonato'],
         'brplayprovider': 'globosat',
-        'gamedetails': None
+        'gamedetails': None,
+        'livefeed': str(offline).lower()
     })
     return meta
 
@@ -221,7 +222,7 @@ def __get_simulcast_data(result):
         # 'logo': None,
         # 'color': None,
         'fanart': result['thumb_cms'],
-        'thumb': result['channel']['url_snapshot'],
+        'thumb': result['channel']['url_snapshot'] + '?v=' + str(int(time.time())),
         'live': result['live'],
         'playable': 'true',
         'plot': ' ', #(result['title'] or '') + ' - ' + (result['subtitle'] or ''), #program_local_date_string + duration_str + '\n' + (result['title'] or '') + '\n' + (result['subtitle'] or ''),
