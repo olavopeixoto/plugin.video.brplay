@@ -22,11 +22,8 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.7
-- Experimental Krypton live streaming support
-- Internal bandwidth limiter
-- Removed resume point from live streaming
-- Added Featured globosat content section
+		<news>0.0.9
+- Experimental Adaptive HLS playback (live streaming)
         </news>
 	</extension>
 </addon>

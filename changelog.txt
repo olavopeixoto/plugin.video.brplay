@@ -1,3 +1,5 @@
+[B]0.0.8[/B]
+- Experimental Adaptive HLS playback (live streaming)
 [B]0.0.7[/B]
 - Experimental Krypton live streaming support
 - Internal bandwidth limiter
