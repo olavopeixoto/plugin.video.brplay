@@ -10,7 +10,8 @@ from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules import hlshelper
 
-from resources.lib.hlsproxy.proxyplayer import ProxyPlayer
+import xbmc
+import threading
 
 
 def get_max_bandwidth():
@@ -31,13 +32,15 @@ def get_max_bandwidth():
         return 0
 
 
-class Player:
+class Player(xbmc.Player):
     def __init__(self):
+        super(xbmc.Player, self).__init__()
+        self.stopPlayingEvent = None
         pass
 
     def playlive(self, id, meta):
         if id == None: return
-        # try:
+
         info = self.__getVideoInfo(id)
 
         # if info['encrypted'] == 'true':
@@ -79,20 +82,10 @@ class Player:
         poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
-        # dummy_url, m3u8, cookies, bandwidth_index = hlshelper.pickBandwidth(url)
-        # url, playlist, cookies, maxbitrate = hlshelper.pickBandwidth(url)
-
-        control.log("Resolved URL: %s" % repr(url))
-
         self.isLive = 'livefeed' in meta and meta['livefeed'] == 'true'
 
-        if not self.isLive or control.isJarvis:
-            self.url = hlshelper.pickBandwidth(url)
-            mime_type = None
-        else:
-            maxbandwidth=get_max_bandwidth()
-            player = ProxyPlayer()
-            self.url, mime_type = player.play(url, title, maxbitrate=maxbandwidth)
+        self.url, mime_type, stopEvent = hlshelper.pickBandwidth(url)
+        control.log("Resolved URL: %s" % repr(self.url))
 
         item = control.item(path=self.url)
         item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
@@ -106,8 +99,37 @@ class Player:
 
         control.resolve(int(sys.argv[1]), True, item)
 
-        # except:
-        #     pass
+        self.stopPlayingEvent = threading.Event()
+        self.stopPlayingEvent.clear()
+
+        while not self.stopPlayingEvent.isSet():
+            if control.monitor.abortRequested():
+                control.log("Abort requested")
+                break;
+            control.sleep(100)
+
+        if stopEvent:
+            control.log("Setting stop event for proxy player")
+            stopEvent.set()
+
+        control.log("Done playing. Quitting...")
+
+    def onPlayBackStarted(self):
+        # Will be called when xbmc starts playing a file
+        control.log("Playback has started!")
+
+    def onPlayBackEnded(self):
+        # Will be called when xbmc stops playing a file
+        control.log("setting event in onPlayBackEnded ")
+        if self.stopPlayingEvent:
+            self.stopPlayingEvent.set()
+
+    def onPlayBackStopped(self):
+        # Will be called when user stops xbmc playing a file
+        control.log("setting event in onPlayBackStopped ")
+        if self.stopPlayingEvent:
+            self.stopPlayingEvent.set()
+
 
     def __getVideoInfo(self, id):
 

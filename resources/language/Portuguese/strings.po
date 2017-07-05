@@ -34,7 +34,7 @@ msgstr "Proxy"
 
 msgctxt "#32003"
 msgid "Authentication Error. Invalid user or password."
-msgstr "Erro na authenticação. Usuário ou senha inválidos."
+msgstr "Erro na authenticação. Usuário ou senha inválido."
 
 
 msgctxt "#32001"

@@ -65,7 +65,7 @@ key_size = None
 
 class AESDecrypter():
     MODE_CBC=2
-    def new(self,key, mode, IV=None):
+    def new(self, key, mode, IV=None):
         if mode == MODE_ECB:
             return ECBMode(AES(key))
         elif mode == MODE_CBC:

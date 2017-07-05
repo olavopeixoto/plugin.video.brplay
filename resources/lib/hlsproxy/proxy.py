@@ -22,10 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 MA 02110-1301, USA.
 """
 
-import hashlib
 import re
 import socket
-import sys
 import traceback
 import urllib
 import urlparse
@@ -33,143 +31,113 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 
 import xbmc
+import xbmcgui
+
+import thread
+import threading
+# from resources.lib.modules import workers
+
+from hlsdownloader import HLSDownloader
+# from hlswriter import HLSWriter as HLSDownloader
+# from legacyhlsdownloader import HLSDownloader
 
 g_stopEvent=None
-g_downloader=None
-g_currentprocessor=None
-MIME_TYPE = 'video/MP2T'
+VIDEO_MIME_TYPE = 'video/MP2T'
+PLAYLIST_MIME_TYPE = 'application/vnd.apple.mpegurl'
 
 HOST_NAME = '127.0.0.1'
 PORT_NUMBER = 55444
 
+
+def log(msg):
+    pass
+    # xbmc.log(msg, level=xbmc.LOGNOTICE)
+
+
 class ProxyHandler(BaseHTTPRequestHandler):
+
+    downloader = None
+
     """
-   Serves a HEAD request
-   """
+    Serves a HEAD request
+    """
     def do_HEAD(self):
         print "XBMCLocalProxy: Serving HEAD request..."
-        #
         self.send_response(200)
-        #self.send_header("Accept-Ranges","bytes")
-        self.send_header("Content-Type", MIME_TYPE)
+        self.send_header("Content-Type", PLAYLIST_MIME_TYPE)
         self.end_headers()
-        #s.answer_request(False)
 
     """
     Serves a GET request.
     """
-    def do_GET(s):
+    def do_GET(self):
         print "XBMCLocalProxy: Serving GET request..."
-        s.answer_request(True)
- 
-    def answer_request(self, sendData):
         global g_stopEvent
-        global g_downloader
-        global g_currentprocessor
 
         try:
             #Pull apart request path
-            request_path=self.path[1:] 
-            querystring=request_path            
+            request_path=self.path[1:]
+            path_and_query=request_path
+            path_and_query_list = path_and_query.split('?')
+            querystring = path_and_query_list[1] if len(path_and_query_list) > 1 else ''
             request_path=re.sub(r"\?.*","",request_path)
-            
-            #If a request to stop is sent, shut down the proxy
-
-            if request_path.lower()=="stop":# all special web interfaces here
-                sys.exit()
-                return
-            if request_path.lower()=="favicon.ico":
-                print 'dont have no icon here, may be in future'
-                self.wfile.close()
-                return
-            if request_path.lower()=="sendvideopart":
-                print 'sendvideopart'
-                #sendvideoparthere
-                self.send_response(200)
-                self.send_header("Content-Type", MIME_TYPE)
-                self.end_headers()
-                init_done=True
-                videourl=self.decode_videoparturl(querystring.split('?')[1])
-                g_currentprocessor.sendVideoPart(videourl,self.wfile)
-                return
 
             init_done=False
-            (url,proxy,use_proxy_for_chunks,maxbitrate)=self.decode_url(request_path)
 
-            from hlsdownloader import HLSDownloader
-            downloader=HLSDownloader()
-            if not downloader.init(self.wfile, url, proxy, use_proxy_for_chunks, g_stopEvent, maxbitrate):
-                print 'cannot init'
-                raise Exception('HLS.url failed to play\nServer down? check Url.')
+            log("GET REQUEST: %s" % self.path)
 
-            self.send_response(200)
-            self.send_header("Content-Type", MIME_TYPE)
-            self.end_headers()
+            if request_path.lower() == "brplay":
+                (url, proxy, use_proxy_for_chunks, maxbitrate) = self.decode_url(querystring)
 
-            init_done=True
-            srange,framgementToSend=(None,None)
+                if not self.downloader.init(self.wfile, url, proxy, use_proxy_for_chunks, g_stopEvent, maxbitrate):
+                    print 'cannot init'
+                    raise Exception('HLS.url failed to play\nServer down? check Url.')
 
-            if sendData:
-                downloader.keep_sending_video(self.wfile, srange, framgementToSend)
-                #self.wfile.close()
-                #runningthread=thread.start_new_thread(downloader.download,(self.wfile,url,proxy,use_proxy_for_chunks,))
-                print 'srange,framgementToSend',srange,framgementToSend
-                #runningthread=thread.start_new_thread(downloader.keep_sending_video,(self.wfile,srange,framgementToSend,))
-                
-                #xbmc.sleep(500)
-                #while not downloader.status=="finished":
-                #    xbmc.sleep(200);
+                log("GET REQUEST Content-Type: %s" % self.downloader.MAIN_MIME_TYPE)
+
+                self.send_response(200)
+                self.send_header("Content-Type", self.downloader.MAIN_MIME_TYPE)
+                self.end_headers()
+
+                init_done=True
+
+                self.downloader.keep_sending_video(self.wfile)
+
+            else:
+                is_playlist = request_path.endswith('.m3u8')
+                is_media = request_path.endswith('.ts')
+                self.send_response(200)
+                mime_type = PLAYLIST_MIME_TYPE if is_playlist else VIDEO_MIME_TYPE if is_media else 'application/octet-stream'
+                log("GET REQUEST Content-Type: %s" % mime_type)
+                self.send_header("Content-Type", mime_type)
+                self.end_headers()
+                init_done = True
+                if is_playlist:
+                    log("GET REQUEST MEDIA PLAYLIST")
+                    base_uri = 'http://%s:%s' % (HOST_NAME, PORT_NUMBER)
+                    self.downloader.download_segment_playlist(path_and_query, base_uri, self.wfile)
+                elif is_media:
+                    log("GET REQUEST MEDIA DATA")
+                    self.downloader.download_segment_media(path_and_query, self.wfile)
+                else:
+                    log("GET REQUEST BINARY DATA")
+                    self.downloader.download_binary(path_and_query, self.wfile)
 
         except Exception as inst:
             #Print out a stack trace
             traceback.print_exc()
-            #g_stopEvent.set()
             if not init_done:
                 xbmc.executebuiltin("XBMC.Notification(BRPlayProxy,%s,4000,'')" % inst.message)
                 self.send_error(404)
-            #print 'sending 404'
-            #self.send_error(404)
-            #Close output stream file
-            #self.wfile.close()
             print 'closed'
-            
-        #Close output stream file
-        #self.wfile.close()
-        self.finish()
-        return 
-   
-    def generate_ETag(self, url):
-        md=hashlib.md5()
-        md.update(url)
-        return md.hexdigest()
-        
-    def get_range_request(self, hrange, file_size):
-        if hrange==None:
-            srange=0
-            erange=None
-        else:
+        finally:
+            log("REQUEST COMPLETED")
             try:
-                #Get the byte value from the request string.
-                hrange=str(hrange)
-                splitRange=hrange.split("=")[1].split("-")
-                srange=int(splitRange[0])
-                erange = splitRange[1]
-                if erange=="":
-                    erange=int(file_size)-1
-                #Build range string
-                
-            except:
-                # Failure to build range string? Create a 0- range.
-                srange=0
-                erange=int(file_size-1);
-        return (srange, erange)
+                self.finish()
+                log("REQUEST FINISHED CALLED SUCCESSFULLY")
+            except Exception, e:
+                xbmc.log("PROXYHANDLER ERROR: %s " % e.message, level=xbmc.LOGERROR)
 
-    def decode_videoparturl(self, url):
-        print 'in params',url
-        params=urlparse.parse_qs(url)
-        received_url = params['url'][0].replace('\r','')
-        return received_url
-        
     def decode_url(self, url):
         print 'in params',url
         params=urlparse.parse_qs(url)
@@ -196,6 +164,12 @@ class ProxyHandler(BaseHTTPRequestHandler):
         
         return (received_url,proxy,use_proxy_for_chunks,maxbitrate)
 
+    def decode_videoparturl(self, url):
+        print 'in params', url
+        params = urlparse.parse_qs(url)
+        received_url = params['url'][0].replace('\r', '')
+        return received_url
+
 
 """
 Sends the requested file and add additional headers.
@@ -204,11 +178,17 @@ class Server(HTTPServer):
     """HTTPServer class with timeout."""
  
     def get_request(self):
+        print "Server(HTTPServer): Serving GET request..."
+        global g_stopEvent
+
         """Get the request and client address from the socket."""
         self.socket.settimeout(5.0)
         result = None
         while result is None:
             try:
+                if g_stopEvent and g_stopEvent.isSet():
+                    return None
+
                 result = self.socket.accept()
             except socket.timeout:
                 pass
@@ -218,61 +198,70 @@ class Server(HTTPServer):
 
 class ThreadedHTTPServer(ThreadingMixIn, Server):
     """Handle requests in a separate thread."""
- 
+    # def __init__(self):
+    #     ThreadingMixIn.daemon_threads = True
+
 
 class hlsProxy():
 
+    @property
+    def stopEvent(self):
+        return self.stopPlaying
+
     def __init__(self):
+        self.stopPlaying = None
         pass
 
-    def start(self,stopEvent,port=PORT_NUMBER):
+    def __start(self, stopEvent, player, port=PORT_NUMBER):
         global PORT_NUMBER
         global HOST_NAME
         global g_stopEvent
-        print 'port',port,'HOST_NAME',HOST_NAME
+
         g_stopEvent = stopEvent
+
         socket.setdefaulttimeout(10)
-        server_class = ThreadedHTTPServer
-        #MyHandler.protocol_version = "HTTP/1.1"
+
         ProxyHandler.protocol_version = "HTTP/1.1"
+        ProxyHandler.downloader = player()
 
         httpd = None
         try:
-            httpd = server_class((HOST_NAME, port), ProxyHandler)
+            ThreadedHTTPServer.daemon_threads = True
+            httpd = ThreadedHTTPServer((HOST_NAME, port), ProxyHandler)
 
-            print "XBMCLocalProxy Starts - %s:%s" % (HOST_NAME, port)
-            while(True and not stopEvent.isSet()):
+            log("XBMCLocalProxy Starts - %s:%s" % (HOST_NAME, port))
+            while not stopEvent.isSet():
                 httpd.handle_request()
         finally:
-            if httpd:
-                httpd.server_close()
+            try:
+                if httpd:
+                    httpd.server_close()
+                    httpd.shutdown()
+            finally:
+                log("XBMCLocalProxy Stops %s:%s" % (HOST_NAME, port))
 
-        print "XBMCLocalProxy Stops %s:%s" % (HOST_NAME, port)
-
-    def prepare_url(self,url, proxy=None, use_proxy_for_chunks=True, port=PORT_NUMBER, maxbitrate=0):
+    def __prepare_url(self, url, proxy=None, use_proxy_for_chunks=True, port=PORT_NUMBER, maxbitrate=0):
         global PORT_NUMBER
-        newurl=urllib.urlencode({'url': url,'proxy':proxy,'use_proxy_for_chunks':use_proxy_for_chunks,'maxbitrate':maxbitrate})
-        link = 'http://'+HOST_NAME+(':%s/' % str(port)) + newurl
+        newurl=urllib.urlencode({'url': url,'proxy': proxy,'use_proxy_for_chunks': use_proxy_for_chunks,'maxbitrate': maxbitrate})
+        link = 'http://%s:%s/brplay?%s' % (HOST_NAME, str(port), newurl)
         return (link) #make a url that caller then call load into player
 
+    def resolve(self, url, proxy=None, use_proxy_for_chunks=False, maxbitrate=0, player=HLSDownloader):
 
-class MyPlayer(xbmc.Player):
-    def __init__ (self):
-        xbmc.Player.__init__(self)
+        self.stopPlaying=threading.Event()
+        progress = xbmcgui.DialogProgress()
 
-    def play(self, url, listitem):
-        print 'Now im playing... %s' % url
+        progress.create('Starting local proxy')
+        progress.update(20, "", 'Loading local proxy', "")
+
         self.stopPlaying.clear()
-        xbmc.Player( ).play(url, listitem)
-        
-    def onPlayBackEnded( self ):
-        # Will be called when xbmc stops playing a file
-        print "seting event in onPlayBackEnded " 
-        self.stopPlaying.set();
-        print "stop Event is SET"
+        thread.start_new_thread(self.__start, (self.stopPlaying, player,))
 
-    def onPlayBackStopped( self ):
-        # Will be called when user stops xbmc playing a file
-        print "seting event in onPlayBackStopped " 
-        self.stopPlaying.set();
-        print "stop Event is SET"
+        url_to_play = self.__prepare_url(url, proxy, use_proxy_for_chunks, maxbitrate=maxbitrate)
+
+        xbmc.sleep(500)
+
+        progress.update(100, "", "", "")
+        progress.close()
+
+        return url_to_play, VIDEO_MIME_TYPE

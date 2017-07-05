@@ -1,27 +1,25 @@
-import thread
-import threading
-import xbmcgui, xbmc
-
-from resources.lib.hlsproxy.proxy import hlsProxy, MIME_TYPE
+import xbmc
 
 
-class ProxyPlayer():
+class ProxyPlayer(xbmc.Player):
+    def __init__ (self):
+        xbmc.Player.__init__(self)
 
-    def play(self, url, name, proxy=None, use_proxy_for_chunks=False, maxbitrate=0):
-        print "URL: " + url
-        stopPlaying=threading.Event()
-        progress = xbmcgui.DialogProgress()
+    def log(msg):
+        xbmc.log(msg, level=xbmc.LOGNOTICE)
 
-        hls_proxy=hlsProxy()
-        stopPlaying.clear()
-        runningthread=thread.start_new_thread(hls_proxy.start,(stopPlaying,))
-        progress.create('Starting local proxy')
-        stream_delay = 1
-        progress.update( 20, "", 'Loading local proxy', "" )
-        xbmc.sleep(stream_delay*1000)
-        progress.update( 100, "", "", "" )
-        url_to_play = hls_proxy.prepare_url(url,proxy,use_proxy_for_chunks,maxbitrate=maxbitrate)
+    def onPlayBackStarted(self):
+        self.log('Now im playing... %s' % url)
+        self.stopPlaying.clear()
 
-        progress.close()
+    def onPlayBackEnded( self ):
+        # Will be called when xbmc stops playing a file
+        self.log("seting event in onPlayBackEnded ")
+        self.stopPlaying.set()
+        self.log("stop Event is SET")
 
-        return url_to_play, MIME_TYPE
+    def onPlayBackStopped( self ):
+        # Will be called when user stops xbmc playing a file
+        self.log("seting event in onPlayBackStopped ")
+        self.stopPlaying.set()
+        self.log("stop Event is SET")

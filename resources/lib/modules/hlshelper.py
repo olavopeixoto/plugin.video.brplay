@@ -2,20 +2,46 @@ import xbmcgui,xbmc
 
 from resources.lib.modules import control
 import urllib, resources.lib.modules.m3u8 as m3u8
+from resources.lib.hlsproxy.proxy import hlsProxy
 
 try:
     import http.cookiejar as cookielib
 except:
     import cookielib
 
+
+def get_max_bandwidth():
+    bandwidth_setting = control.setting('bandwidth')
+
+    max_bandwidth = 99999999999999
+
+    if bandwidth_setting == 'Max':
+        return max_bandwidth
+
+    if bandwidth_setting == 'Medium':
+        return 1264000
+
+    if bandwidth_setting == 'Low':
+        return 264000
+
+    configured_limit = control.getBandwidthLimit()
+    return configured_limit if configured_limit > 0 else max_bandwidth
+
+
 def pickBandwidth(url):
 
     bandwidth_setting = control.setting('bandwidth')
 
     if bandwidth_setting == 'Auto':
-       return url
+        return url, None, None
 
-    #Auto|Manual|Max|Medium|Low
+    if bandwidth_setting == 'Adaptive':
+        maxbandwidth = get_max_bandwidth()
+        url_resolver = hlsProxy()
+        url, mime_type = url_resolver.resolve(url, maxbitrate=maxbandwidth)
+        return url, mime_type, url_resolver.stopEvent
+
+    #Adaptive|Auto|Manual|Max|Medium|Low
 
     playlist, cookies = m3u8.load(url)
 
@@ -29,14 +55,10 @@ def pickBandwidth(url):
     bandwidth_options = sorted(bandwidth_options, key=lambda k: int(k['bandwidth']))
 
     if bandwidth_setting == 'Manual':
-        options = ['Auto'] if control.isJarvis else []
+        options = []
         options = options + [b['bandwidth'] for b in bandwidth_options]
         dialog = xbmcgui.Dialog()
         bandwidth = dialog.select("Pick the desired bandwidth:", options)
-        if control.isJarvis:
-            if bandwidth == 0:
-                return url
-            bandwidth = bandwidth - 1
     else:
         if bandwidth_setting == 'Max':
             bandwidth = len(bandwidth_options)
@@ -49,11 +71,10 @@ def pickBandwidth(url):
     url = '%s|Cookie=%s' % (playlist.playlists[bandwidth_options[bandwidth]['index']].absolute_uri, cookies_str)
     xbmc.log("FINAL URL: %s" % url, level=xbmc.LOGNOTICE)
 
-    if control.isJarvis:
-        cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
-        cookie_jar.clear()
-        for cookie in cookies:
-            cookie_jar.set_cookie(cookie)
-        cookie_jar.save(control.cookieFile, None, None)
+    cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
+    cookie_jar.clear()
+    for cookie in cookies:
+        cookie_jar.set_cookie(cookie)
+    cookie_jar.save(control.cookieFile, None, None)
 
-    return url
+    return url, None, None

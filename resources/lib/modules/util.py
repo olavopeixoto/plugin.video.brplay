@@ -189,11 +189,19 @@ def strptime_workaround(date_string, format='%Y-%m-%dT%H:%M:%S'):
     from datetime import datetime
     try:
         return datetime.strptime(date_string, format)
-    except TypeError:
-        return datetime(*(time.strptime(date_string, format)[0:6]))
+    except Exception:
+        try:
+            return datetime(*(time.strptime(date_string, format)[0:6]))
+        except Exception:
+            return datetime.strptime(date_string[0:19], format)
 
 def get_total_seconds(timedelta):
     return (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
+def get_total_seconds_float(timedelta):
+    return (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24.0 * 3600.0) * 10.0 ** 6.0) / 10.0 ** 6.0
+
 
 def get_total_hours(timedelta):
     import datetime as dt

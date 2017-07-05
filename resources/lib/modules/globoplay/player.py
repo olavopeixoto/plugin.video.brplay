@@ -8,7 +8,7 @@ from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules.util import get_signed_hashes
 
-from resources.lib.hlsproxy.proxyplayer import ProxyPlayer
+import threading
 
 PLAYER_VERSION = '1.1.23'
 PLAYER_SLUG = 'ios'
@@ -16,7 +16,7 @@ PLAYER_SLUG = 'ios'
 
 class Player(xbmc.Player):
     def __init__(self):
-        super(Player, self).__init__()
+        super(xbmc.Player, self).__init__()
         self.sources = []
         self.offset = 0.0
         self.isLive = False
@@ -24,25 +24,22 @@ class Player(xbmc.Player):
         self.cookies = None
         self.url = None
         self.item = None
+        self.stopPlayingEvent = None
 
-    def get_max_bandwidth(self):
-        bandwidth_setting = control.setting('bandwidth')
+    def onPlayBackStopped(self):
+        control.log("PLAYBACK STOPPED")
+        if self.stopPlayingEvent:
+            self.stopPlayingEvent.set()
 
-        max_bandwidth = 99999999999999
-        if bandwidth_setting in ['Auto', 'Manual']:
-            configured_limit = control.getBandwidthLimit()
-            return configured_limit if configured_limit > 0 else max_bandwidth
+    def onPlayBackEnded(self):
+        control.log("PLAYBACK ENDED")
+        if self.stopPlayingEvent:
+            self.stopPlayingEvent.set()
 
-        if bandwidth_setting == 'Max':
-            return max_bandwidth
+    def onPlayBackStarted(self):
+        control.log("PLAYBACK STARTED")
 
-        if bandwidth_setting == 'Medium':
-            return 1264000
-
-        if bandwidth_setting == 'Low':
-            return 0
-
-    def play(self, id, meta):
+    def play_stream(self, id, meta):
 
         if id == None: return
 
@@ -92,13 +89,8 @@ class Player(xbmc.Player):
 
         self.isLive = 'live' in meta and meta['live'] == True
 
-        if not self.isLive or control.isJarvis:
-            self.url = hlshelper.pickBandwidth(url)
-            mime_type = None
-        else:
-            maxbandwidth = self.get_max_bandwidth()
-            player = ProxyPlayer()
-            self.url, mime_type = player.play(url, title, maxbitrate=maxbandwidth)
+        self.url, mime_type, stopEvent = hlshelper.pickBandwidth(url)
+        control.log("Resolved URL: %s" % repr(self.url))
 
         item = control.item(path=self.url)
         item.setInfo(type='video', infoLabels=meta)
@@ -111,6 +103,22 @@ class Player(xbmc.Player):
         item.setContentLookup(False)
 
         control.resolve(syshandle, True, item)
+
+        self.stopPlayingEvent = threading.Event()
+        self.stopPlayingEvent.clear()
+
+        while not self.stopPlayingEvent.isSet():
+            if control.monitor.abortRequested():
+                control.log("Abort requested")
+                break;
+            control.log("IS PLAYING: %s" % self.isPlaying())
+            control.sleep(100)
+
+        if stopEvent:
+            control.log("Setting stop event for proxy player")
+            stopEvent.set()
+
+        control.log("Done playing. Quitting...")
 
     def __getVideoInfo(self, id):
 

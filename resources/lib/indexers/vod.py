@@ -339,6 +339,8 @@ class Vod:
             cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
             item.addContextMenuItems(cm)
 
+            item.setMimeType("application/vnd.apple.mpegurl")
+
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
 
         # if next_page:
@@ -453,6 +455,8 @@ class Vod:
                 cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
                 item.addContextMenuItems(cm)
 
+                item.setMimeType("application/vnd.apple.mpegurl")
+
                 control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
 
         if next_page:
@@ -544,10 +548,11 @@ class Vod:
                 item.setProperty('IsPlayable', 'true' if is_playable else 'false')
                 item.setInfo(type='video', infoLabels = meta)
 
-                control.addItem(handle=syshandle, url=url, listitem=item, isFolder=not is_playable)
-
                 if is_playable:
+                    item.setMimeType("application/vnd.apple.mpegurl")
                     has_playable_item = True
+
+                control.addItem(handle=syshandle, url=url, listitem=item, isFolder=not is_playable)
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
         #

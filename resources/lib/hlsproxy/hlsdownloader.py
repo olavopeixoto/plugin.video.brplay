@@ -1,90 +1,85 @@
-"""
-Simple HTTP Live Streaming client.
+# -*- coding: utf-8 -*-
 
-References:
-    http://tools.ietf.org/html/draft-pantos-http-live-streaming-08
-
-This program is free software. It comes without any warranty, to
-the extent permitted by applicable law. You can redistribute it
-and/or modify it under the terms of the Do What The Fuck You Want
-To Public License, Version 2, as published by Sam Hocevar. See
-http://sam.zoy.org/wtfpl/COPYING for more details.
-
-Last updated: July 22, 2012
-MODIFIED BY shani to make it work with F4mProxy
-"""
-
-import array
 import cookielib
-import random
-import string
-import struct
-import sys
+import os
 import traceback
-import urllib2
 import urlparse
 
 import requests
-import xbmc
+import Queue
+import datetime
 
-#from Crypto.Cipher import AES
-'''
-from crypto.cipher.aes      import AES
-from crypto.cipher.cbc      import CBC
-from crypto.cipher.base     import padWithPadLen
-from crypto.cipher.rijndael import Rijndael
-from crypto.cipher.aes_cbc import AES_CBC
-'''
+import struct
 
-gproxy=None
-gauth=None
-callbackDRM=None
+from resources.lib.modules import util
+from resources.lib.modules import workers
+from resources.lib.modules import control
+from resources.lib.modules import m3u8 as m3u8
+
+try:
+    import xbmc
+    is_standalone = False
+except:
+    is_standalone = True
+
+def log(msg):
+    pass
+    # if is_standalone:
+    #     print msg
+    # else:
+    #     xbmc.log(msg,level=xbmc.LOGNOTICE)
 
 try:
     from Crypto.Cipher import AES
-    USEDec=1 ## 1==crypto 2==local, local pycrypto
+    xbmc.log("DECRYPTOR: Native PyCrypto", xbmc.LOGNOTICE)
 except:
-    print 'pycrypt not available using slow decryption'
-    USEDec=3 ## 1==crypto 2==local, local pycrypto
+    try:
+        from  androidsslPy import AESDecrypter
+        AES=AESDecrypter()
+        xbmc.log("DECRYPTOR: Android PyCrypto", xbmc.LOGNOTICE)
+    except:
+        from decrypter import AESDecrypter
+        AES = AESDecrypter()
+        xbmc.log("DECRYPTOR: SOFTWARE", xbmc.LOGNOTICE)
 
-if USEDec==1:
-    #from Crypto.Cipher import AES
-    print 'using pycrypto'
-elif USEDec==2:
-    from decrypter import AESDecrypter
-    AES=AESDecrypter()
-else:
-    from utils import python_aes
-#from decrypter import AESDecrypter
 
-iv=None
-key=None
-value_unsafe = '%+&;#'
-VALUE_SAFE = ''.join(chr(c) for c in range(33, 127)
-    if chr(c) not in value_unsafe)
-    
-SUPPORTED_VERSION=3
+gproxy=None
 
 cookieJar=cookielib.LWPCookieJar()
 session=None
 clientHeader=None
+average_download_speed = 0.0
 
 
-def xbmclog(msg):
-    xbmc.log(msg,level=xbmc.LOGNOTICE)
+def log_error(msg):
+    if is_standalone:
+        print msg
+    else:
+        xbmc.log(msg,level=xbmc.LOGERROR)
+
+
+def sleep(time_ms):
+    if not is_standalone:
+        xbmc.sleep(time_ms)
 
 
 class HLSDownloader():
     global cookieJar
+
+    MAIN_MIME_TYPE = 'video/MP2T'
 
     """
     A downloader for hls manifests
     """
     def __init__(self):
         self.init_done=False
+        self.url = None
+        self.maxbitrate = 0
+        self.g_stopEvent = None
+        self.init_url = None
 
     def init(self, out_stream, url, proxy=None, use_proxy_for_chunks=True, g_stopEvent=None, maxbitrate=0):
-        global clientHeader,gproxy,gauth,session
+        global clientHeader,gproxy,session
 
         try:
             session = requests.Session()
@@ -92,7 +87,6 @@ class HLSDownloader():
             self.init_done=False
             self.init_url=url
             clientHeader=None
-            self.status='init'
             self.proxy = proxy
 
             if self.proxy and len(self.proxy)==0:
@@ -112,336 +106,86 @@ class HLSDownloader():
                 sp = url.split('|')
                 url = sp[0]
                 clientHeader = sp[1]
-                print clientHeader
+                log( clientHeader )
                 clientHeader= urlparse.parse_qsl(clientHeader)
-                print 'header received now url and headers are', url, clientHeader
+                log ('header received now url and headers are %s | %s' % (url, clientHeader))
 
-            self.status='init done'
             self.url=url
 
-            return True# disabled for time being#downloadInternal(self.url,None,self.maxbitrate,self.g_stopEvent, testing=True)
+            return True
         except: 
             traceback.print_exc()
 
-        self.status='finished'
         return False
 
-    def keep_sending_video(self, dest_stream, segmentToStart=None, totalSegmentToSend=0):
+    def keep_sending_video(self, dest_stream):
+        global average_download_speed
         try:
-            self.status='download Starting'
-            download_internal(self.url, dest_stream, self.maxbitrate, self.g_stopEvent)
-        except: 
-            traceback.print_exc()
+            average_download_speed = float(control.setting('average_download_speed')) if control.setting('average_download_speed') else 0.0
+            queue = Queue.Queue()
+            worker = workers.Thread(queue_processor, queue, dest_stream, self.g_stopEvent)
+            worker.daemon = True
+            worker.start()
+            download_internal(self.url, queue, self.maxbitrate, self.g_stopEvent)
+            control.setSetting('average_download_speed', str(average_download_speed))
 
-        self.status='finished'
+            if not self.g_stopEvent.isSet():
+                log("WAITING FOR QUEUE...")
+                queue.join()
+                log("DONE.")
+                self.g_stopEvent.set()
+                log("WAITING FOR WORKER THREAD...")
+                worker.join()
+                log("DONE.")
+        except:
+            traceback.print_exc()
+        finally:
+            self.g_stopEvent.set()
 
         
-def get_url(url, timeout=15, returnres=False, stream=False):
+def get_url(url, timeout=15, return_response=False, stream=False):
+    log("GET URL: %s" % url)
+
     global session
-    global cookieJar
     global clientHeader
+
     try:
         post=None
-        #print 'url',url
 
         headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
 
         if clientHeader:
             for n,v in clientHeader:
                 headers[n]=v
+
         proxies={}
 
         if gproxy:
-            proxies= { "http": gproxy, "https": gproxy }
-
-        #import random
-        #headers['User-Agent'] =headers['User-Agent'] + str(int(random.random()*100000))
+            proxies= {"http": gproxy, "https": gproxy}
 
         if post:
-            req = session.post(url, headers=headers, data= post, proxies=proxies,verify=False, timeout=timeout, stream=stream)
+            response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
         else:
-            req = session.get(url, headers=headers, proxies=proxies, verify=False ,timeout=timeout, stream=stream)
+            response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
 
-        req.raise_for_status()
+        response.raise_for_status()
 
-        if returnres:
-            return req
+        if return_response:
+            return response
         else:
-            return req.text
+            return response.content
 
     except:
-        print 'Error in getUrl'
         traceback.print_exc()
         return None
 
 
-def download_chunks(URL, chunk_size=4096, enc=None):
-    #conn=urllib2.urlopen(URL)
-    #print 'starting download'
-    
-    response=get_url(URL, timeout=6, returnres=True, stream=True)
+def download_chunks(URL, chunk_size=2048):
 
-    #while 1:
-    if enc:
-        if USEDec==1 :
-            chunk_size*=1000
-        else:
-            chunk_size*=100
+    response=get_url(URL, timeout=6, return_response=True, stream=True)
 
-    else:
-#        yield conn.content;
-        chunk_size=chunk_size*1000
-    
     for chunk in response.iter_content(chunk_size=chunk_size):
         yield chunk
-
-        #if chunk_size==-1:
-        #    data=conn.read()
-        #else:
-        #    data=conn.read(chunk_size)
-        #if not data : return
-        #yield data
-        #if chunk_size==-1: return
-    #return 
-    #print 'function finished'
-
-    #if 1==2:
-    #    data= conn.read()
-    #    #print repr(data)
-    #    #print 'data downloaded'
-    #    for i in range(0,len(data), chunk_size):
-    #        d=data[i:i+chunk_size]
-    #        #print repr(d)
-    #        yield d
-    #        
-    #    mod_index=len(data)%chunk_size;
-    #    if mod_index>0 and mod_index <chunk_size :
-    #        d=data[-mod_index:]
-    #        yield d
-    #    #print 'function finished'
-    #    return
-    
-    #    data=conn.read(chunk_size)
-    #    if not data: return
-    #    yield data
-    #print 'LEN of DATA %d'%len(data)
-    #return data
-
-def download_file(URL):
-    return ''.join(download_chunks(URL))
-
-def validate_m3u(conn):
-    ''' make sure file is an m3u, and returns the encoding to use. '''
-    return 'utf8'
-    mime = conn.headers.get('Content-Type', '').split(';')[0].lower()
-    if mime == 'application/vnd.apple.mpegurl':
-        enc = 'utf8'
-    elif mime == 'audio/mpegurl':
-        enc = 'iso-8859-1'
-    elif conn.url.endswith('.m3u8'):
-        enc = 'utf8'
-    elif conn.url.endswith('.m3u'):
-        enc = 'iso-8859-1'
-    else:
-        raise Exception("Stream MIME type or file extension not recognized")
-    if conn.readline().rstrip('\r\n') != '#EXTM3U':
-        raise Exception("Stream is not in M3U format")
-    return enc
-
-def gen_m3u(url, skip_comments=True):
-    global cookieJar
-    #print url
-    #url0="https://secure.en.beinsports.net/streaming/wab/multiformat/index.html?partnerId=1864&eventId=978267&xmlerrs=true&antiCache=1417448354098"
-    #conn = getUrl(url0)#urllib2.urlopen(url)
-    #url2= re.compile('streamLaunchCode>\s?.*?(http.*)\s?]]').findall(conn)[0]
-    #print url2
-    #url2="https://beinsportnet5-lh.akamaihd.net/i/bisusch332_0@99606/master.m3u8?reportingKey=eventId-978267_partnerId-1864&hdnea=st=1417475666~exp=1417475726~acl=/*~hmac=7ba8a95d718b62d0a5d83f2e3702c7e076c03825c8631242a9f777d58350199d"
-    #conn = getUrl(url2)#urllib2.urlopen(url)
-    #print conn
-    #url=re.compile(',RESOLUTION=512x2.*\s?(.*?)\s').findall(conn)[0]
-    conn = get_url(url, returnres=True)#urllib2.urlopen(url)
-    #print conn
-    #conn=urllib2.urlopen(url)
-    enc = validate_m3u(conn)
-    #print conn
-    for line in conn.iter_lines():#.split('\n'):
-        line = line.rstrip('\r\n').decode(enc)
-        if not line:
-            # blank line
-            continue
-        elif line.startswith('#EXT'):
-            # tag
-            yield line
-        elif line.startswith('#'):
-            # comment
-            if skip_comments:
-                continue
-            else:
-                yield line
-        else:
-            # media file
-            yield line
-
-def parse_m3u_tag(line):
-    if ':' not in line:
-        return line, []
-    tag, attribstr = line.split(':', 1)
-    attribs = []
-    last = 0
-    quote = False
-    for i,c in enumerate(attribstr+','):
-        if c == '"':
-            quote = not quote
-        if quote:
-            continue
-        if c == ',':
-            attribs.append(attribstr[last:i])
-            last = i+1
-    return tag, attribs
-
-def parse_kv(attribs, known_keys=None):
-    d = {}
-    for item in attribs:
-        k, v = item.split('=', 1)
-        k=k.strip()
-        v=v.strip().strip('"')
-        if known_keys is not None and k not in known_keys:
-            raise ValueError("unknown attribute %s"%k)
-        d[k] = v
-    return d
-
-def handle_basic_m3u(url):
-    global iv
-    global key
-    global USEDec
-    global gauth
-    import urlparse
-    global callbackDRM
-    seq = 1
-    enc = None
-    nextlen = 5
-    duration = 5
-    targetduration=5
-    aesdone=False
-    redirurl=url                
-    vod=False         
-    for line in gen_m3u(url):
-        if line.startswith('f4mredirect:'):
-            redirurl=line.split('f4mredirect:')[1]                     
-        if line.startswith('#EXT'):
-            tag, attribs = parse_m3u_tag(line)
-            if tag == '#EXTINF':
-                duration = float(attribs[0])
-            elif tag == '#EXT-X-TARGETDURATION':
-                assert len(attribs) == 1, "too many attribs in EXT-X-TARGETDURATION"
-                targetduration = int(attribs[0])
-                pass
-            elif tag == '#EXT-X-MEDIA-SEQUENCE':
-                assert len(attribs) == 1, "too many attribs in EXT-X-MEDIA-SEQUENCE"
-                seq = int(attribs[0])
-            elif tag == '#EXT-X-KEY':
-                attribs = parse_kv(attribs, ('METHOD', 'URI', 'IV'))
-                assert 'METHOD' in attribs, 'expected METHOD in EXT-X-KEY'
-                if attribs['METHOD'] == 'NONE':
-                    assert 'URI' not in attribs, 'EXT-X-KEY: METHOD=NONE, but URI found'
-                    assert 'IV' not in attribs, 'EXT-X-KEY: METHOD=NONE, but IV found'
-                    enc = None
-                elif attribs['METHOD'] == 'AES-128':
-                    if not aesdone:
-                        #aesdone=False there can be multple aes per file
-                        assert 'URI' in attribs, 'EXT-X-KEY: METHOD=AES-128, but no URI found'
-                        #from Crypto.Cipher import AES
-                        codeurl=attribs['URI'].strip('"')
-                        
-                        if gauth:
-                            currentaesUrl=codeurl
-                            codeurl=gauth
-                            
-                            if codeurl.startswith("LSHex$"):
-                                codeurl=codeurl.split('LSHex$')[1].decode("hex")
-                                print 'code is ',codeurl.encode("hex")
-                            if codeurl.startswith("LSDRMCallBack$"):
-                                codeurlpath=codeurl.split('LSDRMCallBack$')[1]
-                                codeurl='LSDRMCallBack$'+currentaesUrl
-                                
-                                if codeurlpath and len(codeurlpath)>0 and callbackDRM==None:
-                                    print 'callback',codeurlpath
-                                    import importlib, os
-                                    foldername=os.path.sep.join(codeurlpath.split(os.path.sep)[:-1])
-                                    urlnew=''
-                                    if foldername not in sys.path:
-                                        sys.path.append(foldername)
-                                    try:
-                                        callbackfilename= codeurlpath.split(os.path.sep)[-1].split('.')[0]
-                                        callbackDRM = importlib.import_module(callbackfilename)
-                                        print 'LSDRMCallBack imported'
-                                    except:
-                                        traceback.print_exc()
-                        
-                        #key = download_file(codeurl)
-                        elif not codeurl.startswith('http'):
-                            import urlparse
-                            codeurl=urlparse.urljoin(url, codeurl)
-                            
-                        #assert len(key) == 16, 'EXT-X-KEY: downloaded key file has bad length'
-                        if 'IV' in attribs:
-                            assert attribs['IV'].lower().startswith('0x'), 'EXT-X-KEY: IV attribute has bad format'
-                            iv = attribs['IV'][2:].zfill(32).decode('hex')
-                            assert len(iv) == 16, 'EXT-X-KEY: IV attribute has bad length'
-                        else:
-                            iv = '\0'*8 + struct.pack('>Q', seq)
-
-                        enc=(codeurl,iv)
-                        #if not USEDec==3:
-                        #    enc = AES.new(key, AES.MODE_CBC, iv)
-                        #else:
-                        #    ivb=array.array('B',iv)
-                        #    keyb= array.array('B',key)
-                        #    enc=python_aes.new(keyb, 2, ivb)
-                        #enc = AES_CBC(key)
-                        #print key
-                        #print iv
-                        #enc=AESDecrypter.new(key, 2, iv)
-                else:
-                    assert False, 'EXT-X-KEY: METHOD=%s unknown'%attribs['METHOD']
-            elif tag == '#EXT-X-PROGRAM-DATE-TIME':
-                assert len(attribs) == 1, "too many attribs in EXT-X-PROGRAM-DATE-TIME"
-                # TODO parse attribs[0] as ISO8601 date/time
-                pass
-            elif tag == '#EXT-X-ALLOW-CACHE':
-                # XXX deliberately ignore
-                pass
-            elif tag == 'EXT-X-PLAYLIST-TYPE:VOD':
-                vod=True
-                pass                
-                #EXT-X-PLAYLIST-TYPE:VOD 
-            elif tag == '#EXT-X-ENDLIST':
-                assert not attribs
-                yield None
-                return
-            elif tag == '#EXT-X-STREAM-INF':
-                raise ValueError("don't know how to handle EXT-X-STREAM-INF in basic playlist")
-            elif tag == '#EXT-X-DISCONTINUITY':
-                assert not attribs
-                print "[warn] discontinuity in stream"
-            elif tag == '#EXT-X-VERSION':
-                assert len(attribs) == 1
-                if int(attribs[0]) > SUPPORTED_VERSION:
-                    print "[warn] file version %s exceeds supported version %d; some things might be broken"%(attribs[0], SUPPORTED_VERSION)
-            #else:
-            #    raise ValueError("tag %s not known"%tag)
-        else:
-            if not line.startswith('http'):
-                line=urlparse.urljoin(redirurl, line)
-            yield (seq, enc, duration, targetduration, line ,vod)
-            seq += 1
-
-def player_pipe(queue, control, file):
-    while 1:
-        block = queue.get(block=True)
-        if block is None: return
-        file.write(block)
-        file.flush()
 
 
 def send_back(data,file):
@@ -449,176 +193,166 @@ def send_back(data,file):
     file.flush()
 
 
-def download_internal(url, file, maxbitrate=0, stopEvent=None, testing=False):
-    global key
-    global iv
-    global USEDec
-    global callbackDRM
+def queue_processor(queue, file, stop_event):
+    while not stop_event.isSet():
+        data = queue.get()
+        file.write(data)
+        file.flush()
+        queue.task_done()
+
+
+def load_playlist_from_uri(uri):
+    response = get_url(uri, return_response=True)
+    content = response.content.strip()
+    log("PLAYLIST: %s" % content)
+    parsed_url = urlparse.urlparse(uri)
+    prefix = parsed_url.scheme + '://' + parsed_url.netloc
+    base_path = os.path.normpath(parsed_url.path + '/..')
+    base_uri = urlparse.urljoin(prefix, base_path)
+
+    return m3u8.M3U8(content, base_uri=base_uri)
+
+
+def find_bandwidth_index(playlist, average_download_speed):
+    if not playlist.is_variant: return 0
+
+    bandwidth_options = []
+    for index, playlist_item in enumerate(playlist.playlists):
+        bandwidth_options.append({
+            'index': index,
+            'bandwidth': float(playlist.playlists[index].stream_info.bandwidth)
+        })
+    bandwidth_options = sorted(bandwidth_options, key=lambda k: int(k['bandwidth']), reverse=True)
+
+    for bandwidth_option in bandwidth_options:
+        if bandwidth_option['bandwidth'] < average_download_speed:
+            log("SELECTED BANDWIDTH: %s" % bandwidth_option['bandwidth'])
+            return bandwidth_option['index']
+
+    return 0
+
+
+def download_internal(url, queue, maxbitrate=0, stopEvent=None):
+    global average_download_speed
 
     if stopEvent and stopEvent.isSet():
         return
 
-    variants = []
-    variant = None
-    #url check if requires redirect
-    redirurl=url
+    decay = 0.85 #must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 
-    try:
-        print 'going gor  ',url
-        res=get_url(url, returnres=True)
-        print 'here ', res
-        if res.history: 
-            print 'history'
-            redirurl=res.url
-        res.close()
-        if testing: return True
-    except: traceback.print_exc()
-    print 'redirurl',redirurl
+    average_download_speed = min(maxbitrate, average_download_speed)
 
-    for line in gen_m3u(url):
-        if line.startswith('#EXT'):
-            tag, attribs = parse_m3u_tag(line)
-            if tag == '#EXT-X-STREAM-INF':
-                variant = attribs
-        elif variant:
-            variants.append((line, variant))
-            variant = None
+    log ("STARTING MEDIA DOWNLOAD WITH AVERAGE SPEED: %s" % average_download_speed)
 
-    print 'variants',variants
-    if len(variants)==0: url=redirurl
-    if len(variants) == 1:
-        url = urlparse.urljoin(redirurl, variants[0][0])
-    elif len(variants) >= 2:
-        print "More than one variant of the stream was provided."
+    manifest_playlist = load_playlist_from_uri(url)
 
-        choice=-1
-        lastbitrate=0
-        print 'maxbitrate',maxbitrate
-        for i, (vurl, vattrs) in enumerate(variants):
-            print i, vurl,
-            for attr in vattrs:
-                key, value = attr.split('=')
-                key = key.strip()
-                value = value.strip().strip('"')
-                if key == 'BANDWIDTH':
-                    print 'bitrate %.2f kbps'%(int(value)/1024.0)
-                    if int(value)<=int(maxbitrate) and int(value)>lastbitrate:
-                        choice=i
-                        lastbitrate=int(value)
-                elif key == 'PROGRAM-ID':
-                    print 'program %s'%value,
-                elif key == 'CODECS':
-                    print 'codec %s'%value,
-                elif key == 'RESOLUTION':
-                    print 'resolution %s'%value,
-                else:
-                    print "unknown STREAM-INF attribute %s"%key
-                    #raise ValueError("unknown STREAM-INF attribute %s"%key)
-            print
-        if choice==-1: choice=0
-        #choice = int(raw_input("Selection? "))
-        print 'choose %d'%choice
-        url = urlparse.urljoin(redirurl, variants[choice][0])
+    current_bandwidth_index = find_bandwidth_index(manifest_playlist, average_download_speed)
+    old_bandwidth_index = current_bandwidth_index
 
-        xbmclog(repr(variants))
+    if manifest_playlist.is_variant:
+        log("SELECTING VARIANT PLAYLIST: %s" % manifest_playlist.playlists[current_bandwidth_index].stream_info.bandwidth)
+        playlist = manifest_playlist.playlists[current_bandwidth_index]
+    else:
+        playlist = manifest_playlist
 
-        variant_urls = [urlparse.urljoin(redirurl, x[0]) for x in variants]
+    played_segments = []
 
-    last_seq = -1
+    while not stopEvent.isSet():
 
-    try:
-        while True:#thread.isAlive():
+        media_list = load_playlist_from_uri(playlist.absolute_uri)
+
+        is_bitrate_change = False
+        segment_key = None
+
+        for segment_index, segment in enumerate(media_list.segments):
+
             if stopEvent and stopEvent.isSet():
                 return
 
-            medialist = list(handle_basic_m3u(url))
+            segment_number = segment.uri.split('-')[-1:][0].split('.')[0]
 
-            xbmclog("MEDIA LIST (%s): %s" % (url, repr(medialist)))
+            if played_segments.__contains__(segment_number):
+                # log("SKIPPING SEGMENT %s" % segment_number)
+                continue
 
-            if testing:
-                if len(medialist)==0: raise Exception('empty m3u8')
-                return True
+            log("PLAYING SEGMENT %s | URI: %s" % (segment_number, segment.absolute_uri))
 
-            playedSomething=False
+            try:
+                start = datetime.datetime.now()
+                played_segments.append(segment_number)
 
-            if medialist==None: return False
-            
-            if None in medialist:
-                # choose to start playback at the start, since this is a VOD stream
+                if segment.key and segment_key != segment.key.uri:
+                    segment_key = segment.key.uri
+                    # average_download_speed = 0.0
+                    # if media_list.faxs.absolute_uri
+                    log("MEDIA ENCRYPTED, KEY URI: %s" % segment.key.absolute_uri)
+                    segment.key.key_value = ''.join(download_chunks(segment.key.absolute_uri))
+                    log("KEY CONTENT: %s" % repr(segment.key.key_value))
+
+                    key = segment.key.key_value
+                    iv_data = segment.key.iv or media_list.media_sequence
+                    iv = get_key_iv(segment.key, iv_data)
+
+                    decryptor = AES.new(key, AES.MODE_CBC, iv)
+
+                segment_size = 0.0
+                chunk_size = 2048 if not segment.key else int(playlist.stream_info.bandwidth)
+                for chunk_index, chunk in enumerate(download_chunks(segment.absolute_uri, chunk_size=chunk_size)):
+                    if stopEvent and stopEvent.isSet():
+                        return
+
+                    segment_size = segment_size + len(chunk)
+
+                    if segment.key: #decrypt chunk
+                        chunk = decryptor.decrypt(chunk)
+
+                    # log("ENQUEUING CHUNK %s FROM SEGMENT %s" % (chunk_index, segment_number))
+                    queue.put(chunk)
+
+                elapsed = float(util.get_total_seconds_float(datetime.datetime.now() - start))
+                current_segment_download_speed = float(segment_size) / elapsed
+
+                log("SEGMENT SIZE: %s" % segment_size)
+                log("ELAPSED SEGMENT (%s sec) DOWNLOAD TIME: %s | BANDWIDTH: %s" % (str(float(segment.duration)), str(elapsed), current_segment_download_speed))
+
+                real_measured_bandwidth = float(manifest_playlist.playlists[current_bandwidth_index].stream_info.bandwidth) * (float(segment.duration)/elapsed)
+
+                average_download_speed = movingAvgBandwidthCalculator(average_download_speed, decay, real_measured_bandwidth)
+
+                log("MAX CALCULATED BITRATE: %s" % real_measured_bandwidth)
+                log("AVERAGE DOWNLOAD SPEED: %s" % average_download_speed)
+
+                if manifest_playlist.is_variant and old_bandwidth_index == current_bandwidth_index:
+                    log("SELECTING NEW BITRATE. MAXBITRATE: %s" % maxbitrate)
+                    current_bandwidth_index = find_bandwidth_index(manifest_playlist, min(maxbitrate, average_download_speed))
+                    playlist = manifest_playlist.playlists[current_bandwidth_index]
+
+                    if old_bandwidth_index != current_bandwidth_index:
+                        log("BANDWIDTH CHANGED TO: %s" % playlist.stream_info.bandwidth)
+                        old_bandwidth_index = current_bandwidth_index
+                        is_bitrate_change = True
+                        break
+
+            except Exception:
+                traceback.print_exc()
+                log_error('ERROR PROCESSING SEGMENT %s: %s' % (segment_number, Exception.message))
                 pass
-            # else:
-                # choose to start playback three files from the end, since this is a live stream
-                # medialist = medialist[0:]
 
-            #print 'medialist',medialist
-            addsomewait=False
-            lastKeyUrl=""
-            lastkey=None
+        if media_list.is_endlist and not is_bitrate_change:
+            log("IS END LIST. BYE...")
+            return
 
-            for media in medialist:
+#https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+def movingAvgBandwidthCalculator(average, decay, real_bandwidth):
+    return decay * real_bandwidth + (1 - decay) * average if average > 0 else real_bandwidth
 
-                if stopEvent and stopEvent.isSet():
-                    return
 
-                if media is None:
-                    return
-
-                seq, encobj, duration, targetduration, media_url, vod = media
-
-                xbmclog("DOWNLOAD CHUNK (seq,encobj,duration,targetduration,media_url,vod): (%s,%s,%s,%s,%s,%s)" % (seq, encobj, duration, targetduration, media_url, vod))
-
-                addsomewait=True
-
-                if seq > last_seq:
-                    enc=None
-                    if encobj:
-
-                        codeurl,iv=encobj
-
-                        if codeurl<>lastKeyUrl:
-
-                            if codeurl.startswith('http'):
-                                key = download_file(codeurl)
-                            elif codeurl.startswith('LSDRMCallBack$'):
-                                key=callbackDRM.DRMCallback(codeurl.split('LSDRMCallBack$')[1],url)
-                            else:
-                                key = codeurl
-
-                            # codeurl=lastKeyUrl
-                        else:
-                            key=lastkey
-                        lastkey=key
-                        if not USEDec==3:
-                            enc = AES.new(key, AES.MODE_CBC, iv)
-                        else:
-                            ivb=array.array('B',iv)
-                            keyb= array.array('B',key)
-                            enc=python_aes.new(keyb, 2, ivb)
-                        #enc=AESDecrypter.new(key, 2, iv)
-
-                    try:
-                        for chunk in download_chunks(urlparse.urljoin(url, media_url),enc=encobj):
-                            if stopEvent and stopEvent.isSet():
-                                return
-
-                            if enc:
-                                 if not USEDec==3:
-                                    chunk = enc.decrypt(chunk)
-                                 else:
-                                    chunkb=array.array('B',chunk)
-                                    chunk = enc.decrypt(chunkb)
-                                    chunk="".join(map(chr, chunk))
-
-                            #if enc: chunk = enc.decrypt(chunk,key,'CBC')
-
-                            send_back(chunk,file)
-
-                        last_seq = seq
-                        playedSomething=True
-                    except: pass
-
-            if not playedSomething:
-                xbmclog("HLS DOWNLOADER SLEEPING...")
-                xbmc.sleep(100 + (3000 if addsomewait else 0))
-    except:
-        raise
+def get_key_iv(key, media_sequence):
+    if key.iv:
+        iv = str(key.iv)[2:].zfill(32) # Removes 0X prefix
+        log("IV: %s" % iv)
+        return iv.decode('hex')
+    else:
+        iv = '\0' * 8 + struct.pack('>Q', media_sequence)
+        log("IV: %s" % repr(iv))
+        return iv

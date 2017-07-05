@@ -178,6 +178,9 @@ class Live:
                 item.setProperty('Progress', str((offset / duration) * 100) if duration else str(0))
                 item.setProperty('totaltime', str(duration))
 
+            if not isFolder:
+                item.setMimeType("application/vnd.apple.mpegurl")
+
             list_items.append((url, item, isFolder))
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)

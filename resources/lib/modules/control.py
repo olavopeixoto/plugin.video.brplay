@@ -31,6 +31,8 @@ property = xbmcplugin.setProperty
 
 category = xbmcplugin.setPluginCategory
 
+monitor = xbmc.Monitor()
+
 addSortMethod = xbmcplugin.addSortMethod
 SORT_METHOD_NONE = xbmcplugin.SORT_METHOD_NONE
 SORT_METHOD_UNSORTED = xbmcplugin.SORT_METHOD_UNSORTED
@@ -223,7 +225,7 @@ def infoDialog(message, heading=addonInfo('name'), icon='', time=3000, sound=Fal
     elif icon == 'INFO': icon = xbmcgui.NOTIFICATION_INFO
     elif icon == 'WARNING': icon = xbmcgui.NOTIFICATION_WARNING
     elif icon == 'ERROR': icon = xbmcgui.NOTIFICATION_ERROR
-    dialog.notification(heading, message, icon, time, sound=sound)
+    dialog.notification(heading=heading, message=message, icon=icon, time=time, sound=sound)
 
 
 def yesnoDialog(line1, line2, line3, heading=addonInfo('name'), nolabel='', yeslabel=''):

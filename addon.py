@@ -160,7 +160,7 @@ try:
     elif action == 'playlive' and provider == 'globoplay':
         from resources.lib.modules.globoplay import player
 
-        player.Player().play(id_globo_videos, meta)
+        player.Player().play_stream(id_globo_videos, meta)
 
     elif action == 'openchannel' and provider == 'globoplay':
         from resources.lib.indexers import vod
@@ -181,7 +181,7 @@ try:
 
     elif action == 'playvod' and provider == 'globoplay':
         from resources.lib.modules.globoplay import player
-        player.Player().play(id_globo_videos, meta)
+        player.Player().play_stream(id_globo_videos, meta)
 
 
     ###SEXY HOT
