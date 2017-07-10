@@ -259,7 +259,8 @@ class M3U8(object):
             output.append(str(self.playlists))
             if self.iframe_playlists:
                 output.append(str(self.iframe_playlists))
-        output.append(str(self.segments))
+        if self.segments:
+            output.append(str(self.segments))
 
         if self.is_endlist:
             output.append('#EXT-X-ENDLIST')

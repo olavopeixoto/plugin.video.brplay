@@ -44,6 +44,7 @@ except:
 
 
 gproxy=None
+use_proxy = False
 
 cookieJar=cookielib.LWPCookieJar()
 session=None
@@ -79,7 +80,7 @@ class HLSDownloader():
         self.init_url = None
 
     def init(self, out_stream, url, proxy=None, use_proxy_for_chunks=True, g_stopEvent=None, maxbitrate=0):
-        global clientHeader,gproxy,session
+        global clientHeader,gproxy,session,use_proxy
 
         try:
             session = requests.Session()
@@ -88,6 +89,7 @@ class HLSDownloader():
             self.init_url=url
             clientHeader=None
             self.proxy = proxy
+            use_proxy = False
 
             if self.proxy and len(self.proxy)==0:
                 self.proxy=None
@@ -142,12 +144,13 @@ class HLSDownloader():
         finally:
             self.g_stopEvent.set()
 
-        
+
 def get_url(url, timeout=15, return_response=False, stream=False):
     log("GET URL: %s" % url)
 
     global session
     global clientHeader
+    global use_proxy
 
     try:
         post=None
@@ -160,13 +163,22 @@ def get_url(url, timeout=15, return_response=False, stream=False):
 
         proxies={}
 
-        if gproxy:
-            proxies= {"http": gproxy, "https": gproxy}
+        if use_proxy and gproxy:
+            proxies={"http": gproxy, "https": gproxy}
 
         if post:
             response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
         else:
             response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
+
+        #IF 403 RETRY WITH PROXY
+        if not use_proxy and gproxy and response.status_code == 403:
+            proxies= {"http": gproxy, "https": gproxy}
+            use_proxy = True
+            if post:
+                response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
+            else:
+                response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
 
         response.raise_for_status()
 
@@ -175,7 +187,7 @@ def get_url(url, timeout=15, return_response=False, stream=False):
         else:
             return response.content
 
-    except:
+    except Exception, e:
         traceback.print_exc()
         return None
 
@@ -237,6 +249,8 @@ def download_internal(url, queue, maxbitrate=0, stopEvent=None):
 
     if stopEvent and stopEvent.isSet():
         return
+
+    # max_buffer_size = 4 * 1024 *1024 #4MB
 
     decay = 0.85 #must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 

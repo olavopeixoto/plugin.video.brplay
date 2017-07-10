@@ -7,7 +7,6 @@ import urlparse
 
 import requests
 import datetime
-import urllib
 import copy
 from resources.lib.modules import util
 from resources.lib.modules import control
@@ -32,17 +31,15 @@ manifest_playlist = None
 media_list = None
 selected_bandwidth_index = None
 queue = None
+use_proxy = False
+
 
 def log(msg):
-    if is_standalone:
-        print msg
-    else:
-        xbmc.log(msg,level=xbmc.LOGNOTICE)
-
-
-def sleep(time_ms):
-    if not is_standalone:
-        xbmc.sleep(time_ms)
+    pass
+    # if is_standalone:
+    #     print msg
+    # else:
+    #     xbmc.log(msg,level=xbmc.LOGNOTICE)
 
 
 class HLSWriter():
@@ -57,7 +54,7 @@ class HLSWriter():
         pass
 
     def init(self, out_stream, url, proxy=None, use_proxy_for_chunks=True, g_stopEvent=None, maxbitrate=0):
-        global clientHeader,gproxy,session
+        global clientHeader,gproxy,session,use_proxy
 
         try:
             session = requests.Session()
@@ -69,6 +66,7 @@ class HLSWriter():
                 self.proxy=None
 
             gproxy=self.proxy
+            use_proxy = False
 
             self.use_proxy_for_chunks=use_proxy_for_chunks
             self.out_stream=out_stream
@@ -131,6 +129,8 @@ def get_url(url, timeout=15, return_response=False, stream=False):
     global cookieJar
     global session
     global clientHeader
+    global use_proxy
+    global gproxy
 
     log("GET URL Cookies: %s" % cookieJar.as_lwp_str())
 
@@ -143,15 +143,24 @@ def get_url(url, timeout=15, return_response=False, stream=False):
             for n,v in clientHeader:
                 headers[n]=v
 
-        proxies={}
+        proxies = {}
 
-        if gproxy:
-            proxies= {"http": gproxy, "https": gproxy}
+        if use_proxy and gproxy:
+            proxies={"http": gproxy, "https": gproxy}
 
         if post:
             response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
         else:
             response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
+
+        #IF 403 RETRY WITH PROXY
+        if not use_proxy and gproxy and response.status_code == 403:
+            proxies= {"http": gproxy, "https": gproxy}
+            use_proxy = True
+            if post:
+                response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
+            else:
+                response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
 
         response.raise_for_status()
 
@@ -230,6 +239,8 @@ def download_segment_media(segment_uri, stream, stopEvent, queue, maxbitrate=0):
     if stopEvent and stopEvent.isSet():
         return
 
+    decay = 0.80  # must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+
     log ("STARTING MEDIA DOWNLOAD WITH AVERAGE SPEED: %s" % average_download_speed)
 
     segment_size = 0.0
@@ -259,11 +270,11 @@ def download_segment_media(segment_uri, stream, stopEvent, queue, maxbitrate=0):
     log("SEGMENT SIZE: %s" % segment_size)
     log("ELAPSED SEGMENT (%s sec) DOWNLOAD TIME: %s | BANDWIDTH: %s" % (str(float(segment.duration)), str(elapsed), current_segment_download_speed))
 
-    max_calculated_bandwidth = float(manifest_playlist.playlists[selected_bandwidth_index].stream_info.bandwidth) * (float(segment.duration) / elapsed)
+    real_measured_bandwidth = float(manifest_playlist.playlists[selected_bandwidth_index].stream_info.bandwidth) * (float(segment.duration) / elapsed)
 
-    average_download_speed = (average_download_speed + max_calculated_bandwidth) / 2 if average_download_speed > 0 else max_calculated_bandwidth
+    average_download_speed = movingAvgBandwidthCalculator(average_download_speed, decay, real_measured_bandwidth)
 
-    log("MAX CALCULATED BITRATE: %s" % max_calculated_bandwidth)
+    log("MAX CALCULATED BITRATE: %s" % real_measured_bandwidth)
     log("AVERAGE DOWNLOAD SPEED: %s" % average_download_speed)
 
     if manifest_playlist.is_variant:
@@ -273,6 +284,7 @@ def download_segment_media(segment_uri, stream, stopEvent, queue, maxbitrate=0):
             log("CHANGING BANDWIDTH TO: %s" % playlist.stream_info.bandwidth)
             queue.put(playlist.absolute_uri)
             # media_list = load_playlist_from_uri(playlist.absolute_uri)
+
 
 def set_media_list(queue, stopEvent):
     global media_list
@@ -344,3 +356,8 @@ def download_main_playlist(url, stream, stopEvent=None, maxbitrate=0):
     log("SENDING PLAYLIST: %s" % playlist_response)
 
     send_back(playlist_response, stream)
+
+
+#https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+def movingAvgBandwidthCalculator(average, decay, real_bandwidth):
+    return decay * real_bandwidth + (1 - decay) * average if average > 0 else real_bandwidth

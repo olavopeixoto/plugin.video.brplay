@@ -13,6 +13,7 @@ from resources.lib.modules import hlshelper
 import xbmc
 import threading
 
+HISTORY_URL = 'https://api.user.video.globo.com/watch_history/?provider=gplay'
 
 def get_max_bandwidth():
     bandwidth_setting = control.setting('bandwidth')
@@ -102,11 +103,19 @@ class Player(xbmc.Player):
         self.stopPlayingEvent = threading.Event()
         self.stopPlayingEvent.clear()
 
+        last_time = 0.0
         while not self.stopPlayingEvent.isSet():
             if control.monitor.abortRequested():
                 control.log("Abort requested")
                 break;
-            control.sleep(100)
+            if self.isPlaying():
+                total_time = self.getTotalTime()
+                current_time = self.getTime()
+                if current_time - last_time > 10 or (last_time == 0 and current_time > 1):
+                    last_time = current_time
+                    percentage_watched = current_time / total_time if total_time > 0 else 1.0 / 1000000.0
+                    self.save_video_progress(info['credentials'], info['program_id'], info['id'], current_time / 1000.0, fully_watched=percentage_watched>0.9 and percentage_watched<=1)
+            control.sleep(1000)
 
         if stopEvent:
             control.log("Setting stop event for proxy player")
@@ -189,5 +198,23 @@ class Player(xbmc.Player):
             "thumbUri": resource["thumbUri"] if 'thumbUri' in resource else None,
             "hash": hashJson["hash"],
             "user": hashJson["user"] if 'user' in hashJson else None,
-            "encrypted": resource['encrypted'] if 'encrypted' in resource else 'false'
+            "encrypted": resource['encrypted'] if 'encrypted' in resource else 'false',
+            "credentials": credentials
         }
+
+    def save_video_progress(self, credentials, program_id, video_id, milliseconds_watched, fully_watched=False):
+
+        post_data = {
+            'milliseconds_watched': milliseconds_watched,
+            'resource_id': video_id,
+            'program_id': program_id,
+            'fully_watched': fully_watched
+        }
+
+        control.log("SAVING HISTORY: %s" % repr(post_data))
+
+        client.request(HISTORY_URL, error=True, cookie=credentials, mobile=True, headers={
+            "Accept-Encoding": "gzip",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Globo Play/0 (iPhone)"
+        }, post=post_data)

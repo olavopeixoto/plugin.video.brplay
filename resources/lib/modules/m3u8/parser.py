@@ -8,7 +8,7 @@ import datetime
 import itertools
 import re
 import protocol
-# from resources.lib.modules import util
+from resources.lib.modules import util
 
 '''
 http://tools.ietf.org/html/draft-pantos-http-live-streaming-08#section-3.2
@@ -18,7 +18,7 @@ ATTRIBUTELISTPATTERN = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
 
 
 def cast_date_time(value):
-    return ''
+    return datetime.datetime.now()
     # return util.strptime_workaround(value)
 
 

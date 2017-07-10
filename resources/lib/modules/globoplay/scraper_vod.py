@@ -25,6 +25,7 @@ GLOBOPLAY_SEARCH = 'https://api.globoplay.com.br/v1/search?page=%s&q=%s&api_key=
 
 THUMB_URL = 'http://s01.video.glbimg.com/x720/%s.jpg'
 
+
 def get_globoplay_channels():
 
     channels = []
@@ -41,6 +42,7 @@ def get_globoplay_channels():
         })
 
     return channels
+
 
 def get_extra_sections():
 
@@ -63,6 +65,7 @@ def get_extra_sections():
 
     return extras
 
+
 def get_globo_extra_episodes(category, page=1):
     if category == '-highlights-':
         return get_highlights()
@@ -76,6 +79,7 @@ def get_globo_extra_episodes(category, page=1):
         return get_most_watched_videos()
 
     return [], None, 0
+
 
 def get_highlights():
     videos = []
@@ -98,6 +102,7 @@ def get_highlights():
         videos.append(video)
 
     return videos, None, 1
+
 
 def get_favorites(page=1, per_page=10):
     videos = []
@@ -135,6 +140,7 @@ def get_favorites(page=1, per_page=10):
     pager = data['pager']
 
     return videos, pager['next_page'], pager['total_pages']
+
 
 def get_watch_history():
     videos = []
@@ -180,6 +186,7 @@ def get_watch_history():
 
     return videos, None, 1
 
+
 def get_continue_watching():
     videos = []
 
@@ -221,6 +228,7 @@ def get_continue_watching():
 
     return videos, None, 1
 
+
 def get_most_watched_videos():
 
     videos = []
@@ -250,6 +258,7 @@ def get_most_watched_videos():
 
     return videos, None, 1
 
+
 def get_globo_programs():
     headers = {'Accept-Encoding': 'gzip'}
     categories_json = client.request(GLOBOPLAY_CATEGORIAS, headers=headers)['categories']
@@ -262,10 +271,12 @@ def get_globo_programs():
                             # 'fanart': j['thumb'],
                             'fanart': control.addonFanart(),
                             'clearlogo': GLOBO_LOGO,
+                            'kind': 'movies' if j['type'] == 'filmes' else 'default',
                             'brplayprovider': 'globoplay'
                         } for j in json['programs']]} for json in categories_json]
 
     return (categories, programs)
+
 
 def get_program_dates(program_id):
 
@@ -275,6 +286,7 @@ def get_program_dates(program_id):
     days = days['days'] if days and 'days' in days else []
 
     return days
+
 
 def get_globo_partial_episodes(program_id, page=1):
 
@@ -310,6 +322,7 @@ def get_globo_partial_episodes(program_id, page=1):
     page = (page+1 if page < len(days) else None)
 
     return videos, page, len(days), days if page < len(days) else None
+
 
 def get_globo_episodes(program_id, page=1):
 
@@ -392,6 +405,7 @@ def get_globo_episodes_by_date(program_id, date):
         videos.append(video)
 
     return videos
+
 
 def search(term, page=1):
     try:

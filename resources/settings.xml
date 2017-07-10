@@ -6,6 +6,7 @@
 		<setting type="sep" />
 		<setting type="lsep" label="Streaming" />
 		<setting id="bandwidth" type="labelenum" label="Bandwidth" values="Adaptive|Auto|Manual|Max|Medium|Low" default="Auto" />
+		<setting id="proxy_type" type="labelenum" label="Proxy Type" values="Downloader|Redirect" default="Redirect" visible="eq(-1,0)"/>
 		<setting type="sep" />
 		<setting type="lsep" label="GloboPlay"></setting>
 		<setting id="globo_play_full_videos" type="bool" label="Show Full Videos Only" default="true" />

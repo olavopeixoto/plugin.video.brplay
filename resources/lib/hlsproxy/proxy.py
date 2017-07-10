@@ -37,7 +37,7 @@ import thread
 import threading
 # from resources.lib.modules import workers
 
-from hlsdownloader import HLSDownloader
+# from hlsdownloader import HLSDownloader
 # from hlswriter import HLSWriter as HLSDownloader
 # from legacyhlsdownloader import HLSDownloader
 
@@ -50,8 +50,8 @@ PORT_NUMBER = 55444
 
 
 def log(msg):
-    pass
-    # xbmc.log(msg, level=xbmc.LOGNOTICE)
+    # pass
+    xbmc.log(msg, level=xbmc.LOGNOTICE)
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
@@ -246,7 +246,7 @@ class hlsProxy():
         link = 'http://%s:%s/brplay?%s' % (HOST_NAME, str(port), newurl)
         return (link) #make a url that caller then call load into player
 
-    def resolve(self, url, proxy=None, use_proxy_for_chunks=False, maxbitrate=0, player=HLSDownloader):
+    def resolve(self, url, proxy=None, use_proxy_for_chunks=True, maxbitrate=0, player=None):
 
         self.stopPlaying=threading.Event()
         progress = xbmcgui.DialogProgress()
@@ -264,4 +264,4 @@ class hlsProxy():
         progress.update(100, "", "", "")
         progress.close()
 
-        return url_to_play, VIDEO_MIME_TYPE
+        return url_to_play, player.MAIN_MIME_TYPE

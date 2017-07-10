@@ -13,6 +13,8 @@ import threading
 PLAYER_VERSION = '1.1.23'
 PLAYER_SLUG = 'ios'
 
+HISTORY_URL = 'https://api.user.video.globo.com/watch_history/'
+
 
 class Player(xbmc.Player):
     def __init__(self):
@@ -51,7 +53,10 @@ class Player(xbmc.Player):
             "aired": None
         }
 
+        is_live = False
+
         if 'live' in meta and meta['live'] == True:
+            is_live = True
             info = self.__getLiveVideoInfo(id, meta['affiliate'] if 'affiliate' in meta else None)
         else:
             info = self.__getVideoInfo(id)
@@ -107,12 +112,20 @@ class Player(xbmc.Player):
         self.stopPlayingEvent = threading.Event()
         self.stopPlayingEvent.clear()
 
+        last_time = 0.0
         while not self.stopPlayingEvent.isSet():
             if control.monitor.abortRequested():
                 control.log("Abort requested")
                 break;
             control.log("IS PLAYING: %s" % self.isPlaying())
-            control.sleep(100)
+            if not is_live and self.isPlaying():
+                total_time = self.getTotalTime()
+                current_time = self.getTime()
+                if current_time - last_time > 10 or (last_time == 0 and current_time > 1):
+                    last_time = current_time
+                    percentage_watched = current_time / total_time if total_time > 0 else 1.0 / 1000000.0
+                    self.save_video_progress(info['credentials'], info['program_id'], info['id'], current_time / 1000.0, fully_watched=percentage_watched>0.9 and percentage_watched<=1)
+            control.sleep(1000)
 
         if stopEvent:
             control.log("Setting stop event for proxy player")
@@ -206,7 +219,8 @@ class Player(xbmc.Player):
             "query_string_template": resource["query_string_template"],
             "thumbUri": None,
             "hash": hashJson["hash"],
-            "user": None
+            "user": None,
+            "credentials": credentials
         }
 
     def __getLiveVideoInfo(self, id, geolocation):
@@ -257,5 +271,23 @@ class Player(xbmc.Player):
             "query_string_template": "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
             "thumbUri": hashJson["thumbUri"],
             "hash": hashJson["hash"],
-            "user": hashJson["user"]
+            "user": hashJson["user"],
+            "credentials": credentials
         }
+
+    def save_video_progress(self, credentials, program_id, video_id, milliseconds_watched, fully_watched=False):
+
+        post_data = {
+            'resource_id': video_id,
+            'milliseconds_watched': milliseconds_watched,
+            'program_id': program_id,
+            'fully_watched': fully_watched
+        }
+
+        control.log("SAVING HISTORY: %s" % repr(post_data))
+
+        client.request(HISTORY_URL, error=True, cookie=credentials, mobile=True, headers={
+            "Accept-Encoding": "gzip",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Globo Play/0 (iPhone)"
+        }, post=post_data)

@@ -9,6 +9,8 @@ try:
 except:
     import cookielib
 
+from resources.lib.hlsproxy.hlsdownloader import HLSDownloader
+from resources.lib.hlsproxy.hlswriter import HLSWriter
 
 def get_max_bandwidth():
     bandwidth_setting = control.setting('bandwidth')
@@ -33,12 +35,18 @@ def pickBandwidth(url):
     bandwidth_setting = control.setting('bandwidth')
 
     if bandwidth_setting == 'Auto':
+        cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
+        cookie_jar.clear()
+        cookie_jar.save(control.cookieFile, None, None)
         return url, None, None
 
     if bandwidth_setting == 'Adaptive':
+        proxy = control.setting('proxy_url')
         maxbandwidth = get_max_bandwidth()
         url_resolver = hlsProxy()
-        url, mime_type = url_resolver.resolve(url, maxbitrate=maxbandwidth)
+        player_type = control.setting('proxy_type')
+        player = HLSDownloader if player_type == 'Downloader' else HLSWriter
+        url, mime_type = url_resolver.resolve(url, proxy=proxy, use_proxy_for_chunks=True, maxbitrate=maxbandwidth, player=player)
         return url, mime_type, url_resolver.stopEvent
 
     #Adaptive|Auto|Manual|Max|Medium|Low
