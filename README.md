@@ -17,8 +17,6 @@ BR Play
 
 ![screenshot-08.jpg](https://github.com/olavopeixoto/plugin.video.brplay/raw/develop/resources/screenshots/screenshot-08.jpg)
 
-![screenshot-09.jpg](https://github.com/olavopeixoto/plugin.video.brplay/raw/develop/resources/screenshots/screenshot-09.jpg)
-
 License
 -------
 This software is released under the [GPL 3.0 license] [1].
