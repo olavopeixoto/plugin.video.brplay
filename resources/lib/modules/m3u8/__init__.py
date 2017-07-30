@@ -61,11 +61,13 @@ def load(uri, timeout=None, headers={}, cookies=None):
 
 def _load_from_uri(uri, timeout=None, headers={}, cookies=None):
     response = requests.get(uri, cookies=cookies, timeout=timeout, headers=headers)
+    if (response.status_code != 200):
+        return None, None
     content = response.content.strip()
-    parsed_url = urlparse.urlparse(uri)
+    parsed_url = urlparse(uri)
     prefix = parsed_url.scheme + '://' + parsed_url.netloc
     base_path = os.path.normpath(parsed_url.path + '/..')
-    base_uri = urlparse.urljoin(prefix, base_path)
+    base_uri = urljoin(prefix, base_path)
     return M3U8(content, base_uri=base_uri), response.cookies
 
 

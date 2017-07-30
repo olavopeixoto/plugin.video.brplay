@@ -86,6 +86,9 @@ class Player(xbmc.Player):
         self.isLive = 'livefeed' in meta and meta['livefeed'] == 'true'
 
         self.url, mime_type, stopEvent = hlshelper.pickBandwidth(url)
+        if (self.url is None):
+            control.infoDialog('Stream is not available yet!', icon='ERROR')
+            return
         control.log("Resolved URL: %s" % repr(self.url))
 
         item = control.item(path=self.url)

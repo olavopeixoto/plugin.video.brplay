@@ -52,6 +52,8 @@ def pickBandwidth(url):
     #Adaptive|Auto|Manual|Max|Medium|Low
 
     playlist, cookies = m3u8.load(url)
+    if (playlist is None):
+        return None, None, None
 
     bandwidth_options = []
     for index, playlist_item in enumerate(playlist.playlists):
@@ -69,7 +71,7 @@ def pickBandwidth(url):
         bandwidth = dialog.select("Pick the desired bandwidth:", options)
     else:
         if bandwidth_setting == 'Max':
-            bandwidth = len(bandwidth_options)
+            bandwidth = len(bandwidth_options) - 1
         elif bandwidth_setting == 'Medium':
             bandwidth = len(bandwidth_options) - 2
         elif bandwidth_setting == 'Low':
