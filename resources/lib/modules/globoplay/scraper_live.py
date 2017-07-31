@@ -16,7 +16,28 @@ def get_globo_live_id():
 
 def get_live_channels():
 
-    affiliate = control.setting('globo_affiliate')
+    affiliate_temp = control.setting('globo_affiliate')
+
+    # In settings.xml - globo_affiliate
+    # 0 = Rio de Janeiro 
+    # 1 = Sao Paulo
+    # 2 = Brasilia
+    # 3 = Belo Horizonte
+    # 4 = All
+
+
+    if affiliate_temp == '4':
+        affiliate = 'All'
+    elif affiliate_temp == '1':
+        affiliate = 'Sao Paulo'
+    elif affiliate_temp == '2':
+        affiliate = 'Brasilia'
+    elif affiliate_temp == '3':
+        affiliate = 'Belo Horizonte'
+    else:
+        affiliate = 'Rio de Janeiro'
+
+
 
     if affiliate == "All":
         affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte']

@@ -16,9 +16,33 @@ import threading
 HISTORY_URL = 'https://api.user.video.globo.com/watch_history/?provider=gplay'
 
 def get_max_bandwidth():
-    bandwidth_setting = control.setting('bandwidth')
+    bandwidth_setting_temp = control.setting('bandwidth')
 
     max_bandwidth = 99999999999999
+
+    # In settings.xml - bandwidth
+    # Adaptive = '0'
+    # Auto = '1'
+    # Manual = '2'
+    # Max = '3'
+    # Medium = '4'
+    # Low = '5'
+
+
+    if bandwidth_setting_temp == '0':
+        bandwidth_setting = 'Adaptive'
+    elif bandwidth_setting_temp == '1':
+        bandwidth_setting = 'Auto'
+    elif bandwidth_setting_temp == '2':
+        bandwidth_setting = 'Manual'
+    elif bandwidth_setting_temp == '3':
+        bandwidth_setting = 'Max'
+    elif bandwidth_setting_temp == '4':
+        bandwidth_setting = 'Medium'
+    else:
+        bandwidth_setting = 'Low'
+
+    
     if bandwidth_setting in ['Auto','Manual']:
         configured_limit = control.getBandwidthLimit()
         return configured_limit if configured_limit > 0 else max_bandwidth
