@@ -8,14 +8,21 @@ class schedule:
 
     def get_schedule(self):
 
-        if control.setting("globo_affiliate") == "Sao Paulo":
+        # In Settings.xml - globo_affiliate
+        # "0" = Rio de Janeiro
+        # "1" = Sao Paulo
+        # "2" = Brasilia
+        # "3" = Belo Horizonte
+        # "4" = All
+
+        if control.setting("globo_affiliate") == "1":              # "1" = Sao Paulo
             affiliate_slug = "sao-paulo"
-        elif control.setting("globo_affiliate") == "Brasilia":
+        elif control.setting("globo_affiliate") == "2":            # "2" = Brasilia
             affiliate_slug = "distrito-federal"
-        elif control.setting("globo_affiliate") == "Belo Horizonte":
+        elif control.setting("globo_affiliate") == "3":            # "3" = Belo Horizonte
             affiliate_slug = "belo-horizonte"
         else:
-            affiliate_slug = "rio-de-janeiro"
+            affiliate_slug = "rio-de-janeiro"                      # "0" = Rio de Janeiro
 
         schedule_url = "https://globoplay.globo.com/v/xhr/views/schedule.json?affiliate_slug=%s" % affiliate_slug
 

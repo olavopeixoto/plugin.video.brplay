@@ -28,6 +28,26 @@ msgctxt "#31111"
 msgid "Affiliate"
 msgstr ""
 
+msgctxt "#31112"
+msgid "Rio de Janeiro"
+msgstr ""
+
+msgctxt "#31113"
+msgid "Sao Paulo"
+msgstr ""
+
+msgctxt "#31114"
+msgid "Brasilia"
+msgstr ""
+
+msgctxt "#31115"
+msgid "Belo Horizonte"
+msgstr ""
+
+msgctxt "#31116"
+msgid "All"
+msgstr ""
+
 msgctxt "#31003"
 msgid "Proxy"
 msgstr ""
@@ -82,4 +102,104 @@ msgstr ""
 
 msgctxt "#32080"
 msgid "Featured"
+msgstr ""
+
+msgctxt "#33001"
+msgid "Streaming"
+msgstr ""
+
+msgctxt "#33101"
+msgid "Bandwidth"
+msgstr ""
+
+msgctxt "#33102"
+msgid "Adaptive"
+msgstr ""
+
+msgctxt "#33103"
+msgid "Auto"
+msgstr ""
+
+msgctxt "#33104"
+msgid "Manual"
+msgstr ""
+
+msgctxt "#33105"
+msgid "Max"
+msgstr ""
+
+msgctxt "#33106"
+msgid "Medium"
+msgstr ""
+
+msgctxt "#33107"
+msgid "Low"
+msgstr ""
+
+msgctxt "#33201"
+msgid "Proxy Type"
+msgstr ""
+
+msgctxt "#33202"
+msgid "Downloader"
+msgstr ""
+
+msgctxt "#33203"
+msgid "Redirect"
+msgstr ""
+
+msgctxt "#33301"
+msgid "Show Full Videos Only"
+msgstr ""
+
+msgctxt "#33401"
+msgid "Show Adult Content"
+msgstr ""
+
+msgctxt "#33402"
+msgid "Use Pagination"
+msgstr ""
+
+msgctxt "#33501"
+msgid "Clear Cache"
+msgstr ""
+
+msgctxt "#33502"
+msgid "Addon Maintenance"
+msgstr ""
+
+msgctxt "#34004"
+msgid "More Videos"
+msgstr ""
+
+msgctxt "#34005"
+msgid "By Date"
+msgstr ""
+
+msgctxt "#34006"
+msgid "Older Videos"
+msgstr ""
+
+msgctxt "#34010"
+msgid "Pick the desired bandwidth:"
+msgstr ""
+
+msgctxt "#34011"
+msgid "[I]- Highlights -[/I]"
+msgstr ""
+
+msgctxt "#34012"
+msgid "[I]- Most Watched -[/I]"
+msgstr ""
+
+msgctxt "#34013"
+msgid "[I]- Keep Watching -[/I]"
+msgstr ""
+
+msgctxt "#34014"
+msgid "[I]- Favorites -[/I]"
+msgstr ""
+
+msgctxt "#34015"
+msgid "[I]- History -[/I]"
 msgstr ""
