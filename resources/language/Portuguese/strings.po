@@ -50,7 +50,7 @@ msgstr "Todas"
 
 msgctxt "#31117"
 msgid "Recife"
-msgstr "Recífe"
+msgstr "Recife"
 
 msgctxt "#31118"
 msgid "Salvador"
@@ -246,7 +246,7 @@ msgstr "Mostrar apenas vídeos na íntegra"
 
 msgctxt "#33401"
 msgid "Show Adult Content"
-msgstr "Mostrar conteudo adulto"
+msgstr "Mostrar conteúdo adulto"
 
 msgctxt "#33402"
 msgid "Use Pagination"
@@ -277,7 +277,7 @@ msgid "Pick the desired bandwidth:"
 msgstr "Escolha a Largura de Banda Desejada:"
 
 msgctxt "#34011"
-msgid "[I]- Highlights -[/I]"
+msgid "[I]- Featured -[/I]"
 msgstr "[I]- Destaques -[/I]"
 
 msgctxt "#34012"
@@ -293,8 +293,8 @@ msgid "[I]- Favorites -[/I]"
 msgstr "[I]- Favoritos -[/I]"
 
 msgctxt "#34015"
-msgid "[I]- History -[/I]"
-msgstr "[I]- Histórico -[/I]"
+msgid "[I]- Recent Videos -[/I]"
+msgstr "[I]- Vídeos Recentes -[/I]"
 
 msgctxt "#34100"
 msgid "Stream is not available yet!"

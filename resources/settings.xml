@@ -62,7 +62,7 @@
 		<!-- 31110 = User -->
 		<!-- 31120 = Password -->
 		<setting id="globosat_username" type="text" label="31110" default="" />
-		<setting id="globosat_password" type="text" option="hidden" label="31120" enable="!eq(-1,)" default="" />
+		<setting id="globosat_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
 		<setting type="sep" />
 
 		<!-- 31100 = Globo Play -->
