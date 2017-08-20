@@ -24,25 +24,27 @@ class auth:
     OAUTH_URL = 'http://globosatplay.globo.com/-/auth/gplay/'
     GLOBOSAT_CREDENTIALS = 'globosat_credentials'
 
-    PROXY = 'proxy_url'
-
     def __init__(self):
         self.session = requests.Session()
         try:
-            self.proxy = control.setting(self.PROXY)
+            self.proxy = control.proxy_url
             self.proxy = None if self.proxy == None or self.proxy == '' else {
                                                                   'http': self.proxy,
                                                                   'https': self.proxy,
                                                                 }
-            if self.proxy != None: control.log("proxy: %s" % self.proxy)
-            credentials = control.setting(self.GLOBOSAT_CREDENTIALS)
-            control.log("Loaded credentials from: %s" % self.GLOBOSAT_CREDENTIALS)
-            self.credentials = pickle.loads(credentials)
+            if self.proxy is not None: control.log("proxy: %s" % self.proxy)
+            if self.GLOBOSAT_CREDENTIALS:
+                credentials = control.setting(self.GLOBOSAT_CREDENTIALS)
+                control.log("Loaded credentials from: %s" % self.GLOBOSAT_CREDENTIALS)
+                self.credentials = pickle.loads(credentials)
+            else:
+                self.credentials = {}
         except:
             self.credentials = {}
 
     def clearCredentials(self):
-        control.setSetting(self.GLOBOSAT_CREDENTIALS, None)
+        if self.GLOBOSAT_CREDENTIALS:
+            control.setSetting(self.GLOBOSAT_CREDENTIALS, None)
         self.credentials = {}
 
     def get_token(self, username, password, select_profile=True):
@@ -75,7 +77,7 @@ class auth:
             r3 = self._provider_auth(url, urlparse.parse_qs(qs), username, password, r2.text)
         except Exception as e:
             self.error(str(e))
-            return {}
+            return None, None
 
         # set profile
         urlp, qp = r3.url.split('?', 1)
@@ -84,7 +86,13 @@ class auth:
             sessionId = None
             token = self._select_profile(urlp, r3.text)
         else:
-            control.log('COOKIES: %s' % repr(r3.cookies))
+            control.log('COOKIES: %s' % repr(dict(r3.cookies)))
+
+            # control.log('VERIFYING HISTORY: %s' % pickle.dumps(r3))
+            # if r3.history:
+            #     control.log('HAS HISTORY (%s): %s' % (len(r3.history), repr(r3.history)))
+            #     last_response = r3.history[-1]
+            #     control.log('HISTORY COOKIES: %s' % dict(last_response.cookies))
 
             sessionId = dict(r3.cookies)['sexyhotplay_sessionid']
             token = qp.replace('code=', '')
@@ -135,10 +143,10 @@ class auth:
             expirationkey: expiration
         }
 
-
     def _save_credentials(self):
-        control.setSetting(self.GLOBOSAT_CREDENTIALS, pickle.dumps(self.credentials))
-        control.log("Saving credentials with key: %s" % self.GLOBOSAT_CREDENTIALS)
+        if self.GLOBOSAT_CREDENTIALS:
+            control.log("Saving credentials with key: %s" % self.GLOBOSAT_CREDENTIALS)
+            control.setSetting(self.GLOBOSAT_CREDENTIALS, pickle.dumps(self.credentials))
 
     def is_authenticated(self, provider_id):
         for key in self.credentials.keys():

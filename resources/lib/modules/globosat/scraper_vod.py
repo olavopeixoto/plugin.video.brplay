@@ -27,6 +27,9 @@ def get_authorized_channels():
     authenticator = getattr(auth, provider)()
     token, sessionKey = authenticator.get_token(username, password)
 
+    if not token:
+        return []
+
     client_id = "85014160-e953-4ddb-bbce-c8271e4fde74"
     channels_url = "https://gsatmulti.globo.com/oauth/sso/login/?chave=%s&token=%s" % (client_id, token)
 

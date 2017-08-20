@@ -135,7 +135,7 @@ class Player(xbmc.Player):
 
     def __getVideoInfo(self, id):
 
-        proxy = control.setting('proxy_url')
+        proxy = control.proxy_url
         proxy = None if proxy == None or proxy == '' else {
             'http': proxy,
             'https': proxy,

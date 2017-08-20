@@ -78,7 +78,8 @@ def parse(content, strict=False):
             _parse_simple_parameter(line, data, int)
 
         elif line.startswith(protocol.ext_x_program_date_time):
-            _, program_date_time = _parse_simple_parameter_raw_value(line, cast_date_time)
+            # _, program_date_time = _parse_simple_parameter_raw_value(line, cast_date_time)
+            _, program_date_time = _parse_simple_parameter_raw_value(line)
             if not data.get('program_date_time'):
                 data['program_date_time'] = program_date_time
             state['current_program_date_time'] = program_date_time
@@ -193,7 +194,7 @@ def _parse_ts_chunk(line, data, state):
     segment = state.pop('segment')
     if state.get('current_program_date_time'):
         segment['program_date_time'] = state['current_program_date_time']
-        state['current_program_date_time'] += datetime.timedelta(seconds=segment['duration'])
+        #state['current_program_date_time'] += datetime.timedelta(seconds=segment['duration'])
     segment['uri'] = line
     segment['cue_out'] = state.pop('cue_out', False)
     if state.get('current_cue_out_scte35'):

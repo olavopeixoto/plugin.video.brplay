@@ -13,19 +13,13 @@ import time
 import urllib
 import urllib2
 import urlparse
+import traceback
 
 from resources.lib.modules import control, cache
 from resources.lib.modules import workers
 
 
 def request(url, close=True, redirect=True, error=False, proxy=None, post=None, headers=None, mobile=False, XHR=False, limit=None, referer=None, cookie=None, output='', timeout='30'):
-
-    # if not proxy:
-    #     proxy = control.setting('proxy_url')
-    #     proxy = None if proxy == None or proxy == '' else {
-    #         'http': proxy,
-    #         'https': proxy,
-    #     }
 
     try:
         handlers = []
@@ -130,6 +124,10 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             elif error == False:
                 return
 
+        if response.code == 403:
+            raise Exception("Permission Denied")
+        elif response.code >= 400:
+            raise Exception("Request Error: %s" % response.code)
 
         if output == 'cookie':
             try: result = '; '.join(['%s=%s' % (i.name, i.value) for i in cookies])
@@ -208,7 +206,9 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         else:
             if close == True: response.close()
             return result
-    except:
+    except Exception, e:
+        traceback.print_exc()
+        control.log("Request ERROR: %s" % e.message)
         return
 
 def printCookieDict(cookie_dict):

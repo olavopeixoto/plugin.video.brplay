@@ -2,11 +2,12 @@
 <settings>
 	<category label="32310">
 		<setting type="lsep" label="31003" />
-		<setting id="proxy_url" type="text" label="URL" />
+		<setting id="use_proxy" type="bool" label="Use Proxy" default="true" />
+		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)"/>
 		<setting type="sep" />
 		<setting type="lsep" label="Streaming" />
 		<setting id="bandwidth" type="labelenum" label="Bandwidth" values="Adaptive|Auto|Manual|Max|Medium|Low" default="Auto" />
-		<setting id="proxy_type" type="labelenum" label="Proxy Type" values="Downloader|Redirect" default="Redirect" visible="eq(-1,0)"/>
+		<setting id="proxy_type" type="labelenum" label="Proxy Type" values="Downloader|Redirect|Redirect Buffered" default="Redirect" visible="eq(-1,0)"/>
 		<setting type="sep" />
 		<setting type="lsep" label="GloboPlay"></setting>
 		<setting id="globo_play_full_videos" type="bool" label="Show Full Videos Only" default="true" />
@@ -26,7 +27,7 @@
 		<setting type="lsep" label="31100"></setting>
 		<setting id="globoplay_username" type="text" label="31110" default="" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31120" enable="!eq(-1,)" default="" />
-		<setting id="globo_affiliate" type="labelenum" label="31111" values="Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|All" default="Rio de Janeiro" />
+		<setting id="globo_affiliate" type="labelenum" label="31111" values="Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|All" default="Rio de Janeiro" />
 		<setting type="sep" />
 	</category>
 </settings>

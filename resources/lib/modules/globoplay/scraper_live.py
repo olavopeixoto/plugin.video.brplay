@@ -19,7 +19,7 @@ def get_live_channels():
     affiliate = control.setting('globo_affiliate')
 
     if affiliate == "All":
-        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte']
+        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife']
     else:
         affiliates = [affiliate]
 
@@ -43,29 +43,37 @@ def __get_affiliate_live_channels(affiliate):
         code, geo_position = "DF", 'lat=-15.7942&long=-47.8825'
     elif affiliate == "Belo Horizonte":
         code, geo_position = "BH", 'lat=-19.9245&long=-43.9352'
+    elif affiliate == "Recife":
+        code, geo_position = "PE1", 'lat=-8.0476&long=-34.8770'
     else:
         code, geo_position = "RJ", 'lat=-22.900&long=-43.172'
 
     live_program = __get_live_program(code)
     program_description = get_program_description(live_program['program_id_epg'], live_program['program_id'], code)
 
+    control.log("program_description: %s" % repr(program_description))
+
     item = {
         'plot': None,
         'duration': None,
         'affiliate': geo_position,
         'brplayprovider': 'globoplay',
-        'affiliate_code': code
+        'affiliate_code': code,
+        'logo': None
     }
 
     item.update(program_description)
 
     item.pop('datetimeutc', None)
 
+    title = program_description['title'] if 'title' in program_description else 'N/A'
+    subtitle = program_description['subtitle'] if 'subtitle' in program_description else 'N/A'
+
     item.update({
         'slug': 'globo',
-        'name': 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
-        'title': program_description['subtitle'], #'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
-        'tvshowtitle': program_description['title'],
+        'name': 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + title + '[/I]',
+        'title': subtitle, #'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
+        'tvshowtitle': title,
         'sorttitle': 'Globo ' + re.sub(r'\d+','',code),
         'clearlogo': GLOBO_LOGO,
         # 'tagline': program_description['title'],

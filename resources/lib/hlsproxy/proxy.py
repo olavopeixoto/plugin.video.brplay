@@ -35,11 +35,7 @@ import xbmcgui
 
 import thread
 import threading
-# from resources.lib.modules import workers
 
-# from hlsdownloader import HLSDownloader
-# from hlswriter import HLSWriter as HLSDownloader
-# from legacyhlsdownloader import HLSDownloader
 
 g_stopEvent=None
 VIDEO_MIME_TYPE = 'video/MP2T'
@@ -50,8 +46,8 @@ PORT_NUMBER = 55444
 
 
 def log(msg):
-    # pass
-    xbmc.log(msg, level=xbmc.LOGNOTICE)
+    pass
+    # xbmc.log(msg, level=xbmc.LOGNOTICE)
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
@@ -87,9 +83,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
             log("GET REQUEST: %s" % self.path)
 
             if request_path.lower() == "brplay":
-                (url, proxy, use_proxy_for_chunks, maxbitrate) = self.decode_url(querystring)
+                (url, proxy, maxbitrate) = self.decode_url(querystring)
 
-                if not self.downloader.init(self.wfile, url, proxy, use_proxy_for_chunks, g_stopEvent, maxbitrate):
+                if not self.downloader.init(self.wfile, url, proxy, g_stopEvent, maxbitrate):
                     print 'cannot init'
                     raise Exception('HLS.url failed to play\nServer down? check Url.')
 
@@ -145,11 +141,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
         received_url = params['url'][0].replace('\r','')
         print 'received_url',received_url
 
-        use_proxy_for_chunks = False
         proxy=None
         try:
             proxy = params['proxy'][0]
-            use_proxy_for_chunks =  params['use_proxy_for_chunks'][0]
         except: pass
         
         maxbitrate=0
@@ -159,10 +153,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         if proxy=='None' or proxy=='':
             proxy=None
-        if use_proxy_for_chunks=='False':
-            use_proxy_for_chunks=False
         
-        return (received_url,proxy,use_proxy_for_chunks,maxbitrate)
+        return (received_url,proxy,maxbitrate)
 
     def decode_videoparturl(self, url):
         print 'in params', url
@@ -240,13 +232,13 @@ class hlsProxy():
             finally:
                 log("XBMCLocalProxy Stops %s:%s" % (HOST_NAME, port))
 
-    def __prepare_url(self, url, proxy=None, use_proxy_for_chunks=True, port=PORT_NUMBER, maxbitrate=0):
+    def __prepare_url(self, url, proxy=None, port=PORT_NUMBER, maxbitrate=0):
         global PORT_NUMBER
-        newurl=urllib.urlencode({'url': url,'proxy': proxy,'use_proxy_for_chunks': use_proxy_for_chunks,'maxbitrate': maxbitrate})
+        newurl=urllib.urlencode({'url': url, 'proxy': proxy, 'maxbitrate': maxbitrate})
         link = 'http://%s:%s/brplay?%s' % (HOST_NAME, str(port), newurl)
         return (link) #make a url that caller then call load into player
 
-    def resolve(self, url, proxy=None, use_proxy_for_chunks=True, maxbitrate=0, player=None):
+    def resolve(self, url, proxy=None, maxbitrate=0, player=None):
 
         self.stopPlaying=threading.Event()
         progress = xbmcgui.DialogProgress()
@@ -257,7 +249,7 @@ class hlsProxy():
         self.stopPlaying.clear()
         thread.start_new_thread(self.__start, (self.stopPlaying, player,))
 
-        url_to_play = self.__prepare_url(url, proxy, use_proxy_for_chunks, maxbitrate=maxbitrate)
+        url_to_play = self.__prepare_url(url, proxy, maxbitrate=maxbitrate)
 
         xbmc.sleep(500)
 

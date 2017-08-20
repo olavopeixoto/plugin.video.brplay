@@ -1,3 +1,6 @@
+[B]0.0.10[/B]
+- New Adaptative mode (Redirect)
+- Support for Globo Play Telefilmes
 [B]0.0.8[/B]
 - Experimental Adaptive HLS playback (live streaming)
 [B]0.0.7[/B]

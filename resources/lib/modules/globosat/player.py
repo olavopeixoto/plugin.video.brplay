@@ -15,37 +15,19 @@ import threading
 
 HISTORY_URL = 'https://api.user.video.globo.com/watch_history/?provider=gplay'
 
-def get_max_bandwidth():
-    bandwidth_setting = control.setting('bandwidth')
-
-    max_bandwidth = 99999999999999
-    if bandwidth_setting in ['Auto','Manual']:
-        configured_limit = control.getBandwidthLimit()
-        return configured_limit if configured_limit > 0 else max_bandwidth
-
-    if bandwidth_setting == 'Max':
-        return max_bandwidth
-
-    if bandwidth_setting == 'Medium':
-        return 1264000
-
-    if bandwidth_setting == 'Low':
-        return 0
-
 
 class Player(xbmc.Player):
     def __init__(self):
         super(xbmc.Player, self).__init__()
         self.stopPlayingEvent = None
-        pass
 
     def playlive(self, id, meta):
         if id == None: return
 
         info = self.__getVideoInfo(id)
 
-        # if info['encrypted'] == 'true':
-        #     control.infoDialog(control.lang(31200).encode('utf-8'), heading=str("Content is DRM encrypted it won't play in Kodi at this moment"), icon='Wr')
+        if info['encrypted'] == 'true':
+            control.infoDialog(control.lang(31200).encode('utf-8'), heading=str("Content is DRM encrypted it won't play in Kodi at this moment"), icon='Wr')
 
         title = info['channel']
 
@@ -107,7 +89,7 @@ class Player(xbmc.Player):
         while not self.stopPlayingEvent.isSet():
             if control.monitor.abortRequested():
                 control.log("Abort requested")
-                break;
+                break
             if self.isPlaying():
                 total_time = self.getTotalTime()
                 current_time = self.getTime()
@@ -142,7 +124,7 @@ class Player(xbmc.Player):
 
     def __getVideoInfo(self, id):
 
-        proxy = control.setting('proxy_url')
+        proxy = control.proxy_url
         proxy = None if proxy == None or proxy == '' else {
             'http': proxy,
             'https': proxy,

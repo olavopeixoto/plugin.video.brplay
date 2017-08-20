@@ -199,7 +199,7 @@ try:
     elif action == 'playvod' and provider == 'sexyhot':
         from resources.lib.modules.sexyhotplay import player
 
-        player.player().playVod(id_sexyhot, meta)
+        player.Player().play_vod(id_sexyhot, meta)
 
 except Exception:
     buggalo.onExceptionRaised()

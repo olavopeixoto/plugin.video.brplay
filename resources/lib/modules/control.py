@@ -172,6 +172,10 @@ isKrypton = infoLabel("System.BuildVersion").startswith("17.")
 
 cookieFile = os.path.join(tempPath, 'cookies.dat')
 
+use_proxy = xbmcaddon.Addon().getSetting('use_proxy')
+
+proxy_url = xbmcaddon.Addon().getSetting('proxy_url') if xbmcaddon.Addon().getSetting('use_proxy') else None
+
 
 def getKodiVersion():
     return infoLabel("System.BuildVersion").split(' ')[0]
