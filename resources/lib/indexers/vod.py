@@ -345,7 +345,10 @@ class Vod:
 
         # if next_page:
         # label = 'Next Page (%s/%s)' % (nextpage, total_pages)
-        label = 'More Videos'
+
+        # 34004 = "More Videos"
+        label = control.lang(34004).encode('utf-8')
+
         meta = {}
         meta.update({'mediatype': 'video'})
         meta.update({'overlay': 6})
@@ -378,10 +381,12 @@ class Vod:
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
 
+        # 32072 = "Refresh" 
         refreshMenu = control.lang(32072).encode('utf-8')
 
         if days:
-            label = 'By Date'
+            # 34005 = "By Date"
+            label = control.lang(34005).encode('utf-8')
             meta = {}
             meta.update({'mediatype': 'video'})
             meta.update({'overlay': 6})
@@ -461,7 +466,10 @@ class Vod:
 
         if next_page:
             # label = 'Next Page (%s/%s)' % (nextpage, total_pages)
-            label = 'Older Videos'
+
+            # 34006 = "Older Videos"
+            label = control.lang(34006).encode('utf-8')
+            
             meta = {}
             meta.update({'mediatype': 'video'})
             meta.update({'overlay': 6})
@@ -493,6 +501,7 @@ class Vod:
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
 
+        # 32072 = "Refresh" 
         refreshMenu = control.lang(32072).encode('utf-8')
 
         has_playable_item = False
@@ -570,6 +579,7 @@ class Vod:
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
 
+        # 32072 = "Refresh" 
         refreshMenu = control.lang(32072).encode('utf-8')
 
         for extra in extras:
@@ -643,6 +653,7 @@ class Vod:
 
         #queueMenu = control.lang(32065).encode('utf-8')
 
+        # 32072 = "Refresh" 
         refreshMenu = control.lang(32072).encode('utf-8')
 
         for i in items:
@@ -722,6 +733,7 @@ class Vod:
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
 
+        # 32072 = "Refresh" 
         refreshMenu = control.lang(32072).encode('utf-8')
 
         for item in items:

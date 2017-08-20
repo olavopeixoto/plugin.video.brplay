@@ -13,7 +13,31 @@ from resources.lib.hlsproxy.hlsdownloader import HLSDownloader
 from resources.lib.hlsproxy.hlswriter import HLSWriter
 
 def get_max_bandwidth():
-    bandwidth_setting = control.setting('bandwidth')
+    bandwidth_setting_temp = control.setting('bandwidth')
+
+    # In settings.xml - bandwidth
+    # Adaptive = '0'
+    # Auto = '1'
+    # Manual = '2'
+    # Max = '3'
+    # Medium = '4'
+    # Low = '5'
+
+
+    if bandwidth_setting_temp == '0':
+        bandwidth_setting = 'Adaptive'
+    elif bandwidth_setting_temp == '1':
+        bandwidth_setting = 'Auto'
+    elif bandwidth_setting_temp == '2':
+        bandwidth_setting = 'Manual'
+    elif bandwidth_setting_temp == '3':
+        bandwidth_setting = 'Max'
+    elif bandwidth_setting_temp == '4':
+        bandwidth_setting = 'Medium'
+    else:
+        bandwidth_setting = 'Low'
+
+
 
     max_bandwidth = 99999999999999
 
@@ -32,27 +56,66 @@ def get_max_bandwidth():
 
 def pickBandwidth(url):
 
-    bandwidth_setting = control.setting('bandwidth')
+    bandwidth_setting_temp = control.setting('bandwidth')
+
+
+    # In settings.xml - bandwidth
+    # Adaptive = '0'
+    # Auto = '1'
+    # Manual = '2'
+    # Max = '3'
+    # Medium = '4'
+    # Low = '5'
+
+
+    if bandwidth_setting_temp == "0":
+        bandwidth_setting = "Adaptive"
+    elif bandwidth_setting_temp == "1":
+        bandwidth_setting = "Auto"
+    elif bandwidth_setting_temp == "2":
+        bandwidth_setting = "Manual"
+    elif bandwidth_setting_temp == "3":
+        bandwidth_setting = "Max"
+    elif bandwidth_setting_temp == "4":
+        bandwidth_setting = "Medium"
+    else:
+        bandwidth_setting = "Low"
+
 
     if bandwidth_setting == 'Auto':
+        cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
+        cookie_jar.clear()
+        cookie_jar.save(control.cookieFile, None, None)
         return url, None, None
 
     if bandwidth_setting == 'Adaptive':
         proxy = control.proxy_url
         maxbandwidth = get_max_bandwidth()
         url_resolver = hlsProxy()
-        player_type = control.setting('proxy_type')
+        player_type_temp = control.setting('proxy_type')
+
+        if player_type_temp == "0":
+            player_type = "Downloader"
+        else:
+            player_type = "Redirect"
+
         player = HLSDownloader if player_type == 'Downloader' else HLSWriter
+
         if player_type == 'Redirect':
             player.DOWNLOAD_IN_BACKGROUND = False
         elif player_type != 'Downloader':
             player.DOWNLOAD_IN_BACKGROUND = True
+
         url, mime_type = url_resolver.resolve(url, proxy=proxy, maxbitrate=maxbandwidth, player=player)
+
         return url, mime_type, url_resolver.stopEvent
 
     #Adaptive|Auto|Manual|Max|Medium|Low
 
     playlist, cookies = m3u8.load(url)
+
+    if (playlist is None):
+        return None, None, None
 
     bandwidth_options = []
     for index, playlist_item in enumerate(playlist.playlists):
@@ -67,10 +130,10 @@ def pickBandwidth(url):
         options = []
         options = options + [b['bandwidth'] for b in bandwidth_options]
         dialog = xbmcgui.Dialog()
-        bandwidth = dialog.select("Pick the desired bandwidth:", options)
+        bandwidth = dialog.select(control.lang(34010).encode('utf-8'), options)
     else:
         if bandwidth_setting == 'Max':
-            bandwidth = len(bandwidth_options)
+            bandwidth = len(bandwidth_options) - 1
         elif bandwidth_setting == 'Medium':
             bandwidth = len(bandwidth_options) - 2
         elif bandwidth_setting == 'Low':

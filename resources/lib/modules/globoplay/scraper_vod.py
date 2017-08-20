@@ -48,19 +48,19 @@ def get_extra_sections():
 
     extras = [{
         'id': '-highlights-',
-        'title': '-Destaques-'
+        'title': control.lang(34011).encode('utf-8')
     },{
         'id': '-mostwatched-',
-        'title': '-Mais Assistidos-'
+        'title': control.lang(34012).encode('utf-8')
     },{
         'id': '-continue-',
-        'title': '-Continue Assistindo-'
+        'title': control.lang(34013).encode('utf-8')
     },{
         'id': '-favorites-',
-        'title': '-Favoritos-'
+        'title': control.lang(34014).encode('utf-8')
     },{
         'id': '-history-',
-        'title': '-Histórico-'
+        'title': control.lang(34015).encode('utf-8')
     }]
 
     return extras
