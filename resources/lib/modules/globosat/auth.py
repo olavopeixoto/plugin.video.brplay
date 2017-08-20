@@ -338,13 +338,13 @@ class multiplay(auth):
         token_regex = re.match(r'<input type="hidden" name="_token" value="([^"]+)">', html)
 
         token = token_regex.groups()[0]
-        data = {
+        qs.update({
             '_token': token,
             'username': username,
             'password': password
-        }
+        })
 
-        return self.session.post(url, data=data, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
+        return self.session.post(url, data=qs, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
 
 
 #incomplete
@@ -352,10 +352,10 @@ class orm_cabo(auth):
     PROVIDER_ID = 138
 
     def _provider_auth(self, url, qs, username, password, html):
-
-        data = {
+        
+        qs.update({
             'cpf': username,
             'senha': password
-        }
+        })
 
-        return self.session.post(url, data=data, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
+        return self.session.post(url, data=qs, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
