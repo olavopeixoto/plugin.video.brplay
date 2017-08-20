@@ -22,9 +22,10 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.9
-			- New Adaptative mode (Redirect)
-			- Support for Globo Play Telefilmes
+		<news>0.0.11
+			- Support for Recife region (Globo)
+			- Brazilian Portuguese translation
+			- New Redirect Buffered proxy mode (experimental)
         </news>
 	</extension>
 </addon>

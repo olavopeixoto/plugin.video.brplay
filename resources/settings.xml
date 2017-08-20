@@ -5,7 +5,7 @@
 
 		<!-- 31003 = Proxy -->
 		<setting type="lsep" label="31003" />
-		<setting id="use_proxy" type="bool" label="Use Proxy" default="true" />
+		<setting id="use_proxy" type="bool" label="31004" default="true" />
 		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)"/>
 		<setting type="sep" />
 
@@ -13,18 +13,19 @@
 		<setting type="lsep" label="33001" />
 
 		<!-- 33101 = Bandwidth 	-->
-		<!-- 33102 = Adaptive 	-->
 		<!-- 33103 = Auto   	-->
+        <!-- 33102 = Adaptive 	-->
 		<!-- 33104 = Manual 	-->
 		<!-- 33105 = Max 		-->
 		<!-- 33106 = Medium 	-->
 		<!-- 33107 = Low 		-->
-		<setting id="bandwidth" type="enum" label="33101" lvalues="33102|33103|33104|33105|33106|33107" default="1" />
+		<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104|33105|33106|33107" default="0" />
 
 		<!-- 33201 = Proxy Type -->
 		<!-- 33202 = Downloader -->
 		<!-- 33203 = Redirect  	-->
-		<setting id="proxy_type" type="enum" label="33201" lvalues="33202|33203" default="1" visible="eq(-1,0)"/>
+		<!-- 33204 = Redirect Buffered  	-->
+		<setting id="proxy_type" type="enum" label="33201" lvalues="33202|33203|33204" default="1" visible="eq(-1,1)"/>
 		<setting type="sep" />
 
 		<setting type="lsep" label="GloboPlay"></setting>
@@ -66,17 +67,39 @@
 
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
-		<!-- 31120 = Password -->
+		<!-- 31109 = Password -->
 		<!-- 31111 = Affiliate -->
+		<!-- 31116 = All -->
 		<!-- 31112 = Rio de Janeiro -->
 		<!-- 31113 = Sao Paulo -->
 		<!-- 31114 = Brasilia -->
 		<!-- 31115 = Belo Horizonte -->
-		<!-- 31116 = All -->
+		<!-- 31117 = Recife -->
+		<!-- 31118 = Salvador -->
+		<!-- 31119 = Fortaleza -->
+		<!-- 31120 = Aracaju -->
+		<!-- 31121 = Maceio -->
+		<!-- 31122 = Cuiaba -->
+		<!-- 31123 = Porto Alegre -->
+		<!-- 31124 = Florianopolis -->
+		<!-- 31125 = Curitiba -->
+		<!-- 31126 = Vitoria -->
+		<!-- 31127 = Goiania -->
+		<!-- 31128 = Campo Grande -->
+		<!-- 31129 = Manaus -->
+		<!-- 31130 = Belem -->
+		<!-- 31131 = Macapa -->
+		<!-- 31132 = Palmas -->
+		<!-- 31133 = Rio Branco -->
+		<!-- 31134 = Teresina -->
+		<!-- 31135 = Sao Luis -->
+		<!-- 31136 = Joao Pessoa -->
+		<!-- 31137 = Natal -->
 		<setting type="lsep" label="31100"></setting>
 		<setting id="globoplay_username" type="text" label="31110" default="" />
-		<setting id="globoplay_password" type="text" option="hidden" label="31120" enable="!eq(-1,)" default="" />
-		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31112|31113|31114|31115|31116" default="0" />
+		<setting id="globoplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
+		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
+		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117" default="1" />
 		<setting type="sep" />
 	</category>
 </settings>

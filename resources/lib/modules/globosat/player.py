@@ -18,16 +18,23 @@ HISTORY_URL = 'https://api.user.video.globo.com/watch_history/?provider=gplay'
 
 class Player(xbmc.Player):
     def __init__(self):
-        super(xbmc.Player, self).__init__()
+        super(xbmc.Player, self).__init__(self)
         self.stopPlayingEvent = None
+        self.url = None
+        self.isLive = False
 
     def playlive(self, id, meta):
-        if id == None: return
 
-        info = self.__getVideoInfo(id)
+        if id is None: return
 
-        if info['encrypted'] == 'true':
-            control.infoDialog(control.lang(31200).encode('utf-8'), heading=str("Content is DRM encrypted it won't play in Kodi at this moment"), icon='Wr')
+        info = self.__get_video_info(id)
+
+        if not info or 'channel' not in info:
+            return
+
+        if 'encrypted' in info and info['encrypted'] == 'true':
+            control.infoDialog(message=control.lang(34103).encode('utf-8'), icon='Wr')
+            return
 
         title = info['channel']
 
@@ -46,31 +53,33 @@ class Player(xbmc.Player):
 
         control.log("live media url: %s" % url)
 
-        try: meta = json.loads(meta)
-        except: meta = {
-            "playcount": 0,
-            "overlay": 6,
-            "title": title,
-            "thumb": info["thumbUri"],
-            "mediatype": "video",
-            "aired": info["exhibited_at"]
-        }
+        try:
+            meta = json.loads(meta)
+        except:
+            meta = {
+                "playcount": 0,
+                "overlay": 6,
+                "title": title,
+                "thumb": info["thumbUri"],
+                "mediatype": "video",
+                "aired": info["exhibited_at"]
+            }
 
         meta.update({
             "genre": info["category"],
             "plot": info["title"],
             "plotoutline": info["title"]
-        });
+        })
 
         poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
         self.isLive = 'livefeed' in meta and meta['livefeed'] == 'true'
 
-        self.url, mime_type, stopEvent = hlshelper.pickBandwidth(url)
+        self.url, mime_type, stopEvent = hlshelper.pick_bandwidth(url)
 
-        if (self.url is None):
-            control.infoDialog('Stream is not available yet!', icon='ERROR')
+        if self.url is None:
+            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
@@ -101,7 +110,8 @@ class Player(xbmc.Player):
                 if current_time - last_time > 10 or (last_time == 0 and current_time > 1):
                     last_time = current_time
                     percentage_watched = current_time / total_time if total_time > 0 else 1.0 / 1000000.0
-                    self.save_video_progress(info['credentials'], info['program_id'], info['id'], current_time / 1000.0, fully_watched=percentage_watched>0.9 and percentage_watched<=1)
+                    self.save_video_progress(info['credentials'], info['program_id'], info['id'], current_time / 1000.0,
+                                             fully_watched=0.9 < percentage_watched <= 1)
             control.sleep(1000)
 
         if stopEvent:
@@ -126,31 +136,32 @@ class Player(xbmc.Player):
         if self.stopPlayingEvent:
             self.stopPlayingEvent.set()
 
-
-    def __getVideoInfo(self, id):
+    def __get_video_info(self, video_id):
 
         proxy = control.proxy_url
-        proxy = None if proxy == None or proxy == '' else {
+        proxy = None if proxy is None or proxy == '' else {
             'http': proxy,
             'https': proxy,
         }
 
-        playlistUrl = 'http://api.globovideos.com/videos/%s/playlist'
-        playlistJson = client.request(playlistUrl % id, headers={"Accept-Encoding": "gzip"})
+        playlist_url = 'http://api.globovideos.com/videos/%s/playlist'
+        playlist_json = client.request(playlist_url % video_id, headers={"Accept-Encoding": "gzip"})
 
-        if not 'videos' in playlistJson or len(playlistJson['videos']) == 0:
-            return control.infoDialog(control.lang(31200).encode('utf-8'), heading=str('Video Info Not Found'), sound=True, icon='ERROR')
+        if 'videos' not in playlist_json or len(playlist_json['videos']) == 0:
+            control.infoDialog(message=control.lang(34101).encode('utf-8'), sound=True, icon='ERROR')
+            return None
             # raise Exception("Player version not found.")
 
-        playlistJson = playlistJson['videos'][0]
+        playlist_json = playlist_json['videos'][0]
 
-        for node in playlistJson['resources']:
+        for node in playlist_json['resources']:
             if any("ios" in s for s in node['players']):
                 resource = node
                 break
 
-        if (resource or None) == None:
-            return control.infoDialog(control.lang(31200).encode('utf-8'), heading=str('Video Resource Not Found'), sound=True, icon='ERROR')
+        if (resource or None) is None:
+            control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
+            return None
 
         resource_id = resource['_id']
 
@@ -158,33 +169,34 @@ class Player(xbmc.Player):
         username = control.setting('globosat_username')
         password = control.setting('globosat_password')
 
-        #authenticate
+        # authenticate
         authenticator = getattr(auth, provider)()
-        credentials = authenticator.authenticate(playlistJson["provider_id"], username, password)
+        credentials = authenticator.authenticate(playlist_json["provider_id"], username, password)
 
-        hashUrl = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=1.1.23&player=ios' % (id, resource_id)
-        hashJson = client.request(hashUrl, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
+        hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=1.1.23&player=ios' % (video_id, resource_id)
+        hash_json = client.request(hash_url, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
 
-        if not hashJson or 'message' in hashJson and hashJson['message']:
-            return control.infoDialog(control.lang(31200).encode('utf-8'), heading=hashJson['message'], sound=True, icon='ERROR')
+        if not hash_json or 'message' in hash_json and hash_json['message']:
+            control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
+            return None
 
         return {
-            "id": playlistJson["id"],
-            "title": playlistJson["title"],
-            "program": playlistJson["program"],
-            "program_id": playlistJson["program_id"],
-            "provider_id": playlistJson["provider_id"],
-            "channel": playlistJson["channel"],
-            "channel_id": playlistJson["channel_id"],
-            "category": playlistJson["category"],
-            "subscriber_only": playlistJson["subscriber_only"],
-            "exhibited_at": playlistJson["exhibited_at"],
+            "id": playlist_json["id"],
+            "title": playlist_json["title"],
+            "program": playlist_json["program"],
+            "program_id": playlist_json["program_id"],
+            "provider_id": playlist_json["provider_id"],
+            "channel": playlist_json["channel"],
+            "channel_id": playlist_json["channel_id"],
+            "category": playlist_json["category"],
+            "subscriber_only": playlist_json["subscriber_only"],
+            "exhibited_at": playlist_json["exhibited_at"],
             "player": "ios",
             "url": resource["url"],
             "query_string_template": resource["query_string_template"],
             "thumbUri": resource["thumbUri"] if 'thumbUri' in resource else None,
-            "hash": hashJson["hash"],
-            "user": hashJson["user"] if 'user' in hashJson else None,
+            "hash": hash_json["hash"],
+            "user": hash_json["user"] if 'user' in hash_json else None,
             "encrypted": resource['encrypted'] if 'encrypted' in resource else 'false',
             "credentials": credentials
         }

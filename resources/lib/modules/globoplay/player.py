@@ -94,10 +94,12 @@ class Player(xbmc.Player):
 
         self.isLive = 'live' in meta and meta['live'] == True
 
-        self.url, mime_type, stopEvent = hlshelper.pickBandwidth(url)
-        if (self.url is None):
-            control.infoDialog('Stream is not available yet!', icon='ERROR')
+        self.url, mime_type, stopEvent = hlshelper.pick_bandwidth(url)
+
+        if self.url is None:
+            control.infoDialog(message=control.lang('34100').encode('utf-8'), icon='ERROR')
             return
+
         control.log("Resolved URL: %s" % repr(self.url))
 
         item = control.item(path=self.url)
@@ -148,8 +150,9 @@ class Player(xbmc.Player):
         playlistJson = client.request(playlistUrl % id, headers={"Accept-Encoding": "gzip"})
 
         if not playlistJson or not 'videos' in playlistJson or len(playlistJson['videos']) == 0: #Video Not Available
-            control.infoDialog(control.lang(31200).encode('utf-8'), heading=str('Video Info Not Found'), sound=True, icon='ERROR')
-            control.idle(); sys.exit()
+            control.infoDialog(message=control.lang(34101).encode('utf-8'), sound=True, icon='ERROR')
+            control.idle()
+            sys.exit()
             return None
             # raise Exception("Player version not found.")
 
@@ -161,7 +164,7 @@ class Player(xbmc.Player):
                 break
 
         if resource == None:
-            control.infoDialog(control.lang(31200).encode('utf-8'), heading=str('Video Resource Not Found'), sound=True, icon='ERROR')
+            control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
             control.idle()
             sys.exit()
             return None
@@ -236,26 +239,25 @@ class Player(xbmc.Player):
 
         affiliate_temp = control.setting('globo_affiliate')
 
-
         # In settings.xml - globo_affiliate
-        # 0 = Rio de Janeiro 
-        # 1 = Sao Paulo
-        # 2 = Brasilia
-        # 3 = Belo Horizonte
-        # 4 = All
-
-
-        if affiliate_temp == "4":
+        # 0 = All
+        # 1 = Rio de Janeiro
+        # 2 = Sao Paulo
+        # 3 = Brasilia
+        # 4 = Belo Horizonte
+        # 5 = Recife
+        if affiliate_temp == "0":
             affiliate = "All"
-        elif affiliate_temp == "1":
-            affiliate = "Sao Paulo"
         elif affiliate_temp == "2":
-            affiliate = "Brasilia"
+            affiliate = "Sao Paulo"
         elif affiliate_temp == "3":
+            affiliate = "Brasilia"
+        elif affiliate_temp == "4":
             affiliate = "Belo Horizonte"
+        elif affiliate_temp == "5":
+            affiliate = "Recife"
         else:
             affiliate = "Rio de Janeiro"
-
 
         if affiliate == "All" and geolocation != None:
             pass
@@ -265,6 +267,8 @@ class Player(xbmc.Player):
             geolocation = 'lat=-15.7942&long=-47.8825'
         elif affiliate == 'Belo Horizonte':
             geolocation = 'lat=-19.9245&long=-43.9352'
+        elif affiliate == "Recife":
+            geolocation = 'lat=-8.0476&long=-34.8770'
         else: #Rio de Janeiro
             geolocation = 'lat=-22.900&long=-43.172'
 

@@ -12,6 +12,7 @@ except:
 from resources.lib.hlsproxy.hlsdownloader import HLSDownloader
 from resources.lib.hlsproxy.hlswriter import HLSWriter
 
+
 def get_max_bandwidth():
     bandwidth_setting_temp = control.setting('bandwidth')
 
@@ -22,7 +23,6 @@ def get_max_bandwidth():
     # Max = '3'
     # Medium = '4'
     # Low = '5'
-
 
     if bandwidth_setting_temp == '0':
         bandwidth_setting = 'Adaptive'
@@ -36,8 +36,6 @@ def get_max_bandwidth():
         bandwidth_setting = 'Medium'
     else:
         bandwidth_setting = 'Low'
-
-
 
     max_bandwidth = 99999999999999
 
@@ -54,33 +52,29 @@ def get_max_bandwidth():
     return configured_limit if configured_limit > 0 else max_bandwidth
 
 
-def pickBandwidth(url):
+def pick_bandwidth(url):
 
     bandwidth_setting_temp = control.setting('bandwidth')
 
-
     # In settings.xml - bandwidth
-    # Adaptive = '0'
-    # Auto = '1'
+    # Auto = '0'
+    # Adaptive = '1'
     # Manual = '2'
     # Max = '3'
     # Medium = '4'
     # Low = '5'
-
-
-    if bandwidth_setting_temp == "0":
+    if bandwidth_setting_temp == "1":
         bandwidth_setting = "Adaptive"
-    elif bandwidth_setting_temp == "1":
-        bandwidth_setting = "Auto"
     elif bandwidth_setting_temp == "2":
         bandwidth_setting = "Manual"
     elif bandwidth_setting_temp == "3":
         bandwidth_setting = "Max"
     elif bandwidth_setting_temp == "4":
         bandwidth_setting = "Medium"
-    else:
+    elif bandwidth_setting_temp == "5":
         bandwidth_setting = "Low"
-
+    else:
+        bandwidth_setting = "Auto"
 
     if bandwidth_setting == 'Auto':
         cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
@@ -89,9 +83,11 @@ def pickBandwidth(url):
         return url, None, None
 
     if bandwidth_setting == 'Adaptive':
+
         proxy = control.proxy_url
         maxbandwidth = get_max_bandwidth()
         url_resolver = hlsProxy()
+
         player_type_temp = control.setting('proxy_type')
 
         if player_type_temp == "0":
@@ -110,16 +106,13 @@ def pickBandwidth(url):
 
         return url, mime_type, url_resolver.stopEvent
 
-    #Adaptive|Auto|Manual|Max|Medium|Low
-
     playlist, cookies = m3u8.load(url)
 
-    if (playlist is None):
+    if playlist is None:
         return None, None, None
 
     bandwidth_options = []
     for index, playlist_item in enumerate(playlist.playlists):
-        # xbmc.log("BANDWIDTH: %s | URL: %s" % (str(playlist.playlists[index].stream_info.bandwidth), playlist.playlists[index].absolute_uri), level=xbmc.LOGNOTICE)
         bandwidth_options.append({
             'index': index,
             'bandwidth': str(playlist.playlists[index].stream_info.bandwidth)
@@ -143,10 +136,10 @@ def pickBandwidth(url):
     url = '%s|Cookie=%s' % (playlist.playlists[bandwidth_options[bandwidth]['index']].absolute_uri, cookies_str)
     xbmc.log("FINAL URL: %s" % url, level=xbmc.LOGNOTICE)
 
-    # cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
-    # cookie_jar.clear()
-    # for cookie in cookies:
-    #     cookie_jar.set_cookie(cookie)
-    # cookie_jar.save(control.cookieFile, None, None)
+    cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
+    cookie_jar.clear()
+    for cookie in cookies:
+        cookie_jar.set_cookie(cookie)
+    cookie_jar.save(control.cookieFile, None, None)
 
     return url, None, None

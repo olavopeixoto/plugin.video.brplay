@@ -61,7 +61,7 @@ def load(uri, timeout=None, headers={}, cookies=None):
 
 def _load_from_uri(uri, timeout=None, headers={}, cookies=None):
     response = requests.get(uri, cookies=cookies, timeout=timeout, headers=headers)
-    if (response.status_code != 200):
+    if response.status_code != 200:
         return None, None
     content = response.content.strip()
     parsed_url = urlparse(uri)

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import urlparse,os,sys,json
+import urlparse, os, sys, json
 
-import xbmc,xbmcaddon,xbmcplugin,xbmcgui,xbmcvfs
-
+import xbmc, xbmcaddon, xbmcplugin, xbmcgui, xbmcvfs
 
 integer = 1000
 
@@ -172,9 +171,7 @@ isKrypton = infoLabel("System.BuildVersion").startswith("17.")
 
 cookieFile = os.path.join(tempPath, 'cookies.dat')
 
-use_proxy = xbmcaddon.Addon().getSetting('use_proxy')
-
-proxy_url = xbmcaddon.Addon().getSetting('proxy_url') if xbmcaddon.Addon().getSetting('use_proxy') else None
+proxy_url = xbmcaddon.Addon().getSetting('proxy_url') if xbmcaddon.Addon().getSetting('use_proxy') == 'true' else None
 
 
 def getKodiVersion():
@@ -186,8 +183,10 @@ def addonIcon():
     if not (art == None): return os.path.join(art, 'icon.png')
     return addonInfo('icon')
 
+
 def getBandwidthLimit():
-    json_result = xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.GetSettingValue","params":{"setting":"network.bandwidth"},"id":1}')
+    json_result = xbmc.executeJSONRPC(
+        '{"jsonrpc":"2.0","method":"Settings.GetSettingValue","params":{"setting":"network.bandwidth"},"id":1}')
     data_object = json.loads(json_result)
     return data_object['result']['value']
 
@@ -225,10 +224,14 @@ def artPath():
 
 
 def infoDialog(message, heading=addonInfo('name'), icon='', time=3000, sound=False):
-    if icon == '': icon = addonIcon()
-    elif icon == 'INFO': icon = xbmcgui.NOTIFICATION_INFO
-    elif icon == 'WARNING': icon = xbmcgui.NOTIFICATION_WARNING
-    elif icon == 'ERROR': icon = xbmcgui.NOTIFICATION_ERROR
+    if icon == '':
+        icon = addonIcon()
+    elif icon == 'INFO':
+        icon = xbmcgui.NOTIFICATION_INFO
+    elif icon == 'WARNING':
+        icon = xbmcgui.NOTIFICATION_WARNING
+    elif icon == 'ERROR':
+        icon = xbmcgui.NOTIFICATION_ERROR
     dialog.notification(heading=heading, message=message, icon=icon, time=time, sound=sound)
 
 
@@ -241,24 +244,45 @@ def selectDialog(list, heading=addonInfo('name')):
 
 
 def moderator():
-    netloc = [urlparse.urlparse(sys.argv[0]).netloc, '', 'plugin.video.live.streamspro', 'plugin.video.phstreams', 'plugin.video.cpstreams', 'plugin.video.streamarmy', 'plugin.video.tinklepad', 'plugin.video.metallic']
+    netloc = [urlparse.urlparse(sys.argv[0]).netloc, '', 'plugin.video.live.streamspro', 'plugin.video.phstreams',
+              'plugin.video.cpstreams', 'plugin.video.streamarmy', 'plugin.video.tinklepad', 'plugin.video.metallic']
 
     if not infoLabel('Container.PluginName') in netloc: sys.exit()
 
 
 def apiLanguage(ret_name=None):
-    langDict = {'Bulgarian': 'bg', 'Chinese': 'zh', 'Croatian': 'hr', 'Czech': 'cs', 'Danish': 'da', 'Dutch': 'nl', 'English': 'en', 'Finnish': 'fi', 'French': 'fr', 'German': 'de', 'Greek': 'el', 'Hebrew': 'he', 'Hungarian': 'hu', 'Italian': 'it', 'Japanese': 'ja', 'Korean': 'ko', 'Norwegian': 'no', 'Polish': 'pl', 'Portuguese': 'pt', 'Romanian': 'ro', 'Russian': 'ru', 'Serbian': 'sr', 'Slovak': 'sk', 'Slovenian': 'sl', 'Spanish': 'es', 'Swedish': 'sv', 'Thai': 'th', 'Turkish': 'tr', 'Ukrainian': 'uk'}
+    langDict = {'Bulgarian': 'bg', 'Chinese': 'zh', 'Croatian': 'hr', 'Czech': 'cs', 'Danish': 'da', 'Dutch': 'nl',
+                'English': 'en', 'Finnish': 'fi', 'French': 'fr', 'German': 'de', 'Greek': 'el', 'Hebrew': 'he',
+                'Hungarian': 'hu', 'Italian': 'it', 'Japanese': 'ja', 'Korean': 'ko', 'Norwegian': 'no', 'Polish': 'pl',
+                'Portuguese': 'pt', 'Romanian': 'ro', 'Russian': 'ru', 'Serbian': 'sr', 'Slovak': 'sk',
+                'Slovenian': 'sl', 'Spanish': 'es', 'Swedish': 'sv', 'Thai': 'th', 'Turkish': 'tr', 'Ukrainian': 'uk'}
 
-    trakt = ['bg','cs','da','de','el','en','es','fi','fr','he','hr','hu','it','ja','ko','nl','no','pl','pt','ro','ru','sk','sl','sr','sv','th','tr','uk','zh']
-    tvdb = ['en','sv','no','da','fi','nl','de','it','es','fr','pl','hu','el','tr','ru','he','ja','pt','zh','cs','sl','hr','ko']
-    youtube = ['gv', 'gu', 'gd', 'ga', 'gn', 'gl', 'ty', 'tw', 'tt', 'tr', 'ts', 'tn', 'to', 'tl', 'tk', 'th', 'ti', 'tg', 'te', 'ta', 'de', 'da', 'dz', 'dv', 'qu', 'zh', 'za', 'zu', 'wa', 'wo', 'jv', 'ja', 'ch', 'co', 'ca', 'ce', 'cy', 'cs', 'cr', 'cv', 'cu', 'ps', 'pt', 'pa', 'pi', 'pl', 'mg', 'ml', 'mn', 'mi', 'mh', 'mk', 'mt', 'ms', 'mr', 'my', 've', 'vi', 'is', 'iu', 'it', 'vo', 'ii', 'ik', 'io', 'ia', 'ie', 'id', 'ig', 'fr', 'fy', 'fa', 'ff', 'fi', 'fj', 'fo', 'ss', 'sr', 'sq', 'sw', 'sv', 'su', 'st', 'sk', 'si', 'so', 'sn', 'sm', 'sl', 'sc', 'sa', 'sg', 'se', 'sd', 'lg', 'lb', 'la', 'ln', 'lo', 'li', 'lv', 'lt', 'lu', 'yi', 'yo', 'el', 'eo', 'en', 'ee', 'eu', 'et', 'es', 'ru', 'rw', 'rm', 'rn', 'ro', 'be', 'bg', 'ba', 'bm', 'bn', 'bo', 'bh', 'bi', 'br', 'bs', 'om', 'oj', 'oc', 'os', 'or', 'xh', 'hz', 'hy', 'hr', 'ht', 'hu', 'hi', 'ho', 'ha', 'he', 'uz', 'ur', 'uk', 'ug', 'aa', 'ab', 'ae', 'af', 'ak', 'am', 'an', 'as', 'ar', 'av', 'ay', 'az', 'nl', 'nn', 'no', 'na', 'nb', 'nd', 'ne', 'ng', 'ny', 'nr', 'nv', 'ka', 'kg', 'kk', 'kj', 'ki', 'ko', 'kn', 'km', 'kl', 'ks', 'kr', 'kw', 'kv', 'ku', 'ky']
+    trakt = ['bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'fi', 'fr', 'he', 'hr', 'hu', 'it', 'ja', 'ko', 'nl', 'no', 'pl',
+             'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'zh']
+    tvdb = ['en', 'sv', 'no', 'da', 'fi', 'nl', 'de', 'it', 'es', 'fr', 'pl', 'hu', 'el', 'tr', 'ru', 'he', 'ja', 'pt',
+            'zh', 'cs', 'sl', 'hr', 'ko']
+    youtube = ['gv', 'gu', 'gd', 'ga', 'gn', 'gl', 'ty', 'tw', 'tt', 'tr', 'ts', 'tn', 'to', 'tl', 'tk', 'th', 'ti',
+               'tg', 'te', 'ta', 'de', 'da', 'dz', 'dv', 'qu', 'zh', 'za', 'zu', 'wa', 'wo', 'jv', 'ja', 'ch', 'co',
+               'ca', 'ce', 'cy', 'cs', 'cr', 'cv', 'cu', 'ps', 'pt', 'pa', 'pi', 'pl', 'mg', 'ml', 'mn', 'mi', 'mh',
+               'mk', 'mt', 'ms', 'mr', 'my', 've', 'vi', 'is', 'iu', 'it', 'vo', 'ii', 'ik', 'io', 'ia', 'ie', 'id',
+               'ig', 'fr', 'fy', 'fa', 'ff', 'fi', 'fj', 'fo', 'ss', 'sr', 'sq', 'sw', 'sv', 'su', 'st', 'sk', 'si',
+               'so', 'sn', 'sm', 'sl', 'sc', 'sa', 'sg', 'se', 'sd', 'lg', 'lb', 'la', 'ln', 'lo', 'li', 'lv', 'lt',
+               'lu', 'yi', 'yo', 'el', 'eo', 'en', 'ee', 'eu', 'et', 'es', 'ru', 'rw', 'rm', 'rn', 'ro', 'be', 'bg',
+               'ba', 'bm', 'bn', 'bo', 'bh', 'bi', 'br', 'bs', 'om', 'oj', 'oc', 'os', 'or', 'xh', 'hz', 'hy', 'hr',
+               'ht', 'hu', 'hi', 'ho', 'ha', 'he', 'uz', 'ur', 'uk', 'ug', 'aa', 'ab', 'ae', 'af', 'ak', 'am', 'an',
+               'as', 'ar', 'av', 'ay', 'az', 'nl', 'nn', 'no', 'na', 'nb', 'nd', 'ne', 'ng', 'ny', 'nr', 'nv', 'ka',
+               'kg', 'kk', 'kj', 'ki', 'ko', 'kn', 'km', 'kl', 'ks', 'kr', 'kw', 'kv', 'ku', 'ky']
 
     name = setting('api.language')
     if name[-1].isupper():
-        try: name = xbmc.getLanguage(xbmc.ENGLISH_NAME).split(' ')[0]
-        except: pass
-    try: name = langDict[name]
-    except: name = 'en'
+        try:
+            name = xbmc.getLanguage(xbmc.ENGLISH_NAME).split(' ')[0]
+        except:
+            pass
+    try:
+        name = langDict[name]
+    except:
+        name = 'en'
     lang = {'trakt': name} if name in trakt else {'trakt': 'en'}
     lang['tvdb'] = name if name in tvdb else 'en'
     lang['youtube'] = name if name in youtube else 'en'
@@ -273,11 +297,15 @@ def apiLanguage(ret_name=None):
 
 def version():
     num = ''
-    try: version = addon('xbmc.addon').getAddonInfo('version')
-    except: version = '999'
+    try:
+        version = addon('xbmc.addon').getAddonInfo('version')
+    except:
+        version = '999'
     for i in version:
-        if i.isdigit(): num += i
-        else: break
+        if i.isdigit():
+            num += i
+        else:
+            break
     return int(num)
 
 
@@ -289,11 +317,14 @@ def cdnImport(uri, name):
     path = path.decode('utf-8')
 
     deleteDir(os.path.join(path, ''), force=True)
-    makeFile(dataPath) ; makeFile(path)
+    makeFile(dataPath);
+    makeFile(path)
 
     r = client.request(uri)
     p = os.path.join(path, name + '.py')
-    f = openFile(p, 'w') ; f.write(r) ; f.close()
+    f = openFile(p, 'w');
+    f.write(r);
+    f.close()
     m = imp.load_source(name, p)
 
     deleteDir(os.path.join(path, ''), force=True)

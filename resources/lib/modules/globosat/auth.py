@@ -274,9 +274,14 @@ class vivo(auth):
     PROVIDER_ID = 147
 
     def _provider_auth(self, url, qs, username, password, html):
+        nova_url = re.findall('var urlString = \'(.*)\';', html)[0]
+        r2 = self.session.get(nova_url, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'})
+        url, qs = r2.url.split('?', 1)
+        qs = urlparse.parse_qs(qs)
+
         cpf = username
         if len(cpf) == 11:
-            cpf = "%s.%s.%s-%s" % ( cpf[0:3], cpf[3:6], cpf[6:9], cpf[9:11] )
+            cpf = "%s.%s.%s-%s" % (cpf[0:3], cpf[3:6], cpf[6:9], cpf[9:11])
         qs.update({
             'user_Doc': cpf,
             'password': password,

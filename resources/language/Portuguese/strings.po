@@ -12,7 +12,7 @@ msgctxt "#31110"
 msgid "User"
 msgstr "Usuário"
 
-msgctxt "#31120"
+msgctxt "#31109"
 msgid "Password"
 msgstr "Senha"
 
@@ -48,9 +48,97 @@ msgctxt "#31116"
 msgid "All"
 msgstr "Todas"
 
+msgctxt "#31117"
+msgid "Recife"
+msgstr "Recífe"
+
+msgctxt "#31118"
+msgid "Salvador"
+msgstr "Salvador"
+
+msgctxt "#31119"
+msgid "Fortaleza"
+msgstr "Fortaleza"
+
+msgctxt "#31120"
+msgid "Aracaju"
+msgstr "Aracajú"
+
+msgctxt "#31121"
+msgid "Maceio"
+msgstr "Maceió"
+
+msgctxt "#31122"
+msgid "Cuiaba"
+msgstr "Cuiabá"
+
+msgctxt "#31123"
+msgid "Porto Alegre"
+msgstr "Porto Alegre"
+
+msgctxt "#31124"
+msgid "Florianopolis"
+msgstr "Florianópolis"
+
+msgctxt "#31125"
+msgid "Curitiba"
+msgstr "Curitiba"
+
+msgctxt "#31126"
+msgid "Vitoria"
+msgstr "Vitória"
+
+msgctxt "#31127"
+msgid "Goiania"
+msgstr "Goiânia"
+
+msgctxt "#31128"
+msgid "Campo Grande"
+msgstr "Campo Grande"
+
+msgctxt "#31129"
+msgid "Manaus"
+msgstr "Manaus"
+
+msgctxt "#31130"
+msgid "Belem"
+msgstr "Belém"
+
+msgctxt "#31131"
+msgid "Macapa"
+msgstr "Macapá"
+
+msgctxt "#31132"
+msgid "Palmas"
+msgstr "Palmas"
+
+msgctxt "#31133"
+msgid "Rio Branco"
+msgstr "Rio Branco"
+
+msgctxt "#31134"
+msgid "Teresina"
+msgstr "Teresina"
+
+msgctxt "#31135"
+msgid "Sao Luis"
+msgstr "São Luís"
+
+msgctxt "#31136"
+msgid "Joao Pessoa"
+msgstr "João Pessoa"
+
+msgctxt "#31137"
+msgid "Natal"
+msgstr "Natal"
+
 msgctxt "#31003"
 msgid "Proxy"
 msgstr "Proxy"
+
+msgctxt "#31004"
+msgid "Use Proxy"
+msgstr "Usar Proxy"
 
 msgctxt "#32003"
 msgid "Authentication Error. Invalid user or password."
@@ -148,6 +236,10 @@ msgctxt "#33203"
 msgid "Redirect"
 msgstr "Redirect"
 
+msgctxt "#33204"
+msgid "Redirect Buffered"
+msgstr "Redirect Buffered"
+
 msgctxt "#33301"
 msgid "Show Full Videos Only"
 msgstr "Mostrar apenas vídeos na íntegra"
@@ -203,3 +295,27 @@ msgstr "[I]- Favoritos -[/I]"
 msgctxt "#34015"
 msgid "[I]- History -[/I]"
 msgstr "[I]- Histórico -[/I]"
+
+msgctxt "#34100"
+msgid "Stream is not available yet!"
+msgstr "Vídeo ainda não disponível!"
+
+msgctxt "#34101"
+msgid "Video Info Not Found"
+msgstr "Informações do Vídeo Não Encontrada"
+
+msgctxt "#34102"
+msgid "Video Resource Not Found"
+msgstr "Recursos do Vídeo Não Encontrados"
+
+msgctxt "#34103"
+msgid "DRM encrypted content won't play in Kodi at this moment"
+msgstr "Contúdo protegido por Gerenciamento Digital de Direitos (DRM) não é compatível com o Kodi neste momento"
+
+msgctxt "#34104"
+msgid "Not Authorised"
+msgstr "Não Autorizado"
+
+msgctxt "#34105"
+msgid "Authentication Failed"
+msgstr "Falha na Autenticação"

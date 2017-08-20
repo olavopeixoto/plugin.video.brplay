@@ -6,23 +6,29 @@ from resources.lib.modules import control
 
 class schedule:
 
+    def __init__(self):
+        pass
+
     def get_schedule(self):
 
         # In Settings.xml - globo_affiliate
-        # "0" = Rio de Janeiro
-        # "1" = Sao Paulo
-        # "2" = Brasilia
-        # "3" = Belo Horizonte
-        # "4" = All
+        # "0" = All
+        # "1" = Rio de Janeiro
+        # "2" = Sao Paulo
+        # "3" = Brasilia
+        # "4" = Belo Horizonte
+        # "5" = Recife
 
-        if control.setting("globo_affiliate") == "1":              # "1" = Sao Paulo
+        if control.setting("globo_affiliate") == "2":
             affiliate_slug = "sao-paulo"
-        elif control.setting("globo_affiliate") == "2":            # "2" = Brasilia
+        elif control.setting("globo_affiliate") == "3":
             affiliate_slug = "distrito-federal"
-        elif control.setting("globo_affiliate") == "3":            # "3" = Belo Horizonte
+        elif control.setting("globo_affiliate") == "4":
             affiliate_slug = "belo-horizonte"
+        elif control.setting("globo_affiliate") == "5":
+            affiliate_slug = "recife"
         else:
-            affiliate_slug = "rio-de-janeiro"                      # "0" = Rio de Janeiro
+            affiliate_slug = "rio-de-janeiro"
 
         schedule_url = "https://globoplay.globo.com/v/xhr/views/schedule.json?affiliate_slug=%s" % affiliate_slug
 

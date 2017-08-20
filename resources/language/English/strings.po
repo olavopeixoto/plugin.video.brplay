@@ -12,7 +12,7 @@ msgctxt "#31110"
 msgid "User"
 msgstr ""
 
-msgctxt "#31120"
+msgctxt "#31109"
 msgid "Password"
 msgstr ""
 
@@ -48,8 +48,96 @@ msgctxt "#31116"
 msgid "All"
 msgstr ""
 
+msgctxt "#31117"
+msgid "Recife"
+msgstr ""
+
+msgctxt "#31118"
+msgid "Salvador"
+msgstr ""
+
+msgctxt "#31119"
+msgid "Fortaleza"
+msgstr ""
+
+msgctxt "#31120"
+msgid "Aracaju"
+msgstr ""
+
+msgctxt "#31121"
+msgid "Maceio"
+msgstr ""
+
+msgctxt "#31122"
+msgid "Cuiaba"
+msgstr ""
+
+msgctxt "#31123"
+msgid "Porto Alegre"
+msgstr ""
+
+msgctxt "#31124"
+msgid "Florianopolis"
+msgstr ""
+
+msgctxt "#31125"
+msgid "Curitiba"
+msgstr ""
+
+msgctxt "#31126"
+msgid "Vitoria"
+msgstr ""
+
+msgctxt "#31127"
+msgid "Goiania"
+msgstr ""
+
+msgctxt "#31128"
+msgid "Campo Grande"
+msgstr ""
+
+msgctxt "#31129"
+msgid "Manaus"
+msgstr ""
+
+msgctxt "#31130"
+msgid "Belem"
+msgstr ""
+
+msgctxt "#31131"
+msgid "Macapa"
+msgstr ""
+
+msgctxt "#31132"
+msgid "Palmas"
+msgstr ""
+
+msgctxt "#31133"
+msgid "Rio Branco"
+msgstr ""
+
+msgctxt "#31134"
+msgid "Teresina"
+msgstr ""
+
+msgctxt "#31135"
+msgid "Sao Luis"
+msgstr ""
+
+msgctxt "#31136"
+msgid "Joao Pessoa"
+msgstr ""
+
+msgctxt "#31137"
+msgid "Natal"
+msgstr ""
+
 msgctxt "#31003"
 msgid "Proxy"
+msgstr ""
+
+msgctxt "#31004"
+msgid "Use Proxy"
 msgstr ""
 
 msgctxt "#32003"
@@ -148,6 +236,10 @@ msgctxt "#33203"
 msgid "Redirect"
 msgstr ""
 
+msgctxt "#33204"
+msgid "Redirect Buffered"
+msgstr ""
+
 msgctxt "#33301"
 msgid "Show Full Videos Only"
 msgstr ""
@@ -185,7 +277,7 @@ msgid "Pick the desired bandwidth:"
 msgstr ""
 
 msgctxt "#34011"
-msgid "[I]- Highlights -[/I]"
+msgid "[I]- Featured -[/I]"
 msgstr ""
 
 msgctxt "#34012"
@@ -193,7 +285,7 @@ msgid "[I]- Most Watched -[/I]"
 msgstr ""
 
 msgctxt "#34013"
-msgid "[I]- Keep Watching -[/I]"
+msgid "[I]- Continue Watching -[/I]"
 msgstr ""
 
 msgctxt "#34014"
@@ -201,5 +293,29 @@ msgid "[I]- Favorites -[/I]"
 msgstr ""
 
 msgctxt "#34015"
-msgid "[I]- History -[/I]"
+msgid "[I]- Recent Videos -[/I]"
+msgstr ""
+
+msgctxt "#34100"
+msgid "Stream is not available yet!"
+msgstr ""
+
+msgctxt "#34101"
+msgid "Video Info Not Found"
+msgstr ""
+
+msgctxt "#34102"
+msgid "Video Resource Not Found"
+msgstr ""
+
+msgctxt "#34103"
+msgid "Content is DRM encrypted it won't play in Kodi at this moment"
+msgstr ""
+
+msgctxt "#34104"
+msgid "Not Authorised"
+msgstr ""
+
+msgctxt "#34105"
+msgid "Authentication Failed"
 msgstr ""

@@ -19,27 +19,68 @@ def get_live_channels():
     affiliate_temp = control.setting('globo_affiliate')
 
     # In settings.xml - globo_affiliate
-    # 0 = Rio de Janeiro 
-    # 1 = Sao Paulo
-    # 2 = Brasilia
-    # 3 = Belo Horizonte
-    # 4 = All
+    # 0 = All
+    # 1 = Rio de Janeiro
+    # 2 = Sao Paulo
+    # 3 = Brasilia
+    # 4 = Belo Horizonte
+    # 5 = Recife
 
-
-    if affiliate_temp == '4':
+    if affiliate_temp == '0':
         affiliate = 'All'
-    elif affiliate_temp == '1':
-        affiliate = 'Sao Paulo'
     elif affiliate_temp == '2':
-        affiliate = 'Brasilia'
+        affiliate = 'Sao Paulo'
     elif affiliate_temp == '3':
+        affiliate = 'Brasilia'
+    elif affiliate_temp == '4':
         affiliate = 'Belo Horizonte'
+    elif affiliate_temp == '5':
+        affiliate = 'Recife'
+    # elif affiliate_temp == '6':
+    #     affiliate = 'Salvador'
+    # elif affiliate_temp == '7':
+    #     affiliate = 'Fortaleza'
+    # elif affiliate_temp == '8':
+    #     affiliate = 'Aracaju'
+    # elif affiliate_temp == '9':
+    #     affiliate = 'Maceio'
+    # elif affiliate_temp == '10':
+    #     affiliate = 'Cuiaba'
+    # elif affiliate_temp == '11':
+    #     affiliate = 'Porto Alegre'
+    # elif affiliate_temp == '12':
+    #     affiliate = 'Florianopolis'
+    # elif affiliate_temp == '13':
+    #     affiliate = 'Curitiba'
+    # elif affiliate_temp == '14':
+    #     affiliate = 'Vitoria'
+    # elif affiliate_temp == '15':
+    #     affiliate = 'Goiania'
+    # elif affiliate_temp == '16':
+    #     affiliate = 'Campo Grande'
+    # elif affiliate_temp == '17':
+    #     affiliate = 'Manaus'
+    # elif affiliate_temp == '18':
+    #     affiliate = 'Belem'
+    # elif affiliate_temp == '19':
+    #     affiliate = 'Macapa'
+    # elif affiliate_temp == '20':
+    #     affiliate = 'Palmas'
+    # elif affiliate_temp == '21':
+    #     affiliate = 'Rio Branco'
+    # elif affiliate_temp == '22':
+    #     affiliate = 'Teresina'
+    # elif affiliate_temp == '23':
+    #     affiliate = 'Sao Luis'
+    # elif affiliate_temp == '24':
+    #     affiliate = 'Joao Pessoa'
+    # elif affiliate_temp == '25':
+    #     affiliate = 'Natal'
     else:
         affiliate = 'Rio de Janeiro'
 
-
-
     if affiliate == "All":
+        # affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Salvador','Fortaleza','Aracaju','Maceio','Cuiaba','Porto Alegre','Florianopolis','Curitiba','Vitoria','Goiania','Campo Grande','Manaus','Belem','Macapa','Palmas','Rio Branco','Teresina','Sao Luis','Joao Pessoa','Natal']
         affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife']
     else:
         affiliates = [affiliate]
@@ -52,12 +93,13 @@ def get_live_channels():
     return live
 
 def __append_result(fn, list, *args):
-        list.append(fn(*args))
+        item = fn(*args)
+        if item:
+            list.append(item)
 
 def __get_affiliate_live_channels(affiliate):
     liveglobo = get_globo_live_id()
 
-    # Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte
     if affiliate == "Sao Paulo":
         code, geo_position = "SP1", 'lat=-23.5505&long=-46.6333'
     elif affiliate == "Brasilia":
@@ -66,10 +108,55 @@ def __get_affiliate_live_channels(affiliate):
         code, geo_position = "BH", 'lat=-19.9245&long=-43.9352'
     elif affiliate == "Recife":
         code, geo_position = "PE1", 'lat=-8.0476&long=-34.8770'
+
+    # elif affiliate == "Salvador":
+    #     code, geo_position = "SAL", 'lat=-12.9722&long=-38.5014'
+    # elif affiliate == "Fortaleza":
+    #     code, geo_position = "CE1", 'lat=-3.7319&long=-38.5267'
+    # elif affiliate == "Aracaju":
+    #     code, geo_position = "SER", 'lat=-10.9472&long=-37.0731'
+    # elif affiliate == "Maceio":
+    #     code, geo_position = "MAC", 'lat=-9.6498&long=-35.7089'
+    # elif affiliate == "Cuiaba":
+    #     code, geo_position = "MT", 'lat=-15.6014&long=-56.0979'
+    # elif affiliate == "Porto Alegre":
+    #     code, geo_position = "RS1", 'lat=-30.0347&long=-51.2177'
+    # elif affiliate == "Florianopolis":
+    #     code, geo_position = "SC1", 'lat=-27.5949&long=-48.5482'
+    # elif affiliate == "Curitiba":
+    #     code, geo_position = "CUR", 'lat=-25.4244&long=-49.2654'
+    # elif affiliate == "Vitoria":
+    #     code, geo_position = "VIT", 'lat=-20.2976&long=-40.2958'
+    # elif affiliate == "Goiania":
+    #     code, geo_position = "GO01", 'lat=-16.6869&long=-49.2648'
+    # elif affiliate == "Campo Grande":
+    #     code, geo_position = "MS1", 'lat=-20.4697&long=-54.6201'
+    # elif affiliate == "Manaus":
+    #     code, geo_position = "MAN", 'lat=-3.1190&long=-60.0217'
+    # elif affiliate == "Belem":
+    #     code, geo_position = "BEL", 'lat=-1.4558&long=-48.4902'
+    # elif affiliate == "Macapa":
+    #     code, geo_position = "AMP", 'lat=-0.0356&long=-51.0705'
+    # elif affiliate == "Palmas":
+    #     code, geo_position = "PAL", 'lat=-10.2491&long=-48.3243'
+    # elif affiliate == "Rio Branco":
+    #     code, geo_position = "ACR", 'lat=-9.9754&long=-67.8249'
+    # elif affiliate == "Teresina":
+    #     code, geo_position = "TER", 'lat=-5.0920&long=-42.8038'
+    # elif affiliate == "Sao Luis":
+    #     code, geo_position = "MA1", 'lat=-2.5391&long=-44.2829'
+    # elif affiliate == "Joao Pessoa":
+    #     code, geo_position = "JP", 'lat=-7.1195&long=-34.8450'
+    # elif affiliate == "Natal":
+    #     code, geo_position = "NAT", 'lat=-5.7793&long=-35.2009'
     else:
         code, geo_position = "RJ", 'lat=-22.900&long=-43.172'
 
     live_program = __get_live_program(code)
+
+    if not live_program:
+        return None
+
     program_description = get_program_description(live_program['program_id_epg'], live_program['program_id'], code)
 
     control.log("program_description: %s" % repr(program_description))
@@ -114,7 +201,12 @@ def __get_live_program(affiliate='RJ'):
     headers = {'Accept-Encoding': 'gzip'}
     url = 'https://api.globoplay.com.br/v1/live/%s?api_key=%s' % (affiliate, GLOBOPLAY_APIKEY)
 
-    live = client.request(url, headers=headers)['live']
+    response = client.request(url, headers=headers)
+
+    if not 'live' in response:
+        return None
+
+    live = response['live']
 
     return {
         'poster': live['poster'],

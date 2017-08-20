@@ -74,7 +74,7 @@ class Player(xbmc.Player):
         poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
-        url, mime_type, stopEvent = hlshelper.pickBandwidth(url)
+        url, mime_type, stopEvent = hlshelper.pick_bandwidth(url)
         control.log("Resolved URL: %s" % repr(url))
 
         item = control.item(path=url)
@@ -146,8 +146,7 @@ class Player(xbmc.Player):
                 authenticator.clearCredentials()
                 return self.__get_globo_id(id)
             else:
-                control.infoDialog(control.lang(31200).encode('utf-8'),
-                                   heading=u'Não Autorizado: %s' % json_response['motivo'], sound=True, icon='ERROR')
+                control.infoDialog(message=u'%s: %s' % (control.lang(34104).encode('utf-8'), json_response['motivo']), sound=True, icon='ERROR')
                 control.idle()
                 sys.exit()
                 return None
@@ -160,8 +159,7 @@ class Player(xbmc.Player):
         playlistJson = client.request(playlistUrl % id, headers={"Accept-Encoding": "gzip"})
 
         if not 'videos' in playlistJson or len(playlistJson['videos']) == 0:
-            control.infoDialog(control.lang(31200).encode('utf-8'), heading=str('Video Info Not Found'), sound=True,
-                               icon='ERROR')
+            control.infoDialog(message=control.lang(34101).encode('utf-8'), sound=True, icon='ERROR')
             return None
 
         playlistJson = playlistJson['videos'][0]
@@ -172,8 +170,7 @@ class Player(xbmc.Player):
                 break
 
         if resource == None:
-            control.infoDialog(control.lang(31200).encode('utf-8'), heading=str('Video Resource Not Found'), sound=True,
-                               icon='ERROR')
+            control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
             return None
 
         resource_id = resource['_id']
@@ -196,9 +193,7 @@ class Player(xbmc.Player):
         control.log("HASH JSON: %s" % repr(hashJson))
 
         if 'http_status_code' in hashJson and hashJson['http_status_code'] == 403:
-            control.infoDialog(control.lang(31200).encode('utf-8'),
-                               heading=str('Authentication Failed: %s' % hashJson['message']),
-                               sound=True, icon='ERROR')
+            control.infoDialog(message=str('%s: %s' % (control.lang(34105).encode('utf-8'), hashJson['message'])), sound=True, icon='ERROR')
             return None
 
         return {
