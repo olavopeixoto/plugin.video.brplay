@@ -39,6 +39,7 @@ def get_globoplay_channels():
             'playable': 'false',
             'plot': None,
             'id': 196,
+            'adult': False
         })
 
     return channels

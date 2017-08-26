@@ -40,10 +40,10 @@ def get_authorized_channels():
     channel_ids = []
     for pkg in pkgs:
         for channel in pkg['canais']:
-            if control.setting('show_adult') == 'false' and channel['slug'] == 'sexyhot':
-                continue
-
-            if channel['id_cms'] == 0 and channel['slug'] != 'combate' and channel['slug'] != 'sexyhot' or channel['slug'] == 'telecine-zone' :
+            if channel['id_cms'] == 0 and channel['slug'] != 'combate' and channel['slug'] != 'sexyhot'\
+                    or channel['slug'] == 'telecine-zone'\
+                    or channel['slug'] == 'megapix'\
+                    or channel['slug'] == 'telecine':
                 continue
 
             elif "vod" in channel['acls'] and channel['id_globo_videos'] not in channel_ids:
@@ -54,7 +54,8 @@ def get_authorized_channels():
                     "id_cms": channel['id_cms'],
                     "logo": channel['logo_fundo_claro'],
                     "name": channel['nome'],
-                    "slug": channel['slug']
+                    "slug": channel['slug'],
+                    "adult": channel['slug'] == 'sexyhot'
                 })
 
     return channels

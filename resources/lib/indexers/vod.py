@@ -27,7 +27,11 @@ class Vod:
 
         channels = cache.get(self.__get_vod_channels, 360, table="channels")
 
+        if not control.show_adult_content:
+            channels = [channel for channel in channels if not channel["adult"]]
+
         self.channel_directory(channels)
+
         return channels
 
     def __get_vod_channels(self):

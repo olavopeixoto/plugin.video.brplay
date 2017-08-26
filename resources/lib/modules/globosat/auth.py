@@ -103,7 +103,7 @@ class auth:
         })
         self._save_credentials()
 
-        if sessionId != None:
+        if sessionId is not None:
             control.log('SESSION_KEY: %s' % sessionId)
         control.log('TOKEN: %s' % token)
 
@@ -126,7 +126,6 @@ class auth:
             return credentials[credentials['b64globosatplay']]
         except Exception as ex:
             raise Exception('There was a problem in the authetication process. - %s' % repr(ex))
-
 
     def _authenticate(self, provider_id, username, password, select_profile):
 
@@ -352,7 +351,7 @@ class orm_cabo(auth):
     PROVIDER_ID = 138
 
     def _provider_auth(self, url, qs, username, password, html):
-        
+
         qs.update({
             'cpf': username,
             'senha': password

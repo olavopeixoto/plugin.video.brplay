@@ -173,6 +173,7 @@ cookieFile = os.path.join(tempPath, 'cookies.dat')
 
 proxy_url = xbmcaddon.Addon().getSetting('proxy_url') if xbmcaddon.Addon().getSetting('use_proxy') == 'true' else None
 
+show_adult_content = xbmcaddon.Addon().getSetting('show_adult') == 'true'
 
 def getKodiVersion():
     return infoLabel("System.BuildVersion").split(' ')[0]

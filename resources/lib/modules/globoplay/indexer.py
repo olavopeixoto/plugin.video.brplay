@@ -3,6 +3,7 @@
 class Indexer:
 
     def get_live_channels(self):
+        
         import scraper_live as scraper
 
         live = scraper.get_live_channels()
@@ -10,6 +11,7 @@ class Indexer:
         return live
 
     def get_vod(self):
+
         import scraper_vod as scraper
         vod = scraper.get_globoplay_channels()
 
@@ -19,18 +21,21 @@ class Indexer:
         return vod
 
     def get_channel_categories(self):
+
         import scraper_vod as scraper
         categories, programs = scraper.get_globo_programs()
 
         return categories
 
     def get_extra_categories(self):
+
         import scraper_vod as scraper
         categories = scraper.get_extra_sections()
 
         return categories
 
     def get_category_programs(self, category):
+
         import scraper_vod as scraper
         categories, category_programs = scraper.get_globo_programs()
 
@@ -40,6 +45,7 @@ class Indexer:
         return next(category_program for category_program in category_programs if category_program['category'] == category)['programs']
 
     def get_videos_by_category(self, category, page=1):
+
         import scraper_vod as scraper
         episodes, next_page, total_pages = scraper.get_globo_extra_episodes(category, page)
 
@@ -49,6 +55,7 @@ class Indexer:
         return episodes, next_page, total_pages
 
     def get_videos_by_program(self, program_id, page=1):
+
         import scraper_vod as scraper
         from resources.lib.modules import control
 
@@ -60,6 +67,7 @@ class Indexer:
         return episodes, nextpage, total_pages, days
 
     def get_videos_by_program_date(self, program_id, date):
+
         import scraper_vod as scraper
 
         episodes = scraper.get_globo_episodes_by_date(program_id, date)
@@ -70,6 +78,7 @@ class Indexer:
         return episodes
 
     def get_program_dates(self, program_id):
+
         import scraper_vod as scraper
 
         days = scraper.get_program_dates(program_id)
@@ -77,6 +86,7 @@ class Indexer:
         return days
 
     def search(self, q, page=1):
+
         import scraper_vod as scraper
 
         return scraper.search(q, page)
