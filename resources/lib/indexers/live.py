@@ -35,10 +35,10 @@ class Live:
         threads = []
 
         if self.__isGloboplayAvailable():
-            threads.append(workers.Thread(self.appendResult, globoplay.Indexer().get_live_channels, live))
+            threads.append(workers.Thread(self.append_result, globoplay.Indexer().get_live_channels, live))
 
         if self.__isGlobosatAvailable():
-            threads.append(workers.Thread(self.appendResult, globosat.Indexer().get_live, live))
+            threads.append(workers.Thread(self.append_result, globosat.Indexer().get_live, live))
 
         [i.start() for i in threads]
         [i.join() for i in threads]
@@ -72,10 +72,10 @@ class Live:
 
         return live
 
-    def appendResult(self, fn, list, *args):
+    def append_result(self, fn, list, *args):
         list += fn(*args)
 
-    def getSubitems(self, meta):
+    def get_subitems(self, meta):
         live = globosat.Indexer().get_pfc(meta)
 
         self.channel_directory(live)

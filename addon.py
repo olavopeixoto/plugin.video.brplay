@@ -87,7 +87,7 @@ try:
 
     elif action == 'vodChannels':
         from resources.lib.indexers import vod
-        vod.Vod().get_vod_channels()
+        vod.Vod().get_vod_channels_directory()
 
     ## COMMON
     elif action == 'showdates':
@@ -105,7 +105,7 @@ try:
     #PREMIER FC
     elif action == 'playlive' and isFolder == True or isFolder == 'True':
         from resources.lib.indexers import live
-        live.Live().getSubitems(metaJson)
+        live.Live().get_subitems(metaJson)
 
     #LIVE CHANNELS
     elif action == 'playlive' and provider == 'globosat':

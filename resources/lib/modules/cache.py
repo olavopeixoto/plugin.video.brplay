@@ -45,9 +45,9 @@ def get(function, timeout, *args, **table):
 
     # try:
     r = function(*args)
-    if (r == None or r == []) and not response == None:
+    if (r is None or r == []) and response is not None:
         return response
-    elif (r == None or r == []):
+    elif r is None or r == []:
         return r
     # except:
     #     return

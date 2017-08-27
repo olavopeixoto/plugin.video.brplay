@@ -23,14 +23,18 @@ class Vod:
     def __init__(self):
         self.systime = (datetime.datetime.utcnow()).strftime('%Y%m%d%H%M%S%f')
 
+    def get_vod_channels_directory(self):
+
+        channels = self.get_vod_channels()
+
+        self.channel_directory(channels)
+
     def get_vod_channels(self):
 
         channels = cache.get(self.__get_vod_channels, 360, table="channels")
 
         if not control.show_adult_content:
             channels = [channel for channel in channels if not channel["adult"]]
-
-        self.channel_directory(channels)
 
         return channels
 

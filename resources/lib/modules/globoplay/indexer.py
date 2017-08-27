@@ -3,7 +3,7 @@
 class Indexer:
 
     def get_live_channels(self):
-        
+
         import scraper_live as scraper
 
         live = scraper.get_live_channels()
