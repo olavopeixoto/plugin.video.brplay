@@ -24,19 +24,17 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
     try:
         handlers = []
 
-        if not proxy == None:
+        if not proxy is None:
             control.log("proxy: %s" % proxy)
             handlers += [urllib2.ProxyHandler(proxy), urllib2.HTTPHandler]
             opener = urllib2.build_opener(*handlers)
             opener = urllib2.install_opener(opener)
-
 
         if output == 'cookie' or output == 'extended' or not close == True:
             cookies = cookielib.LWPCookieJar()
             handlers += [urllib2.HTTPHandler(), urllib2.HTTPSHandler(), urllib2.HTTPCookieProcessor(cookies)]
             opener = urllib2.build_opener(*handlers)
             opener = urllib2.install_opener(opener)
-
 
         try:
             if sys.version_info < (2, 7, 9): raise Exception()
@@ -49,13 +47,11 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         except:
             pass
 
-
         try: headers.update(headers)
         except: headers = {}
         if 'User-Agent' in headers:
             pass
         elif not mobile == True:
-            #headers['User-Agent'] = agent()
             headers['User-Agent'] = cache.get(randomagent, 1)
         else:
             headers['User-Agent'] = 'Apple-iPhone/701.341'
@@ -75,7 +71,6 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             pass
         elif not cookie == None:
             headers['Cookie'] = printCookieDict(cookie) if isinstance(cookie, dict) else cookie
-
 
         if redirect == False:
 
@@ -155,7 +150,6 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             if close == True: response.close()
             return result
 
-
         if limit == '0':
             result = response.read(224 * 1024)
         elif not limit == None:
@@ -167,7 +161,6 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         except: encoding = None
         if encoding == 'gzip':
             result = gzip.GzipFile(fileobj=StringIO.StringIO(result)).read()
-
 
         if 'sucuri_cloudproxy_js' in result:
             su = sucuri().get(result)
@@ -191,7 +184,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
                 result = gzip.GzipFile(fileobj=StringIO.StringIO(result)).read()
 
         if 'application/json' in response.headers.get('content-type') or 'text/javascript' in response.headers.get('content-type'):
-            #control.log("response: %s" % result)
+            control.log("response: %s" % result)
             return json.loads(result)
 
         if output == 'extended':
@@ -208,7 +201,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             return result
     except Exception, e:
         traceback.print_exc()
-        control.log("Request ERROR: %s" % e.message)
+        control.log("Request ERROR: %s" % str(e))
         return
 
 def printCookieDict(cookie_dict):

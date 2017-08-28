@@ -42,27 +42,15 @@ class Vod:
 
         channels = []
 
-        if self.__isGlobosatAvailable():
+        if control.is_globosat_available():
             channels += globosat.Indexer().get_vod()
 
-        if self.__isGloboplayAvailable():
+        if control.is_globoplay_available():
              channels += globoplay.Indexer().get_vod()
 
         channels = sorted(channels, key=lambda k: k['name'])
 
         return channels
-
-    def __isGlobosatAvailable(self):
-        username = control.setting('globosat_username')
-        password = control.setting('globosat_password')
-
-        return username and password and username.strip() != '' and password.strip() != ''
-
-    def __isGloboplayAvailable(self):
-        username = control.setting('globoplay_username')
-        password = control.setting('globoplay_password')
-
-        return username and password and username.strip() != '' and password.strip() != ''
 
     def get_channel_programs(self, channel_id):
         programs = cache.get(globosat.Indexer().get_channel_programs, 1, channel_id)
@@ -283,10 +271,10 @@ class Vod:
 
         threads = []
 
-        if self.__isGloboplayAvailable():
+        if control.is_globoplay_available():
             threads.append(workers.Thread(self.add_search_results, globoplay.Indexer().search, results, q, page))
 
-        if self.__isGlobosatAvailable():
+        if control.is_globosat_available():
             threads.append(workers.Thread(self.add_search_results, globosat.Indexer().search, results, q, page))
 
         [i.start() for i in threads]

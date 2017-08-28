@@ -25,8 +25,8 @@ class Indexer:
 
         return live
 
-    def is_in(self, live, channels):
-        for channel in channels:
+    def is_in(self, live, authorized_channels):
+        for channel in authorized_channels:
             if channel['id'] == live['channel_id']:
                 return True
 

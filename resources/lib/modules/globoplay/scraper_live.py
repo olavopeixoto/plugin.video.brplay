@@ -5,14 +5,18 @@ from resources.lib.modules import client
 from resources.lib.modules import util
 from resources.lib.modules import workers
 import datetime,re
+from sqlite3 import dbapi2 as database
+import time
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
 GLOBO_FANART = control.addonFanart()
 
 GLOBOPLAY_APIKEY = '35978230038e762dd8e21281776ab3c9'
 
+
 def get_globo_live_id():
     return 4452349
+
 
 def get_live_channels():
 
@@ -92,10 +96,12 @@ def get_live_channels():
 
     return live
 
+
 def __append_result(fn, list, *args):
         item = fn(*args)
         if item:
             list.append(item)
+
 
 def __get_affiliate_live_channels(affiliate):
     liveglobo = get_globo_live_id()
@@ -227,8 +233,6 @@ def get_program_description(program_id_epg, program_id, affiliate='RJ'):
     return next(iter(sorted((slot for slot in day_schedule if ((slot['id_programa'] == program_id_epg and slot['id_programa'] is not None) or (slot['id_webmedia'] == program_id and slot['id_webmedia'] is not None)) and slot['datetimeutc'] < datetime.datetime.utcnow()), key=lambda x: x['datetimeutc'], reverse=True)), {})
 
 
-from sqlite3 import dbapi2 as database
-import time
 def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
     control.makeFile(control.dataPath)
     dbcon = database.connect(control.cacheFile)
@@ -252,9 +256,9 @@ def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
 
     control.log("Fetching FullDaySchedule for %s: %s" % (affiliate, date_str))
     r = __get_full_day_schedule(date_str, affiliate)
-    if (r == None or r == []) and not response == None:
+    if (r is None or r == []) and not response is None:
         return response
-    elif (r == None or r == []):
+    elif r is None or r == []:
         return []
 
     r_str = repr(r)
@@ -333,7 +337,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             'duration': util.get_total_seconds(next_start - program_datetime)
         }
 
-        if showtitle and len(showtitle) > 0 :
+        if showtitle and len(showtitle) > 0:
             item.update({
                 'tvshowtitle': showtitle
             })

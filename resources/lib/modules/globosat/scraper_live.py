@@ -125,6 +125,7 @@ def get_premiere_live_channels():
             'clearlogo': PREMIERE_LOGO,
             'fanart': PREMIERE_FANART,
             'thumb': PREMIERE_FANART,
+            'channel_id': 1995
         }, offline)]
 
     if len(live_games) > 1:

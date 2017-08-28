@@ -3,6 +3,7 @@
 import json
 import re
 import sys
+import urllib
 
 import auth
 from resources.lib.modules import util
@@ -12,13 +13,14 @@ from resources.lib.modules import hlshelper
 
 import xbmc
 import threading
+import scraper_live
 
-HISTORY_URL = 'https://api.user.video.globo.com/watch_history/?provider=gplay'
+HISTORY_URL_API = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s'
 
 
 class Player(xbmc.Player):
     def __init__(self):
-        super(xbmc.Player, self).__init__(self)
+        super(xbmc.Player, self).__init__()
         self.stopPlayingEvent = None
         self.url = None
         self.isLive = False
@@ -99,6 +101,16 @@ class Player(xbmc.Player):
         self.stopPlayingEvent = threading.Event()
         self.stopPlayingEvent.clear()
 
+        provider = control.setting('globosat_provider').lower().replace(' ', '_')
+        username = control.setting('globosat_username')
+        password = control.setting('globosat_password')
+
+        if not username or not password or username == '' or password == '':
+            return []
+
+        authenticator = getattr(auth, provider)()
+        token, sessionKey = authenticator.get_token(username, password)
+
         last_time = 0.0
         while not self.stopPlayingEvent.isSet():
             if control.monitor.abortRequested():
@@ -110,7 +122,7 @@ class Player(xbmc.Player):
                 if current_time - last_time > 10 or (last_time == 0 and current_time > 1):
                     last_time = current_time
                     percentage_watched = current_time / total_time if total_time > 0 else 1.0 / 1000000.0
-                    self.save_video_progress(info['credentials'], info['program_id'], info['id'], current_time / 1000.0,
+                    self.save_video_progress(token, info['program_id'], info['id'], current_time / 1000.0,
                                              fully_watched=0.9 < percentage_watched <= 1)
             control.sleep(1000)
 
@@ -201,19 +213,21 @@ class Player(xbmc.Player):
             "credentials": credentials
         }
 
-    def save_video_progress(self, credentials, program_id, video_id, milliseconds_watched, fully_watched=False):
+    def save_video_progress(self, token, program_id, video_id, milliseconds_watched, fully_watched=False):
 
         post_data = {
-            'milliseconds_watched': milliseconds_watched,
-            'resource_id': video_id,
-            'program_id': program_id,
-            'fully_watched': fully_watched
+            'watched_seconds': int(round((milliseconds_watched * 1000.0))),
+            'id': video_id
         }
 
-        control.log("SAVING HISTORY: %s" % repr(post_data))
-
-        client.request(HISTORY_URL, error=True, cookie=credentials, mobile=True, headers={
+        url = HISTORY_URL_API % token
+        headers = {
             "Accept-Encoding": "gzip",
             "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Globo Play/0 (iPhone)"
-        }, post=post_data)
+            "version": "2",
+            "Authorization": scraper_live.GLOBOSAT_API_AUTHORIZATION
+        }
+
+        post_data = urllib.urlencode(post_data)
+
+        client.request(url, error=True, mobile=True, headers=headers, post=post_data)
