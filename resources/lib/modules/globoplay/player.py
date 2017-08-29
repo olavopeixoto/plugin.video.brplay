@@ -307,12 +307,10 @@ class Player(xbmc.Player):
 
         post_data = {
             'resource_id': video_id,
-            'milliseconds_watched': milliseconds_watched,
+            'milliseconds_watched': int(round(milliseconds_watched)),
             'program_id': program_id,
             'fully_watched': fully_watched
         }
-
-        control.log("SAVING HISTORY: %s" % repr(post_data))
 
         client.request(HISTORY_URL, error=True, cookie=credentials, mobile=True, headers={
             "Accept-Encoding": "gzip",
