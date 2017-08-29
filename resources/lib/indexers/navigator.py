@@ -22,7 +22,8 @@ class navigator:
 
         if control.is_globosat_available():
             self.addDirectoryItem(32080, 'featured', 'featured.png', 'DefaultMovies.png')
-            self.addDirectoryItem(32090, 'favorites', 'featured.png', 'DefaultMovies.png')
+            self.addDirectoryItem(32090, 'favorites', 'favorites.png', 'DefaultMovies.png')
+            self.addDirectoryItem(32095, 'watchlater', 'userlists.png', 'DefaultMovies.png')
 
         self.addDirectoryItem(32010, 'searchMenu', 'search.png', 'DefaultMovies.png')
 
@@ -61,6 +62,7 @@ class navigator:
 
     def cacheAuth(self):
         import resources.lib.modules.globosat.scraper_vod as scraper_vod
+
         cache.get(scraper_vod.get_authorized_channels, 1)
 
     def addDirectoryItem(self, name, query, thumb, icon, queue=False, isAction=True, isFolder=True):

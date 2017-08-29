@@ -196,6 +196,14 @@ msgctxt "#32074"
 msgid "Remove from Globosat favorites"
 msgstr "Remover dos Favoritos do Globosat"
 
+msgctxt "#32075"
+msgid "Add to Globosat Watch Later"
+msgstr "Adicionar ao Assistir Mais Tarde do Globosat"
+
+msgctxt "#32076"
+msgid "Remove from Globosat Watch Later"
+msgstr "Remover do Assistir Mais Tarde do Globosat"
+
 msgctxt "#32080"
 msgid "Featured"
 msgstr "Destaques Globosat"
@@ -203,6 +211,10 @@ msgstr "Destaques Globosat"
 msgctxt "#32090"
 msgid "Favorites"
 msgstr "Favoritos Globosat"
+
+msgctxt "#32095"
+msgid "Watch Later"
+msgstr "Assistir Mais Tarde Globosat"
 
 msgctxt "#33001"
 msgid "Streaming"

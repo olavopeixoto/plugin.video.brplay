@@ -124,9 +124,32 @@ class Vod:
         from resources.lib.modules.globosat import scraper_vod
         scraper_vod.add_favorites(video_id)
 
+        control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
+
     def del_favorites(self, video_id):
         from resources.lib.modules.globosat import scraper_vod
         scraper_vod.del_favorites(video_id)
+
+        control.refresh()
+        control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
+
+    def get_watch_later(self):
+        from resources.lib.modules.globosat import scraper_vod
+        favorites = scraper_vod.get_watch_later()
+        self.episodes_directory(favorites, provider='globosat', is_watchlater=True)
+
+    def add_watch_later(self, video_id):
+        from resources.lib.modules.globosat import scraper_vod
+        scraper_vod.add_watch_later(video_id)
+
+        control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
+
+    def del_watch_later(self, video_id):
+        from resources.lib.modules.globosat import scraper_vod
+        scraper_vod.del_watch_later(video_id)
+
+        control.refresh()
+        control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
 
     def get_programs_by_categories(self, category):
         categories = cache.get(globoplay.Indexer().get_category_programs, 1, category)
@@ -388,7 +411,7 @@ class Vod:
         results = fn(*args)
         list += results
 
-    def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None, is_favorite=False):
+    def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None, is_favorite=False, is_watchlater=False):
         if items is None or len(items) == 0: control.idle() ; sys.exit()
 
         sysaddon = sys.argv[0]
@@ -398,6 +421,8 @@ class Vod:
         refreshMenu = control.lang(32072).encode('utf-8')
         addFavorite = control.lang(32073).encode('utf-8')
         removeFavorite = control.lang(32074).encode('utf-8')
+        addWatchLater = control.lang(32075).encode('utf-8')
+        removeWatchLater = control.lang(32076).encode('utf-8')
 
         if days:
             # 34005 = "By Date"
@@ -478,6 +503,10 @@ class Vod:
                         cm.append((removeFavorite, 'RunPlugin(%s?action=delFavorites&id_globo_videos=%s)' % (sysaddon,video['id'])))
                     else:
                         cm.append((addFavorite, 'RunPlugin(%s?action=addFavorites&id_globo_videos=%s)' % (sysaddon,video['id'])))
+                    if is_watchlater:
+                        cm.append((removeWatchLater, 'RunPlugin(%s?action=delwatchlater&id_globo_videos=%s)' % (sysaddon,video['id'])))
+                    else:
+                        cm.append((addWatchLater, 'RunPlugin(%s?action=addwatchlater&id_globo_videos=%s)' % (sysaddon,video['id'])))
                 item.addContextMenuItems(cm)
 
                 item.setMimeType("application/vnd.apple.mpegurl")

@@ -51,7 +51,7 @@ try:
 
     #Actions
 
-    if action == None:
+    if action is None:
         from resources.lib.indexers import navigator
         navigator.navigator().root()
 
@@ -94,6 +94,21 @@ try:
         from resources.lib.indexers import vod
 
         vod.Vod().del_favorites(id_globo_videos)
+
+    elif action == 'watchlater':
+        from resources.lib.indexers import vod
+
+        vod.Vod().get_watch_later()
+
+    elif action == 'addwatchlater':
+        from resources.lib.indexers import vod
+
+        vod.Vod().add_watch_later(id_globo_videos)
+
+    elif action == 'delwatchlater':
+        from resources.lib.indexers import vod
+
+        vod.Vod().del_watch_later(id_globo_videos)
 
     elif action == 'liveChannels':
         from resources.lib.indexers import live

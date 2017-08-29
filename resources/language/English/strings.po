@@ -196,12 +196,24 @@ msgctxt "#32074"
 msgid "Remove from Globosat favorites"
 msgstr ""
 
+msgctxt "#32075"
+msgid "Add to Globosat Watch Later"
+msgstr ""
+
+msgctxt "#32076"
+msgid "Remove from Globosat Watch Later"
+msgstr ""
+
 msgctxt "#32080"
 msgid "Featured"
 msgstr ""
 
 msgctxt "#32090"
 msgid "Favorites"
+msgstr ""
+
+msgctxt "#32095"
+msgid "Watch Later"
 msgstr ""
 
 msgctxt "#33001"
