@@ -80,6 +80,20 @@ try:
 
         vod.Vod().get_extras()
 
+    elif action == 'favorites':
+        from resources.lib.indexers import vod
+
+        vod.Vod().get_favorites()
+
+    elif action == 'addFavorites':
+        from resources.lib.indexers import vod
+
+        vod.Vod().add_favorites(id_globo_videos)
+
+    elif action == 'delFavorites':
+        from resources.lib.indexers import vod
+
+        vod.Vod().del_favorites(id_globo_videos)
 
     elif action == 'liveChannels':
         from resources.lib.indexers import live

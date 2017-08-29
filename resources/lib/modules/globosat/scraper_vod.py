@@ -3,6 +3,9 @@
 from resources.lib.modules import control
 from resources.lib.modules import client
 import auth
+import auth_helper
+import urllib
+import requests
 
 GLOBOSAT_API_URL = 'https://api.vod.globosat.tv/globosatplay'
 GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
@@ -11,20 +14,16 @@ GLOBOSAT_SEARCH = 'https://globosatplay.globo.com/busca/pagina/%s.json?q=%s'
 GLOBOSAT_FEATURED = 'https://api.vod.globosat.tv/globosatplay/featured.json'
 GLOBOSAT_TRACKS = 'https://api.vod.globosat.tv/globosatplay/tracks.json'
 GLOBOSAT_TRACKS_ITEM = 'https://api.vod.globosat.tv/globosatplay/tracks/%s.json'
+GLOBOSAT_FAVORITES = 'https://api.vod.globosat.tv/globosatplay/watch_favorite.json?token=%s&page=%s&per_page=%s'
+GLOBOSAT_ADD_FAVORITES = 'https://api.vod.globosat.tv/globosatplay/watch_favorite.json?token=%s'
+GLOBOSAT_DEL_FAVORITES = 'https://api.vod.globosat.tv/globosatplay/watch_favorite.json?token=%s&id=%s'
+GLOBOSAT_WATCH_LATER = 'https://api.vod.globosat.tv/globosatplay/watch_later.json?token=%s'
 
 artPath = control.artPath()
 
 
 def get_authorized_channels():
-    provider = control.setting('globosat_provider').lower().replace(' ', '_')
-    username = control.setting('globosat_username')
-    password = control.setting('globosat_password')
-
-    if not username or not password or username == '' or password == '':
-        return []
-
-    authenticator = getattr(auth, provider)()
-    token, sessionKey = authenticator.get_token(username, password)
+    token = auth_helper.get_globosat_token()
 
     if not token:
         return []
@@ -280,3 +279,88 @@ def get_track_list(id):
         videos.append(video)
 
     return videos
+
+
+def get_favorites(page=1):
+    headers = {
+        'Accept-Encoding': 'gzip',
+        'Authorization': GLOBOSAT_API_AUTHORIZATION,
+        'Version': 2
+    }
+
+    token = auth_helper.get_globosat_token()
+
+    favorites_list = client.request(GLOBOSAT_FAVORITES % (token, page, 50), headers=headers)
+
+    results = favorites_list['data']
+
+    while favorites_list['next'] is not None:
+        favorites_list = client.request(favorites_list['next'], headers=headers)
+        results += favorites_list['data']
+
+    videos = []
+
+    for item in results:
+
+        video = {
+            'id': item['id_globo_videos'],
+            'label': item['channel']['title'] + (' - ' + item['program']['title'] if 'program' in item and item['program'] else '') + ' - ' + item['title'],
+            'title': item['title'],
+            'tvshowtitle': item['program']['title'] if 'program' in item and item['program'] else item['title'],
+            'studio': item['channel']['title'],
+            'plot': item['description'],
+            'tagline': item['subtitle'],
+            'duration': float(item['duration_in_milliseconds']) / 1000.0,
+            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel'][
+                'color_logo'],
+            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else
+            item['channel']['color_logo'],
+            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item[
+                'card_image'],
+            'thumb': item['thumb_image'],
+            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item[
+                'background_image_tv_cropped'],
+            'mediatype': 'episode',
+            'brplayprovider': 'globosat'
+        }
+
+        videos.append(video)
+
+    return videos
+
+
+def add_favorites(video_id):
+    post_data = {
+        'id': video_id
+    }
+
+    token = auth_helper.get_globosat_token()
+
+    url = GLOBOSAT_ADD_FAVORITES % token
+    headers = {
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "version": "2",
+        "Authorization": GLOBOSAT_API_AUTHORIZATION
+    }
+
+    post_data = urllib.urlencode(post_data)
+
+    client.request(url, headers=headers, post=post_data)
+
+
+def del_favorites(video_id):
+
+    token = auth_helper.get_globosat_token()
+
+    url = GLOBOSAT_DEL_FAVORITES % (token, video_id)
+    headers = {
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "version": "2",
+        "Authorization": GLOBOSAT_API_AUTHORIZATION
+    }
+
+    requests.delete(url=url, headers=headers)
+
+    control.log("--- REMOVE FAV: %s" % video_id)

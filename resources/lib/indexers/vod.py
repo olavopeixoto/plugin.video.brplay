@@ -115,6 +115,19 @@ class Vod:
         featured = cache.get(scraper_vod.get_featured, 1)
         self.episodes_directory(featured, provider='globosat')
 
+    def get_favorites(self):
+        from resources.lib.modules.globosat import scraper_vod
+        favorites = scraper_vod.get_favorites()
+        self.episodes_directory(favorites, provider='globosat', is_favorite=True)
+
+    def add_favorites(self, video_id):
+        from resources.lib.modules.globosat import scraper_vod
+        scraper_vod.add_favorites(video_id)
+
+    def del_favorites(self, video_id):
+        from resources.lib.modules.globosat import scraper_vod
+        scraper_vod.del_favorites(video_id)
+
     def get_programs_by_categories(self, category):
         categories = cache.get(globoplay.Indexer().get_category_programs, 1, category)
         self.programs_directory(categories)
@@ -371,14 +384,20 @@ class Vod:
         results, next_page, total = fn(*args)
         list += results
 
-    def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None):
-        if items == None or len(items) == 0: control.idle() ; sys.exit()
+    def add_results(self, fn, list, *args):
+        results = fn(*args)
+        list += results
+
+    def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None, is_favorite=False):
+        if items is None or len(items) == 0: control.idle() ; sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
 
         # 32072 = "Refresh" 
         refreshMenu = control.lang(32072).encode('utf-8')
+        addFavorite = control.lang(32073).encode('utf-8')
+        removeFavorite = control.lang(32074).encode('utf-8')
 
         if days:
             # 34005 = "By Date"
@@ -454,6 +473,11 @@ class Vod:
 
                 cm = []
                 cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+                if provider == 'globosat':
+                    if is_favorite:
+                        cm.append((removeFavorite, 'RunPlugin(%s?action=delFavorites&id_globo_videos=%s)' % (sysaddon,video['id'])))
+                    else:
+                        cm.append((addFavorite, 'RunPlugin(%s?action=addFavorites&id_globo_videos=%s)' % (sysaddon,video['id'])))
                 item.addContextMenuItems(cm)
 
                 item.setMimeType("application/vnd.apple.mpegurl")
@@ -724,7 +748,7 @@ class Vod:
 
 
     def category_combate_directory(self, items):
-        if items == None or len(items) == 0: control.idle() ; sys.exit()
+        if items is None or len(items) == 0: control.idle() ; sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])

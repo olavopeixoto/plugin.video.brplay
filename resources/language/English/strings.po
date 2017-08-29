@@ -188,8 +188,20 @@ msgctxt "#32072"
 msgid "Refresh"
 msgstr ""
 
+msgctxt "#32073"
+msgid "Add to Globosat favorites"
+msgstr ""
+
+msgctxt "#32074"
+msgid "Remove from Globosat favorites"
+msgstr ""
+
 msgctxt "#32080"
 msgid "Featured"
+msgstr ""
+
+msgctxt "#32090"
+msgid "Favorites"
 msgstr ""
 
 msgctxt "#33001"

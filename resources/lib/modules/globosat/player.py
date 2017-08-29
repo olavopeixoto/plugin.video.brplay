@@ -6,6 +6,7 @@ import sys
 import urllib
 
 import auth
+import auth_helper
 from resources.lib.modules import util
 from resources.lib.modules import client
 from resources.lib.modules import control
@@ -106,15 +107,7 @@ class Player(xbmc.Player):
         self.stopPlayingEvent = threading.Event()
         self.stopPlayingEvent.clear()
 
-        provider = control.setting('globosat_provider').lower().replace(' ', '_')
-        username = control.setting('globosat_username')
-        password = control.setting('globosat_password')
-
-        if not username or not password or username == '' or password == '':
-            return []
-
-        authenticator = getattr(auth, provider)()
-        self.token, sessionKey = authenticator.get_token(username, password)
+        self.token = auth_helper.get_globosat_token()
 
         self.video_id = info['id'] if 'id' in info else None
 

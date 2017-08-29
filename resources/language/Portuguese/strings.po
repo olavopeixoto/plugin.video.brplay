@@ -188,9 +188,21 @@ msgctxt "#32072"
 msgid "Refresh"
 msgstr "Atualizar"
 
+msgctxt "#32073"
+msgid "Add to Globosat favorites"
+msgstr "Adicionar aos Favoritos do Globosat"
+
+msgctxt "#32074"
+msgid "Remove from Globosat favorites"
+msgstr "Remover dos Favoritos do Globosat"
+
 msgctxt "#32080"
 msgid "Featured"
 msgstr "Destaques Globosat"
+
+msgctxt "#32090"
+msgid "Favorites"
+msgstr "Favoritos Globosat"
 
 msgctxt "#33001"
 msgid "Streaming"

@@ -22,6 +22,7 @@ class navigator:
 
         if control.is_globosat_available():
             self.addDirectoryItem(32080, 'featured', 'featured.png', 'DefaultMovies.png')
+            self.addDirectoryItem(32090, 'favorites', 'featured.png', 'DefaultMovies.png')
 
         self.addDirectoryItem(32010, 'searchMenu', 'search.png', 'DefaultMovies.png')
 
@@ -38,7 +39,7 @@ class navigator:
         k = control.keyboard('', t); k.doModal()
         q = k.getText() if k.isConfirmed() else None
 
-        if (q == None or q == ''): return
+        if q is None or q == '': return
 
         url = '%s?action=search&q=%s&page=1' % (sys.argv[0], urllib.quote_plus(q))
         control.execute('Container.Update(%s)' % url)
