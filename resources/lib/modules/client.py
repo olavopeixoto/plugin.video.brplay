@@ -183,7 +183,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             if encoding == 'gzip':
                 result = gzip.GzipFile(fileobj=StringIO.StringIO(result)).read()
 
-        if 'application/json' in response.headers.get('content-type') or 'text/javascript' in response.headers.get('content-type'):
+        if response.headers and response.headers.get('content-type') and ('application/json' in response.headers.get('content-type') or 'text/javascript' in response.headers.get('content-type')):
             control.log("response: %s" % result)
             return json.loads(result)
 
