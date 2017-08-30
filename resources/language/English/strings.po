@@ -216,6 +216,10 @@ msgctxt "#32095"
 msgid "Watch Later"
 msgstr ""
 
+msgctxt "#32096"
+msgid "Watch History"
+msgstr ""
+
 msgctxt "#33001"
 msgid "Streaming"
 msgstr ""

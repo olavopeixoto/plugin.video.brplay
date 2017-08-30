@@ -231,7 +231,8 @@ class HLSWriter():
 
     def keep_sending_video(self, dest_stream):
         try:
-            self.average_download_speed = float(control.setting('average_download_speed')) if control.setting('average_download_speed') else 0.0
+            #self.average_download_speed = float(control.setting('average_download_speed')) if control.setting('average_download_speed') else 0.0
+            self.average_download_speed = 0.0
             self.download_main_playlist(self.url, dest_stream, self.g_stopEvent, self.maxbitrate)
             control.setSetting('average_download_speed', str(self.average_download_speed))
         except Exception, e:

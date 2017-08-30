@@ -110,6 +110,11 @@ try:
 
         vod.Vod().del_watch_later(id_globo_videos)
 
+    elif action == 'watchhistory':
+        from resources.lib.indexers import vod
+
+        vod.Vod().get_watch_history()
+
     elif action == 'liveChannels':
         from resources.lib.indexers import live
         live.Live().get_channels()

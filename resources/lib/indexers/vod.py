@@ -151,6 +151,12 @@ class Vod:
         control.refresh()
         control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
 
+    def get_watch_history(self):
+        from resources.lib.modules.globosat import scraper_vod
+        watch_history = scraper_vod.get_watch_history()
+
+        self.episodes_directory(watch_history, provider='globosat')
+
     def get_programs_by_categories(self, category):
         categories = cache.get(globoplay.Indexer().get_category_programs, 1, category)
         self.programs_directory(categories)

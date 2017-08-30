@@ -216,6 +216,10 @@ msgctxt "#32095"
 msgid "Watch Later"
 msgstr "Assistir Mais Tarde Globosat"
 
+msgctxt "#32096"
+msgid "Watch History"
+msgstr "Histórico de Visualizações Globosat"
+
 msgctxt "#33001"
 msgid "Streaming"
 msgstr "Streaming"
