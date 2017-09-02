@@ -1,0 +1,23 @@
+branches:
+  only:
+    - master
+    - /v\.\d+\.\d+\.\d+/
+language: python
+python: "2.7"
+install: true
+script: echo "Nothing to build"
+before_deploy:
+  - wget https://gist.githubusercontent.com/olavopeixoto/314f988b0f0f212e8dcce3a0d7af90e1/raw/2db5be3304720d53f9096f1c734730f9a2a6ea22/deploy_addon.py
+  - python deploy_addon.py -z plugin.video.brplay
+  - export RELEASE_ZIP=$(ls *.zip)
+deploy:
+  - provider: releases
+    api_key:
+      secure: $GH_TOKEN
+    file_glob: true
+    file: $RELEASE_ZIP
+    skip_cleanup: true
+    on:
+      tags: true
+notifications:
+  email: false
