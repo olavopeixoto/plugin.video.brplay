@@ -7,7 +7,7 @@ python: "2.7"
 install: true
 script: echo "Nothing to build"
 before_deploy:
-  - wget https://gist.githubusercontent.com/olavopeixoto/314f988b0f0f212e8dcce3a0d7af90e1/raw/d9e7df83ba0601130fef42bbc40f6b63730dc599/deploy_addon.py
+  - wget https://gist.githubusercontent.com/olavopeixoto/314f988b0f0f212e8dcce3a0d7af90e1/raw
   - python deploy_addon.py plugin.video.brplay
   - export RELEASE_ZIP=$(ls *.zip)
 deploy:
