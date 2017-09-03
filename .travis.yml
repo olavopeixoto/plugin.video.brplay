@@ -1,6 +1,5 @@
 branches:
   only:
-    - master
     - /\d+\.\d+\.\d+/
 language: python
 python: "2.7"
@@ -12,8 +11,7 @@ before_deploy:
   - export RELEASE_ZIP=$(ls *.zip)
 deploy:
   provider: releases
-  api_key:
-    secure: $GH_TOKEN
+  api_key: $GH_TOKEN
   file_glob: true
   file: $RELEASE_ZIP
   skip_cleanup: true
