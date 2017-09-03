@@ -11,13 +11,13 @@ before_deploy:
   - python deploy_addon.py plugin.video.brplay
   - export RELEASE_ZIP=$(ls *.zip)
 deploy:
-  - provider: releases
-    api_key:
-      secure: $GH_TOKEN
-    file_glob: true
-    file: $RELEASE_ZIP
-    skip_cleanup: true
-    on:
-      tags: true
+  provider: releases
+  api_key:
+    secure: $GH_TOKEN
+  file_glob: true
+  file: $RELEASE_ZIP
+  skip_cleanup: true
+  on:
+    tags: true
 notifications:
   email: false
