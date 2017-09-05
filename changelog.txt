@@ -1,6 +1,6 @@
 [B]0.0.12[/B]
 - Fix Vivo Authentication
-- Globosat Favori- tes
+- Globosat Favorites
 - Globosat Watch History
 - Globosat Watch Later
 - Save Globo Play VOD history (Allows to continue watching later on any player)
