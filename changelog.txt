@@ -1,3 +1,15 @@
+[B]0.0.12[/B]
+- Fix Vivo Authentication
+- Globosat Favori- tes
+- Globosat Watch History
+- Globosat Watch Later
+- Save Globo Play VOD history (Allows to continue watching later on any player)
+- Save Globosat VOD history (Allows to continue watching later on any player)
+[B]0.0.11[/B]
+- Support for Recife region (Globo)
+- Brazilian portuguese translation
+- Yet another proxy mode: Redirect Buffered (experimental)
+- Bug fixes
 [B]0.0.10[/B]
 - New Adaptative mode (Redirect)
 - Support for Globo Play Telefilmes
