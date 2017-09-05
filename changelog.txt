@@ -11,7 +11,7 @@
 - Yet another proxy mode: Redirect Buffered (experimental)
 - Bug fixes
 [B]0.0.10[/B]
-- New Adaptative mode (Redirect)
+- New Adaptive mode (Redirect)
 - Support for Globo Play Telefilmes
 [B]0.0.8[/B]
 - Experimental Adaptive HLS playback (live streaming)
