@@ -22,13 +22,8 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.12
-			- Fix Vivo Authentication
-			- Globosat Favorites
-			- Globosat Watch History
-			- Globosat Watch Later
-			- Save Globo Play VOD history (Allows to continue watching later on any player)
-			- Save Globosat VOD history (Allows to continue watching later on any player)
+		<news>0.0.13
+			- Fixed Globosat "Older Videos" not playing
         </news>
 	</extension>
 </addon>
