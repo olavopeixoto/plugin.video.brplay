@@ -520,8 +520,6 @@ class Vod:
                 control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
 
         if next_page:
-            # label = 'Next Page (%s/%s)' % (nextpage, total_pages)
-
             # 34006 = "Older Videos"
             label = control.lang(34006).encode('utf-8')
             
@@ -530,7 +528,7 @@ class Vod:
             meta.update({'overlay': 6})
             meta.update({'title': label})
 
-            url = '%s?action=%s&provider=%s&program_id=%s&category=%s&page=%s' % (sysaddon, next_action, 'globoplay', program_id, program_id, next_page)
+            url = '%s?action=%s&provider=%s&program_id=%s&category=%s&page=%s' % (sysaddon, next_action, provider, program_id, program_id, next_page)
 
             item = control.item(label=label)
 
