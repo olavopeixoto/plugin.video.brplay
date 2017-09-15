@@ -124,6 +124,9 @@ class Player(xbmc.Player):
 
         item.setContentLookup(False)
 
+        item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+        item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+
         control.resolve(syshandle, True, item)
 
         self.stopPlayingEvent = threading.Event()
@@ -164,7 +167,7 @@ class Player(xbmc.Player):
         playlistUrl = 'http://api.globovideos.com/videos/%s/playlist'
         playlistJson = client.request(playlistUrl % id, headers={"Accept-Encoding": "gzip"})
 
-        if not playlistJson or not 'videos' in playlistJson or len(playlistJson['videos']) == 0:  # Video Not Available
+        if not playlistJson or 'videos' not in playlistJson or len(playlistJson['videos']) == 0:  # Video Not Available
             control.infoDialog(message=control.lang(34101).encode('utf-8'), sound=True, icon='ERROR')
             control.idle()
             sys.exit()
@@ -222,6 +225,12 @@ class Player(xbmc.Player):
         credentials = auth.auth().authenticate(username, password)
         hashUrl = 'http://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
         hashJson = client.request(hashUrl, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
+
+        if not hashJson or 'hash' not in hashJson:
+            control.infoDialog(message=control.lang(34101).encode('utf-8'), sound=True, icon='ERROR')
+            control.idle()
+            sys.exit()
+            return None
 
         return {
             "id": playlistJson["id"],

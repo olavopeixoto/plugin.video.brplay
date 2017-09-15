@@ -87,6 +87,9 @@ class Player(xbmc.Player):
         self.url, mime_type, stopEvent = hlshelper.pick_bandwidth(url)
 
         if self.url is None:
+            if stopEvent:
+                control.log("Setting stop event for proxy player")
+                stopEvent.set()
             control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
             return
 
@@ -101,6 +104,9 @@ class Player(xbmc.Player):
             item.setMimeType(mime_type)
 
         item.setContentLookup(False)
+
+        item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+        item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
         control.resolve(int(sys.argv[1]), True, item)
 
@@ -138,20 +144,15 @@ class Player(xbmc.Player):
         # Will be called when xbmc stops playing a file
         control.log("setting event in onPlayBackEnded ")
 
-        if not self.isLive: self.save_video_progress(self.token, self.video_id, self.getTime())
-
-        if self.stopPlayingEvent:
-            self.stopPlayingEvent.set()
+        # if self.stopPlayingEvent:
+        #     self.stopPlayingEvent.set()
 
     def onPlayBackStopped(self):
         # Will be called when user stops xbmc playing a file
         control.log("setting event in onPlayBackStopped ")
 
-        if not self.isLive:
-            self.save_video_progress(self.token, self.video_id, self.getTime())
-
-        if self.stopPlayingEvent:
-            self.stopPlayingEvent.set()
+        # if self.stopPlayingEvent:
+        #     self.stopPlayingEvent.set()
 
     def __get_video_info(self, video_id):
 
