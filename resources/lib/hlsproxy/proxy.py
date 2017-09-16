@@ -46,8 +46,8 @@ PORT_NUMBER = 55444
 
 
 def log(msg):
-    pass
-    # xbmc.log(msg, level=xbmc.LOGNOTICE)
+    # pass
+    xbmc.log(msg, level=xbmc.LOGNOTICE)
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
@@ -228,7 +228,6 @@ class hlsProxy():
             try:
                 if httpd:
                     httpd.server_close()
-                    httpd.shutdown()
             finally:
                 log("XBMCLocalProxy Stops %s:%s" % (HOST_NAME, port))
 
@@ -236,7 +235,7 @@ class hlsProxy():
         global PORT_NUMBER
         newurl=urllib.urlencode({'url': url, 'proxy': proxy, 'maxbitrate': maxbitrate})
         link = 'http://%s:%s/brplay?%s' % (HOST_NAME, str(port), newurl)
-        return (link) #make a url that caller then call load into player
+        return link  # make a url that caller then call load into player
 
     def resolve(self, url, proxy=None, maxbitrate=0, player=None):
 
@@ -247,11 +246,13 @@ class hlsProxy():
         progress.update(20, "", 'Loading local proxy', "")
 
         self.stopPlaying.clear()
-        thread.start_new_thread(self.__start, (self.stopPlaying, player,))
+        t = threading.Thread(target=self.__start, args=(self.stopPlaying, player,))
+        t.daemon = True
+        t.start()
 
         url_to_play = self.__prepare_url(url, proxy, maxbitrate=maxbitrate)
 
-        xbmc.sleep(500)
+        xbmc.sleep(100)
 
         progress.update(100, "", "", "")
         progress.close()

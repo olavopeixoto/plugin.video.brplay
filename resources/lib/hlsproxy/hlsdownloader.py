@@ -18,45 +18,51 @@ from resources.lib.modules import m3u8 as m3u8
 
 try:
     import xbmc
+
     is_standalone = False
 except:
     is_standalone = True
+
+try:
+    from Crypto.Cipher import AES
+
+    xbmc.log("DECRYPTOR: Native PyCrypto", xbmc.LOGNOTICE)
+except:
+    try:
+        from androidsslPy import AESDecrypter
+
+        AES = AESDecrypter()
+        xbmc.log("DECRYPTOR: Android PyCrypto", xbmc.LOGNOTICE)
+    except:
+        from decrypter import AESDecrypter
+
+        AES = AESDecrypter()
+        xbmc.log("DECRYPTOR: SOFTWARE", xbmc.LOGNOTICE)
+
+gproxy = None
+use_proxy = False
+
+cookieJar = cookielib.LWPCookieJar()
+session = None
+clientHeader = None
+average_download_speed = 0.0
+max_queue_size = 5
+
 
 def log(msg):
     pass
     # if is_standalone:
     #     print msg
     # else:
-    #     xbmc.log(msg,level=xbmc.LOGNOTICE)
-
-try:
-    from Crypto.Cipher import AES
-    xbmc.log("DECRYPTOR: Native PyCrypto", xbmc.LOGNOTICE)
-except:
-    try:
-        from  androidsslPy import AESDecrypter
-        AES=AESDecrypter()
-        xbmc.log("DECRYPTOR: Android PyCrypto", xbmc.LOGNOTICE)
-    except:
-        from decrypter import AESDecrypter
-        AES = AESDecrypter()
-        xbmc.log("DECRYPTOR: SOFTWARE", xbmc.LOGNOTICE)
-
-
-gproxy=None
-use_proxy = False
-
-cookieJar=cookielib.LWPCookieJar()
-session=None
-clientHeader=None
-average_download_speed = 0.0
+    #     import threading
+    #     xbmc.log("%s - %s" % (threading.currentThread(), msg),level=xbmc.LOGNOTICE)
 
 
 def log_error(msg):
     if is_standalone:
         print msg
     else:
-        xbmc.log(msg,level=xbmc.LOGERROR)
+        xbmc.log(msg, level=xbmc.LOGERROR)
 
 
 def sleep(time_ms):
@@ -72,49 +78,54 @@ class HLSDownloader():
     """
     A downloader for hls manifests
     """
+
     def __init__(self):
-        self.init_done=False
+        self.init_done = False
         self.url = None
         self.maxbitrate = 0
         self.g_stopEvent = None
         self.init_url = None
+        self.out_stream = None
+        self.proxy = None
 
-    def init(self, out_stream, url, proxy=None, g_stopEvent=None, maxbitrate=0):
-        global clientHeader,gproxy,session,use_proxy
+    def init(self, out_stream, url, proxy=None, g_stop_event=None, maxbitrate=0):
+        global clientHeader, gproxy, session, use_proxy
 
         try:
+            from requests.packages.urllib3.exceptions import InsecureRequestWarning
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
             session = requests.Session()
             session.cookies = cookieJar
-            self.init_done=False
-            self.init_url=url
-            clientHeader=None
+            self.init_done = False
+            self.init_url = url
+            clientHeader = None
             self.proxy = proxy
             use_proxy = False
 
-            if self.proxy and len(self.proxy)==0:
-                self.proxy=None
+            if self.proxy and len(self.proxy) == 0:
+                self.proxy = None
 
-            gproxy=self.proxy
+            gproxy = self.proxy
 
-            self.out_stream=out_stream
+            self.out_stream = out_stream
 
-            if g_stopEvent: g_stopEvent.clear()
+            if g_stop_event: g_stop_event.clear()
 
-            self.g_stopEvent=g_stopEvent
-            self.maxbitrate=maxbitrate
+            self.g_stopEvent = g_stop_event
+            self.maxbitrate = maxbitrate
 
             if '|' in url:
                 sp = url.split('|')
                 url = sp[0]
                 clientHeader = sp[1]
-                log( clientHeader )
-                clientHeader= urlparse.parse_qsl(clientHeader)
-                log ('header received now url and headers are %s | %s' % (url, clientHeader))
+                log(clientHeader)
+                clientHeader = urlparse.parse_qsl(clientHeader)
+                log('header received now url and headers are %s | %s' % (url, clientHeader))
 
-            self.url=url
+            self.url = url
 
             return True
-        except: 
+        except:
             traceback.print_exc()
 
         return False
@@ -122,13 +133,19 @@ class HLSDownloader():
     def keep_sending_video(self, dest_stream):
         global average_download_speed
         try:
-            #average_download_speed = float(control.setting('average_download_speed')) if control.setting('average_download_speed') else 0.0
-            average_download_speed = 0.0
-            queue = Queue.Queue()
+            # average_download_speed = 0.0
+            average_download_speed = float(control.setting('average_download_speed')) if control.setting('average_download_speed') else 0.0
+
+            queue = Queue.Queue(max_queue_size)
             worker = workers.Thread(queue_processor, queue, dest_stream, self.g_stopEvent)
             worker.daemon = True
             worker.start()
-            download_internal(self.url, queue, self.maxbitrate, self.g_stopEvent)
+
+            try:
+                download_loop(self.url, queue, self.maxbitrate, self.g_stopEvent)
+            except Exception as ex:
+                log_error("ERROR DOWNLOADING: %s" % ex)
+
             control.setSetting('average_download_speed', str(average_download_speed))
 
             if not self.g_stopEvent.isSet():
@@ -153,27 +170,28 @@ def get_url(url, timeout=15, return_response=False, stream=False):
     global use_proxy
 
     try:
-        post=None
+        post = None
 
-        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
 
         if clientHeader:
-            for n,v in clientHeader:
-                headers[n]=v
+            for n, v in clientHeader:
+                headers[n] = v
 
-        proxies={}
+        proxies = {}
 
         if use_proxy and gproxy:
-            proxies={"http": gproxy, "https": gproxy}
+            proxies = {"http": gproxy, "https": gproxy}
 
         if post:
             response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
         else:
             response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
 
-        #IF 403 RETRY WITH PROXY
+        # IF 403 RETRY WITH PROXY
         if not use_proxy and gproxy and response.status_code == 403:
-            proxies= {"http": gproxy, "https": gproxy}
+            proxies = {"http": gproxy, "https": gproxy}
             use_proxy = True
             if post:
                 response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
@@ -187,20 +205,12 @@ def get_url(url, timeout=15, return_response=False, stream=False):
         else:
             return response.content
 
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return None
 
 
-def download_chunks(URL, chunk_size=2048):
-
-    response=get_url(URL, timeout=6, return_response=True, stream=True)
-
-    for chunk in response.iter_content(chunk_size=chunk_size):
-        yield chunk
-
-
-def send_back(data,file):
+def send_back(data, file):
     file.write(data)
     file.flush()
 
@@ -213,8 +223,15 @@ def queue_processor(queue, file, stop_event):
         queue.task_done()
 
 
+def download_chunks(URL, chunk_size=2048):
+    response = get_url_with_retry(URL, timeout=6, return_response=True, stream=True)
+
+    for chunk in response.iter_content(chunk_size=chunk_size):
+        yield chunk
+
+
 def load_playlist_from_uri(uri):
-    response = get_url(uri, return_response=True)
+    response = get_url_with_retry(uri, return_response=True)
     content = response.content.strip()
     log("PLAYLIST: %s" % content)
     parsed_url = urlparse.urlparse(uri)
@@ -225,8 +242,19 @@ def load_playlist_from_uri(uri):
     return m3u8.M3U8(content, base_uri=base_uri)
 
 
+def get_url_with_retry(url, timeout=15, return_response=False, stream=False, retry_count=3):
+    try:
+        return get_url(url, timeout, return_response, stream)
+    except Exception as ex:
+        if retry_count == 0:
+            raise ex
+        log_error("Retrying (%s) request due to error: %s" % (retry_count, ex))
+        return get_url_with_retry(url, timeout, return_response, stream, retry_count-1)
+
+
 def find_bandwidth_index(playlist, average_download_speed):
-    if not playlist.is_variant: return 0
+    if not playlist.is_variant:
+        return 0
 
     bandwidth_options = []
     for index, playlist_item in enumerate(playlist.playlists):
@@ -244,19 +272,17 @@ def find_bandwidth_index(playlist, average_download_speed):
     return 0
 
 
-def download_internal(url, queue, maxbitrate=0, stopEvent=None):
+def download_loop(url, queue, maxbitrate=0, stopEvent=None):
     global average_download_speed
 
     if stopEvent and stopEvent.isSet():
         return
 
-    # max_buffer_size = 4 * 1024 *1024 #4MB
-
-    decay = 0.85 #must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+    decay = 0.80  # must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 
     average_download_speed = min(maxbitrate, average_download_speed)
 
-    log ("STARTING MEDIA DOWNLOAD WITH AVERAGE SPEED: %s" % average_download_speed)
+    log("STARTING MEDIA DOWNLOAD WITH AVERAGE SPEED: %s" % average_download_speed)
 
     manifest_playlist = load_playlist_from_uri(url)
 
@@ -264,7 +290,8 @@ def download_internal(url, queue, maxbitrate=0, stopEvent=None):
     old_bandwidth_index = current_bandwidth_index
 
     if manifest_playlist.is_variant:
-        log("SELECTING VARIANT PLAYLIST: %s" % manifest_playlist.playlists[current_bandwidth_index].stream_info.bandwidth)
+        log("SELECTING VARIANT PLAYLIST: %s" % manifest_playlist.playlists[
+            current_bandwidth_index].stream_info.bandwidth)
         playlist = manifest_playlist.playlists[current_bandwidth_index]
     else:
         playlist = manifest_playlist
@@ -310,39 +337,55 @@ def download_internal(url, queue, maxbitrate=0, stopEvent=None):
                     decryptor = AES.new(key, AES.MODE_CBC, iv)
 
                 segment_size = 0.0
-                chunk_size = 2048 if not segment.key else int(playlist.stream_info.bandwidth)
+                # chunk_size = 2048 if not segment.key else int(playlist.stream_info.bandwidth)
+                chunk_size = int(playlist.stream_info.bandwidth)
                 for chunk_index, chunk in enumerate(download_chunks(segment.absolute_uri, chunk_size=chunk_size)):
                     if stopEvent and stopEvent.isSet():
                         return
 
                     segment_size = segment_size + len(chunk)
 
-                    if segment.key: #decrypt chunk
+                    if segment.key:  # decrypt chunk
                         chunk = decryptor.decrypt(chunk)
 
                     # log("ENQUEUING CHUNK %s FROM SEGMENT %s" % (chunk_index, segment_number))
+                    end_download = datetime.datetime.now()
                     queue.put(chunk)
 
-                elapsed = float(util.get_total_seconds_float(datetime.datetime.now() - start))
+                elapsed = float(util.get_total_seconds_float(end_download - start))
                 current_segment_download_speed = float(segment_size) / elapsed
 
                 log("SEGMENT SIZE: %s" % segment_size)
                 log("ELAPSED SEGMENT (%s sec) DOWNLOAD TIME: %s | BANDWIDTH: %s" % (str(float(segment.duration)), str(elapsed), current_segment_download_speed))
 
-                real_measured_bandwidth = float(manifest_playlist.playlists[current_bandwidth_index].stream_info.bandwidth) * (float(segment.duration)/elapsed)
+                real_measured_bandwidth = float(manifest_playlist.playlists[current_bandwidth_index].stream_info.bandwidth) * (float(segment.duration) / elapsed)
 
                 average_download_speed = movingAvgBandwidthCalculator(average_download_speed, decay, real_measured_bandwidth)
+
+                download_rate = real_measured_bandwidth / playlist.stream_info.bandwidth
 
                 log("MAX CALCULATED BITRATE: %s" % real_measured_bandwidth)
                 log("AVERAGE DOWNLOAD SPEED: %s" % average_download_speed)
 
+                log('DOWNLOAD RATE: %s' % download_rate)
+                log('CURRENT QUEUE SIZE: %s' % queue.qsize())
+
                 if manifest_playlist.is_variant and old_bandwidth_index == current_bandwidth_index:
+                    current_bandwidth = playlist.stream_info.bandwidth
+                    log("CURRENT BANDWIDTH: %s" % current_bandwidth)
                     log("SELECTING NEW BITRATE. MAXBITRATE: %s" % maxbitrate)
+
+                    if download_rate <= 1 and queue.qsize() == 0:
+                        average_download_speed = 0
+
                     current_bandwidth_index = find_bandwidth_index(manifest_playlist, min(maxbitrate, average_download_speed))
                     playlist = manifest_playlist.playlists[current_bandwidth_index]
+                    selected_bandwidth = playlist.stream_info.bandwidth
 
-                    if old_bandwidth_index != current_bandwidth_index:
-                        log("BANDWIDTH CHANGED TO: %s" % playlist.stream_info.bandwidth)
+                    is_increasing_bandwidth = current_bandwidth<selected_bandwidth
+
+                    if old_bandwidth_index != current_bandwidth_index and (not is_increasing_bandwidth or download_rate > 1.3):
+                        log("BANDWIDTH CHANGED TO: %s" % selected_bandwidth)
                         old_bandwidth_index = current_bandwidth_index
                         is_bitrate_change = True
                         break
@@ -356,14 +399,15 @@ def download_internal(url, queue, maxbitrate=0, stopEvent=None):
             log("IS END LIST. BYE...")
             return
 
-#https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+
+# https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 def movingAvgBandwidthCalculator(average, decay, real_bandwidth):
     return decay * real_bandwidth + (1 - decay) * average if average > 0 else real_bandwidth
 
 
 def get_key_iv(key, media_sequence):
     if key.iv:
-        iv = str(key.iv)[2:].zfill(32) # Removes 0X prefix
+        iv = str(key.iv)[2:].zfill(32)  # Removes 0X prefix
         log("IV: %s" % iv)
         return iv.decode('hex')
     else:
