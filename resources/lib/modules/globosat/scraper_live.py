@@ -167,7 +167,7 @@ def get_premiere_live_24h_channels():
 
     live = []
 
-    headers = {'Accept-Encoding': 'gzip'}
+    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
     live_channels = client.request(PREMIERE_24H_SIMULCAST, headers=headers)
 
     studio = 'Premiere Clubes'
@@ -175,14 +175,14 @@ def get_premiere_live_24h_channels():
     for channel in live_channels:
         program_date = util.strptime_workaround(channel['starts_at']) + datetime.timedelta(hours=3) + util.get_utc_delta() if not channel['starts_at'] is None else datetime.datetime.now()
         live_text = ' (' + control.lang(32004) + ')' if channel['live'] else ''
-        title = studio + ('[I] - ' + (channel['description'] or '') + '[/I]' if channel['description'] else '') + live_text
+        title = studio + ('[I] - ' + (channel['name'] or '') + '[/I]' if channel['name'] else '') + live_text
 
         live.append({
             'slug': 'premiere-fc',
             'name': title,
             'studio': studio,
             'title': channel['description'],
-            'tvshowtitle': channel['description'],
+            'tvshowtitle': channel['name'],
             'sorttitle': studio,
             'logo': PREMIERE_LOGO,
             'clearlogo': PREMIERE_LOGO,
