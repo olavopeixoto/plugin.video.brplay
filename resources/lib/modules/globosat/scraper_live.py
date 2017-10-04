@@ -4,6 +4,7 @@ import os, datetime, time
 from resources.lib.modules import control
 from resources.lib.modules import client
 from resources.lib.modules import util
+from resources.lib.modules import workers
 
 GLOBOSAT_URL = 'http://globosatplay.globo.com'
 GLOBOSAT_API_URL = 'http://api.vod.globosat.tv/globosatplay'
@@ -26,23 +27,19 @@ PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')
 def get_basic_live_channels():
 
     live = []
+    results = []
+    simulcast_results = []
 
-    page = 1
-    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
-    channel_info = client.request(GLOBOSAT_API_CHANNELS % page, headers=headers)
-    results = channel_info['results']
-    # loop through pages
-    while channel_info['next'] is not None:
-        page += 1
-        channel_info = client.request(GLOBOSAT_API_CHANNELS % page, headers=headers)
-        results.update(channel_info['results'])
-
-    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
-    channel_info = client.request(GLOBOSAT_SIMULCAST_URL, headers=headers)
-    simulcast_results = channel_info['results']
+    threads = [
+        workers.Thread(__get_channels_from_api, results),
+        workers.Thread(__get_globosat_simulcast, simulcast_results)
+    ]
+    [i.start() for i in threads]
+    [i.join() for i in threads]
 
     for result in results:
-        if len(result['transmissions']) == 0: pass
+        if len(result['transmissions']) == 0:
+            pass
 
         for transmission in result['transmissions']:
             simulcast_result = next((result for result in simulcast_results if result['id_midia_live_play'] == transmission['items'][0]['id_globo_videos']), None)
@@ -80,6 +77,25 @@ def get_basic_live_channels():
             live.append(item)
 
     return live
+
+
+def __get_channels_from_api(results):
+    page = 1
+    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
+    channel_info = client.request(GLOBOSAT_API_CHANNELS % page, headers=headers)
+    results += channel_info['results']
+    # loop through pages
+    while channel_info['next'] is not None:
+        page += 1
+        channel_info = client.request(GLOBOSAT_API_CHANNELS % page, headers=headers)
+        results += channel_info['results']
+
+
+def __get_globosat_simulcast(simulcast_results):
+    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
+    channel_info = client.request(GLOBOSAT_SIMULCAST_URL, headers=headers)
+    simulcast_results += channel_info['results']
+
 
 def get_combate_live_channels():
 
@@ -200,7 +216,7 @@ def get_premiere_live_24h_channels():
             'live': channel_data['live'],
             'livefeed': 'true',
             'brplayprovider': 'globosat',
-            'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
+            'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S')
         })
 
     return live
@@ -226,6 +242,7 @@ def get_premiere_games(meta):
 
     return live
 
+
 def __get_game_data(game, meta, offline):
     meta.update({
         'name': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
@@ -247,6 +264,7 @@ def __get_game_data(game, meta, offline):
         'livefeed': str(offline).lower()
     })
     return meta
+
 
 def __get_simulcast_data(result):
 
