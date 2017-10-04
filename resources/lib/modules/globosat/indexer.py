@@ -1,5 +1,6 @@
 from resources.lib.modules import workers
 from resources.lib.modules import cache
+from resources.lib.modules import control
 
 
 class Indexer:
@@ -14,7 +15,8 @@ class Indexer:
         threads = [
             workers.Thread(self.__append_result, scraper.get_basic_live_channels, live),
             workers.Thread(self.__append_result, scraper.get_combate_live_channels, live),
-            workers.Thread(self.__append_result, scraper.get_premiere_live_channels, live)
+            workers.Thread(self.__append_result, scraper.get_premiere_live_channels, live),
+            workers.Thread(self.__append_result, scraper.get_premiere_live_24h_channels, live)
         ]
         [i.start() for i in threads]
         [i.join() for i in threads]

@@ -19,6 +19,7 @@ GLOBO_FANART = scraper_vod.GLOBO_FANART
 CALENDAR_ICON = os.path.join(control.artPath(), 'calendar.png')
 NEXT_ICON = os.path.join(control.artPath(), 'next.png')
 
+
 class Vod:
     def __init__(self):
         self.systime = (datetime.datetime.utcnow()).strftime('%Y%m%d%H%M%S%f')
@@ -35,6 +36,9 @@ class Vod:
 
         if not control.show_adult_content:
             channels = [channel for channel in channels if not channel["adult"]]
+
+        if not control.is_inputstream_available():
+            channels = [channel for channel in channels if channel['slug'] != 'megapix' and channel['slug'] != 'telecine']
 
         return channels
 
@@ -278,7 +282,8 @@ class Vod:
     def get_program_dates(self, program_id, poster=None, provider='globoplay'):
         days = globoplay.Indexer().get_program_dates(program_id)
 
-        if days == None or len(days) == 0: control.idle() ; sys.exit()
+        if days is None or len(days) == 0:
+            control.idle() ; sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
@@ -373,8 +378,7 @@ class Vod:
             item.setProperty('IsPlayable', "true")
             item.setInfo(type='video', infoLabels=meta)
 
-            cm = []
-            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             item.setMimeType("application/vnd.apple.mpegurl")
@@ -460,13 +464,17 @@ class Vod:
                 label = video['title']
                 meta = video
                 meta.update({'overlay': 6})
-                meta.update({'live': False})
+
+                if 'live' not in meta:
+                    meta.update({'live': False})
 
                 sysmeta = urllib.quote_plus(json.dumps(meta))
 
                 provider = provider or video['brplayprovider'] if 'brplayprovider' in video else provider
 
-                url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, provider, video['id'], sysmeta)
+                action = 'playvod' if not meta['live'] else 'playlive'
+
+                url = '%s?action=%s&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, action, provider, video['id'], sysmeta)
 
                 item = control.item(label=label)
 
@@ -502,8 +510,7 @@ class Vod:
                 item.setProperty('IsPlayable', "true")
                 item.setInfo(type='video', infoLabels = meta)
 
-                cm = []
-                cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+                cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
                 if provider == 'globosat':
                     if is_favorite:
                         cm.append((removeFavorite, 'RunPlugin(%s?action=delFavorites&id_globo_videos=%s)' % (sysaddon,video['id'])))
@@ -547,9 +554,9 @@ class Vod:
         control.content(syshandle, 'episodes')
         control.directory(syshandle, cacheToDisc=False)
 
-
     def programs_directory(self, items):
-        if items == None or len(items) == 0: control.idle() ; sys.exit()
+        if items is None or len(items) == 0:
+            control.idle() ; sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
@@ -627,7 +634,8 @@ class Vod:
         control.directory(syshandle, cacheToDisc=False)
 
     def category_directory(self, items, extras, provider='globoplay'):
-        if items == None or len(items) == 0: control.idle() ; sys.exit()
+        if items is None or len(items) == 0:
+            control.idle() ; sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
@@ -686,9 +694,10 @@ class Vod:
         control.content(syshandle, 'files')
         control.directory(syshandle, cacheToDisc=False)
 
-
     def channel_directory(self, items):
-        if items == None or len(items) == 0: control.idle() ; sys.exit()
+        if items is None or len(items) == 0:
+            control.idle()
+            sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
@@ -757,7 +766,7 @@ class Vod:
 
                 # if settingFanart == 'true' and 'fanart' in i and not i['fanart'] == '0':
                 #     item.setProperty('Fanart_Image', i['fanart'])
-                # elif not addonFanart == None:
+                # elif not addonFanart is None:
                 #     item.setProperty('Fanart_Image', addonFanart)
 
                 if 'fanart' in i:

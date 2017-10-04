@@ -28,7 +28,7 @@ class auth:
         self.session = requests.Session()
         try:
             self.proxy = control.proxy_url
-            self.proxy = None if self.proxy == None or self.proxy == '' else {
+            self.proxy = None if self.proxy is None or self.proxy == '' else {
                                                                   'http': self.proxy,
                                                                   'https': self.proxy,
                                                                 }

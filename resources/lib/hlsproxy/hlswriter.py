@@ -24,11 +24,19 @@ except:
 
 
 def log(msg):
-    # pass
+    pass
+    # if is_standalone:
+    #     print msg
+    # else:
+    #     import threading
+    #     xbmc.log("%s - %s" % (threading.currentThread(), msg), level=xbmc.LOGNOTICE)
+
+
+def log_error(msg):
     if is_standalone:
         print msg
     else:
-        xbmc.log(msg,level=xbmc.LOGNOTICE)
+        xbmc.log(msg, level=xbmc.LOGERROR)
 
 
 class HLSWriter():
@@ -55,16 +63,19 @@ class HLSWriter():
         self.media_buffer = {}
         self.requested_segment = None
         self.key = None
+        self.queue = None
 
     def init(self, out_stream, url, proxy=None, stopEvent=None, maxbitrate=0):
 
         try:
+            from requests.packages.urllib3.exceptions import InsecureRequestWarning
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
             self.session = requests.Session()
             self.session.cookies = self.cookieJar
-            self.clientHeader=None
+            self.clientHeader = None
             self.proxy = proxy
 
-            if self.proxy and len(self.proxy)==0:
+            if self.proxy and len(self.proxy) == 0:
                 self.proxy=None
 
             self.use_proxy = False
@@ -78,14 +89,20 @@ class HLSWriter():
                 sp = url.split('|')
                 url = sp[0]
                 self.clientHeader = sp[1]
-                log( self.clientHeader )
+                log(self.clientHeader)
                 self.clientHeader= urlparse.parse_qsl(self.clientHeader)
-                log ('header received now url and headers are %s | %s' % (url, self.clientHeader))
+                log('header received now url and headers are %s | %s' % (url, self.clientHeader))
 
             self.url=url
 
+            self.queue = Queue.Queue()
+
+            worker = workers.Thread(self.__bandwidth_selector)
+            worker.daemon = True
+            worker.start()
+
             if self.DOWNLOAD_IN_BACKGROUND:
-                worker = workers.Thread(self.load_buffer)
+                worker = workers.Thread(self.__load_buffer)
                 worker.daemon = True
                 worker.start()
 
@@ -95,8 +112,21 @@ class HLSWriter():
 
         return False
 
-    def load_buffer(self):
-        decay = 0.90  # must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+    def __bandwidth_selector(self):
+        log("STARTED BANDWIDTH SELECTOR WORKER")
+        while not self.g_stopEvent.isSet():
+            try:
+                (start, stop, size, duration) = self.queue.get()
+                log("CALCULATING BANDWIDTH...")
+                self.__calculate_bitrate(start, stop, size, duration)
+            except Exception as ex:
+                log_error("ERROR PROCESSING BANDWIDTH: %s" % repr(ex))
+                traceback.print_exc()
+            finally:
+                self.queue.task_done()
+
+    def __load_buffer(self):
+        decay = 0.80  # must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 
         log("STARTING BUFFER LOADER...")
 
@@ -115,7 +145,7 @@ class HLSWriter():
 
             log("BUFFERED MODE - LOADING PLAYLIST: %s" % playlist.absolute_uri)
 
-            media_list = self.load_playlist_from_uri(playlist.absolute_uri)
+            media_list = self.__load_playlist_from_uri(playlist.absolute_uri)
 
             log("BUFFERED MODE - LOADING %s SEGMENT(S)" % len(media_list.segments))
 
@@ -128,7 +158,7 @@ class HLSWriter():
             if self.g_stopEvent.isSet():
                 return
 
-            segment_number = self.get_segment_number(segment.absolute_uri)
+            segment_number = self.__get_segment_number(segment.absolute_uri)
 
             if str(segment_number) in self.media_buffer or int(self.requested_segment) > int(segment_number):
                 log("SKIPPING SEGMENT %s" % segment_number)
@@ -137,7 +167,7 @@ class HLSWriter():
             start = datetime.datetime.now()
             segment_size = 0.0
             segment_data = []
-            for chunk in self.download_chunks(segment.absolute_uri):
+            for chunk in self.__download_chunks(segment.absolute_uri):
                 if self.g_stopEvent.isSet():
                     return
 
@@ -150,9 +180,10 @@ class HLSWriter():
 
         stop = datetime.datetime.now()
 
-        worker = workers.Thread(self.__calculate_bitrate, start, stop, segment_size, segment.duration)
-        worker.daemon = True
-        worker.start()
+        self.queue.put((start, stop, segment_size, segment.duration))
+        # worker = workers.Thread(self.__calculate_bitrate, start, stop, segment_size, segment.duration)
+        # worker.daemon = True
+        # worker.start()
 
     def __download_segments_parallel(self, segments):
         threads = []
@@ -161,7 +192,7 @@ class HLSWriter():
             if self.g_stopEvent.isSet():
                 return
 
-            segment_number = self.get_segment_number(segment.absolute_uri)
+            segment_number = self.__get_segment_number(segment.absolute_uri)
 
             if str(segment_number) in self.media_buffer or int(self.requested_segment) > int(segment_number):
                 log("SKIPPING SEGMENT %s" % segment_number)
@@ -178,7 +209,7 @@ class HLSWriter():
         if self.g_stopEvent.isSet():
             return
 
-        segment_number = self.get_segment_number(segment.absolute_uri)
+        segment_number = self.__get_segment_number(segment.absolute_uri)
 
         if str(segment_number) in self.media_buffer or int(self.requested_segment) > int(segment_number):
             log("SKIPPING SEGMENT %s" % segment_number)
@@ -187,7 +218,7 @@ class HLSWriter():
         start = datetime.datetime.now()
         segment_size = 0.0
         segment_data = []
-        for chunk in self.download_chunks(segment.absolute_uri):
+        for chunk in self.__download_chunks(segment.absolute_uri):
             if self.g_stopEvent.isSet():
                 return
 
@@ -200,19 +231,20 @@ class HLSWriter():
 
         stop = datetime.datetime.now()
 
-        worker = workers.Thread(self.__calculate_bitrate, start, stop, segment_size, segment.duration)
-        worker.daemon = True
-        worker.start()
+        self.queue.put((start, stop, segment_size, segment.duration))
+        # worker = workers.Thread(self.__calculate_bitrate, start, stop, segment_size, segment.duration)
+        # worker.daemon = True
+        # worker.start()
 
     def download_binary(self, url, dest_stream):
 
         log('DOWNLOADING BINARY URI: %s' % url)
 
-        current_bandwidth_index = self.find_bandwidth_index(self.manifest_playlist,
-                                                            min(self.maxbitrate, self.average_download_speed))
-        self.selected_bandwidth_index = current_bandwidth_index
-        playlist = self.manifest_playlist.playlists[self.selected_bandwidth_index]
-        self.media_list = self.load_playlist_from_uri(playlist.absolute_uri)
+        # current_bandwidth_index = self.find_bandwidth_index(self.manifest_playlist,
+        #                                                     min(self.maxbitrate, self.average_download_speed))
+        # self.selected_bandwidth_index = current_bandwidth_index
+        # playlist = self.manifest_playlist.playlists[self.selected_bandwidth_index]
+        # self.media_list = self.load_playlist_from_uri(playlist.absolute_uri)
 
         file = url.split('/')[-1]
         keys = filter(lambda k: k.uri.split('/')[-1] == file, self.media_list.keys)
@@ -226,20 +258,20 @@ class HLSWriter():
 
         log('DOWNLOADING BINARY ABSOLUTE URI: %s' % absolute_uri)
 
-        for chunk in self.download_chunks(absolute_uri):
-            self.send_back(chunk, dest_stream)
+        for chunk in self.__download_chunks(absolute_uri):
+            self.__send_back(chunk, dest_stream)
 
     def keep_sending_video(self, dest_stream):
         try:
-            #self.average_download_speed = float(control.setting('average_download_speed')) if control.setting('average_download_speed') else 0.0
-            self.average_download_speed = 0.0
+            # self.average_download_speed = 0.0
+            self.average_download_speed = float(control.setting('average_download_speed')) if control.setting('average_download_speed') else 0.0
             self.download_main_playlist(self.url, dest_stream, self.g_stopEvent, self.maxbitrate)
             control.setSetting('average_download_speed', str(self.average_download_speed))
         except Exception, e:
             log('ERROR SENDING MAIN PLAYLIST: %s' % e.message)
             traceback.print_exc()
         
-    def get_url(self, url, timeout=15, return_response=False, stream=False):
+    def __get_url(self, url, timeout=15, return_response=False, stream=False):
         log("GET URL: %s" % url)
         log("GET URL Cookies: %s" % self.cookieJar.as_lwp_str())
 
@@ -282,18 +314,18 @@ class HLSWriter():
             traceback.print_exc()
             return None
 
-    def download_chunks(self, URL, chunk_size=65536):
-        response=self.get_url(URL, timeout=6, return_response=True, stream=True)
+    def __download_chunks(self, URL, chunk_size=65536):
+        response=self.__get_url(URL, timeout=6, return_response=True, stream=True)
 
         for chunk in response.iter_content(chunk_size=chunk_size):
             yield chunk
 
-    def send_back(self, data, stream):
+    def __send_back(self, data, stream):
         stream.write(data)
         stream.flush()
 
-    def load_playlist_from_uri(self, uri):
-        response = self.get_url(uri, return_response=True)
+    def __load_playlist_from_uri(self, uri):
+        response = self.__get_url(uri, return_response=True)
         content = response.content.strip()
         log("PLAYLIST: %s" % content)
         parsed_url = urlparse.urlparse(uri)
@@ -303,7 +335,7 @@ class HLSWriter():
 
         return m3u8.M3U8(content, base_uri=base_uri)
 
-    def find_bandwidth_index(self, playlist, average_download_speed, safe_ratio=1.0):
+    def __find_bandwidth_index(self, playlist, average_download_speed, safe_ratio=1.0):
         if not playlist.is_variant:
             return 0
 
@@ -322,14 +354,14 @@ class HLSWriter():
 
         return 0
 
-    def get_segment_number(self, segment_uri):
+    def __get_segment_number(self, segment_uri):
         return segment_uri.split('-')[-1:][0].split('.')[0]
 
-    def download_segment_media_from_buffer(self, segment_uri, stream):
+    def __download_segment_media_from_buffer(self, segment_uri, stream):
         if self.g_stopEvent and self.g_stopEvent.isSet():
             return
 
-        segment_number = self.get_segment_number(segment_uri)
+        segment_number = self.__get_segment_number(segment_uri)
 
         self.requested_segment = segment_number
 
@@ -344,109 +376,116 @@ class HLSWriter():
 
         self.media_buffer[str(segment_number)] = None
 
-        self.send_back(segment_bytes, stream)
+        self.__send_back(segment_bytes, stream)
 
         return True
-
-    def download_segment_media(self, segment_uri, stream):
-        if self.g_stopEvent and self.g_stopEvent.isSet():
-            return
-
-        if self.DOWNLOAD_IN_BACKGROUND and self.download_segment_media_from_buffer(segment_uri, stream):
-            return
-
-        log ("STARTING MEDIA DOWNLOAD (%s) WITH AVERAGE SPEED: %s" % (segment_uri, self.average_download_speed))
-
-        segment_size = 0.0
-
-        segment_number = self.get_segment_number(segment_uri)
-
-        log("SEGMENT NUMBER: %s" % segment_number)
-
-        segment_result_list = filter(lambda k: self.get_segment_number(k.uri) == segment_number, self.media_list.segments)
-
-        if len(segment_result_list) == 0:
-            log("SEGMENT NOT FOUND!!! Requested URI: %s | Parsed Number: %s" % (segment_uri, segment_number))
-            segment = self.media_list.segments[0]
-        else:
-            segment = segment_result_list[0]
-
-        log("SEGMENT URL: %s" % segment.absolute_uri)
-
-        start = datetime.datetime.now()
-        for chunk in self.download_chunks(segment.absolute_uri):
-            if self.g_stopEvent.isSet():
-                stream.flush()
-                return
-
-            segment_size += len(chunk)
-
-            self.send_back(chunk, stream)
-
-        stop = datetime.datetime.now()
-        worker = workers.Thread(self.__calculate_bitrate, start, stop, segment_size, segment.duration)
-        worker.daemon = True
-        worker.start()
 
     def __calculate_bitrate(self, start, stop, segment_size, duration):
 
         if not self.manifest_playlist.is_variant:
             return
 
-        decay = 0.70  # must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+        decay = 0.80  # must be between 0 and 1 see: https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 
         # Calculate optimal bitrate
         elapsed = float(util.get_total_seconds_float(stop - start))
         current_segment_download_speed = float(segment_size) / elapsed
 
         log("SEGMENT SIZE: %s" % segment_size)
-        log("ELAPSED SEGMENT (%s sec) DOWNLOAD TIME: %s | BANDWIDTH: %s" % (
-        str(float(duration)), str(elapsed), current_segment_download_speed))
+        log("ELAPSED SEGMENT (%s sec) DOWNLOAD TIME: %s | BANDWIDTH: %s" % (str(float(duration)), str(elapsed), current_segment_download_speed))
 
-        real_measured_bandwidth = float(
-            self.manifest_playlist.playlists[self.selected_bandwidth_index].stream_info.bandwidth) * (
-                                  float(duration) / elapsed)
+        playlist = self.manifest_playlist.playlists[self.selected_bandwidth_index]
 
-        self.average_download_speed = self.moving_average_bandwidth_calculator(self.average_download_speed, decay,
-                                                                               real_measured_bandwidth)
+        real_measured_bandwidth = float(playlist.stream_info.bandwidth) * (float(duration) / elapsed)
+
+        self.average_download_speed = self.__moving_average_bandwidth_calculator(self.average_download_speed, decay, real_measured_bandwidth)
+
+        download_rate = real_measured_bandwidth / playlist.stream_info.bandwidth
 
         log("MAX CALCULATED BITRATE: %s" % real_measured_bandwidth)
         log("AVERAGE DOWNLOAD SPEED: %s" % self.average_download_speed)
+        log('DOWNLOAD RATE: %s' % download_rate)
 
-        if self.media_list.keys and len(self.media_list.keys) > 0 and self.media_list.keys[-1]:
-            log("%s" % self.media_list.dumps())
-            log("ENCRYPTED PLAYLIST, SKIPPING RELOADING...")
-            return
+        # if self.media_list.keys and len(self.media_list.keys) > 0 and self.media_list.keys[-1]:
+        #     log("%s" % self.media_list.dumps())
+        #     log("ENCRYPTED PLAYLIST, SKIPPING RELOADING...")
+        #     return
 
-        current_bandwidth_index = self.find_bandwidth_index(self.manifest_playlist,
-                                                            min(self.maxbitrate, self.average_download_speed))
+        current_bandwidth_index = self.__find_bandwidth_index(self.manifest_playlist, min(self.maxbitrate, self.average_download_speed))
 
-        if current_bandwidth_index != self.selected_bandwidth_index:
-            playlist = self.manifest_playlist.playlists[current_bandwidth_index]
+        current_bandwidth = playlist.stream_info.bandwidth
+        playlist = self.manifest_playlist.playlists[current_bandwidth_index]
+        selected_bandwidth = playlist.stream_info.bandwidth
+        is_increasing_bandwidth = current_bandwidth < selected_bandwidth
+
+        if current_bandwidth_index != self.selected_bandwidth_index and (not is_increasing_bandwidth or download_rate > 1.3):
             log("CHANGING BANDWIDTH TO: %s" % playlist.stream_info.bandwidth)
             self.selected_bandwidth_index = current_bandwidth_index
-            self.media_list = self.load_playlist_from_uri(playlist.absolute_uri)
+            self.media_list = self.__load_playlist_from_uri(playlist.absolute_uri)
 
-    def download_segment_playlist(self, uri, base_uri, stream, stopEvent=None):
-        if stopEvent and stopEvent.isSet():
+    def download_segment_media(self, segment_uri, stream):
+        if self.g_stopEvent and self.g_stopEvent.isSet():
+            return
+
+        if self.DOWNLOAD_IN_BACKGROUND and self.__download_segment_media_from_buffer(segment_uri, stream):
+            return
+
+        log("STARTING MEDIA DOWNLOAD (%s)" % segment_uri)
+
+        segment_number = self.__get_segment_number(segment_uri)
+
+        log("SEGMENT URI | NUMBER: %s | %s" % (segment_uri, segment_number))
+
+        segment_result_list = filter(lambda k: self.__get_segment_number(k.uri) == segment_number, self.media_list.segments)
+
+        if len(segment_result_list) == 0:
+            log("SEGMENT NOT FOUND!!! Requested URI: %s | Parsed Number: %s" % (segment_uri, segment_number))
+            self.__send_back(bytearray(), stream)
+            return
+        else:
+            segment = segment_result_list[0]
+
+        log("SEGMENT URL: %s" % segment.absolute_uri)
+
+        segment_size = 0.0
+        start = datetime.datetime.now()
+        for chunk in self.__download_chunks(segment.absolute_uri):
+            if self.g_stopEvent.isSet():
+                stream.flush()
+                return
+
+            segment_size += len(chunk)
+
+            stream.write(chunk)
+
+        stream.flush()
+        stop = datetime.datetime.now()
+
+        self.queue.put((start, stop, segment_size, segment.duration))
+
+    def download_segment_playlist(self, uri, base_uri, stream, stop_event=None):
+        if stop_event and stop_event.isSet():
             return
 
         log("STARTING SEGMENT PLAYLIST DOWNLOAD. URI: %s" % uri)
 
         absolute_uri = self.manifest_playlist.base_uri + uri
 
-        log("SEGMENT PLAYLIST ABSOLUTE URI: %s" % absolute_uri)
+        log("REQUESTED SEGMENT PLAYLIST ABSOLUTE URI: %s" % absolute_uri)
 
-        media_list = self.load_playlist_from_uri(absolute_uri)
+        # always send same original bandwidth back to Kodi to avoid errors, we will use proper bandwidth in the background
+        media_list = self.__load_playlist_from_uri(absolute_uri)
 
         playlist = self.manifest_playlist.playlists[self.selected_bandwidth_index] if self.manifest_playlist.is_variant else self.manifest_playlist
 
         log("PLAYING PLAYLIST ABSOLUTE URI: %s" % playlist.absolute_uri)
 
-        self.media_list = self.load_playlist_from_uri(playlist.absolute_uri)
+        # use selected bandwidth playlist to play segments
+        self.media_list = self.__load_playlist_from_uri(playlist.absolute_uri)
 
         media_list_copy = copy.deepcopy(media_list)
 
+        # replace original url with proxy's url so Kodi requests to proxy player instead of media origin
         media_list_copy.base_uri = base_uri
         for segment in media_list_copy.segments:
             segment.base_uri = base_uri
@@ -457,37 +496,45 @@ class HLSWriter():
 
         log("SENDING MEDIA PLAYLIST: %s" % media_playlist_response)
 
-        self.send_back(media_playlist_response, stream)
+        self.__send_back(media_playlist_response, stream)
 
     def download_main_playlist(self, url, stream, stop_event=None, max_bitrate=0):
         if stop_event and stop_event.isSet():
             return
 
-        self.average_download_speed = 0.0 #min(max_bitrate, self.average_download_speed)
+        log("STARTING MAIN PLAYLIST DOWNLOAD. URI: %s" % url)
 
-        self.manifest_playlist = self.load_playlist_from_uri(url)
+        # load main m3u8 playlist
+        self.manifest_playlist = self.__load_playlist_from_uri(url)
 
-        self.selected_bandwidth_index = 0 #self.find_bandwidth_index(self.manifest_playlist, self.average_download_speed)
+        # find max bandwidth to use
+        self.average_download_speed = min(max_bitrate, self.average_download_speed)
 
         if self.manifest_playlist.is_variant:
+
+            # index of selected bandwidth from playlist bandwidth array
+            self.selected_bandwidth_index = self.__find_bandwidth_index(self.manifest_playlist, self.average_download_speed)
+
+            # creates a striped version of the original playlist containing only selected bandwidth
             manifest_playlist_copy = copy.deepcopy(self.manifest_playlist)
             playlist = self.manifest_playlist.playlists[self.selected_bandwidth_index]
 
-            self.average_download_speed = float(playlist.stream_info.bandwidth)
+            # self.average_download_speed = float(playlist.stream_info.bandwidth)
 
             items_to_remove = filter(lambda p: p.stream_info.bandwidth != playlist.stream_info.bandwidth, manifest_playlist_copy.playlists)
             for p in items_to_remove:
                 manifest_playlist_copy.playlists.remove(p)
 
             playlist = manifest_playlist_copy
+
         else:
             playlist = self.manifest_playlist
 
         playlist_response = playlist.dumps()
-        log("SENDING PLAYLIST: %s" % playlist_response)
+        log("SENDING MAIN PLAYLIST: %s" % playlist_response)
 
-        self.send_back(playlist_response, stream)
+        self.__send_back(playlist_response, stream)
 
     #https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
-    def moving_average_bandwidth_calculator(self, average, decay, real_bandwidth):
+    def __moving_average_bandwidth_calculator(self, average, decay, real_bandwidth):
         return decay * real_bandwidth + (1 - decay) * average if average > 0 else real_bandwidth

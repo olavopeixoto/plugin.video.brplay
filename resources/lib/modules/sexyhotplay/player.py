@@ -74,20 +74,32 @@ class Player(xbmc.Player):
         poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
-        url, mime_type, stopEvent = hlshelper.pick_bandwidth(url)
+        url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
         control.log("Resolved URL: %s" % repr(url))
+
+        if self.url is None:
+            if stopEvent:
+                control.log("Setting stop event for proxy player")
+                stopEvent.set()
+            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+            return
 
         item = control.item(path=url)
         item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=meta)
 
-        if mime_type:
-            item.setMimeType(mime_type)
-
         item.setContentLookup(False)
 
-        control.resolve(int(sys.argv[1]), id != None, item)
+        if mime_type:
+            item.setMimeType(mime_type)
+        elif not cookies:
+            item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            # if cookies:
+            #     item.setProperty('inputstream.adaptive.stream_headers', 'Cookie=' + cookies)
+
+        control.resolve(int(sys.argv[1]), id is not None, item)
 
         self.stopPlayingEvent = threading.Event()
         self.stopPlayingEvent.clear()
@@ -96,7 +108,7 @@ class Player(xbmc.Player):
             if control.monitor.abortRequested():
                 control.log("Abort requested")
                 break
-            control.sleep(500)
+            control.sleep(100)
 
         if stopEvent:
             control.log("Setting stop event for proxy player")
@@ -169,7 +181,7 @@ class Player(xbmc.Player):
                 resource = node
                 break
 
-        if resource == None:
+        if resource is None:
             control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
             return None
 

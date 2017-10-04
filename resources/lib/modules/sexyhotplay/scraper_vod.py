@@ -85,7 +85,7 @@ def get_videos(url):
     for item in items:
         div = item.find('div')
 
-        if div == None:
+        if div is None:
             continue
 
         img = item.find('img', attrs={'class': 'imagem'})

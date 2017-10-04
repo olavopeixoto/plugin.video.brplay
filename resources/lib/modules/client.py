@@ -57,7 +57,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             headers['User-Agent'] = 'Apple-iPhone/701.341'
         if 'Referer' in headers:
             pass
-        elif referer == None:
+        elif referer is None:
             headers['Referer'] = '%s://%s/' % (urlparse.urlparse(url).scheme, urlparse.urlparse(url).netloc)
         else:
             headers['Referer'] = referer
@@ -69,7 +69,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             headers['X-Requested-With'] = 'XMLHttpRequest'
         if 'Cookie' in headers:
             pass
-        elif not cookie == None:
+        elif not cookie is None:
             headers['Cookie'] = printCookieDict(cookie) if isinstance(cookie, dict) else cookie
 
         if redirect == False:
@@ -152,7 +152,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
 
         if limit == '0':
             result = response.read(224 * 1024)
-        elif not limit == None:
+        elif not limit is None:
             result = response.read(int(limit) * 1024)
         else:
             result = response.read(5242880)
@@ -173,7 +173,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
 
             if limit == '0':
                 result = response.read(224 * 1024)
-            elif not limit == None:
+            elif not limit is None:
                 result = response.read(int(limit) * 1024)
             else:
                 result = response.read(5242880)
@@ -351,7 +351,7 @@ class cfcookie:
         [i.start() for i in threads]
 
         for i in range(0, 30):
-            if not self.cookie == None: return self.cookie
+            if not self.cookie is None: return self.cookie
             time.sleep(1)
 
 

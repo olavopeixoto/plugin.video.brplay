@@ -225,7 +225,7 @@ msgid "Streaming"
 msgstr ""
 
 msgctxt "#33101"
-msgid "Bandwidth"
+msgid "Player Mode"
 msgstr ""
 
 msgctxt "#33102"
@@ -250,6 +250,10 @@ msgstr ""
 
 msgctxt "#33107"
 msgid "Low"
+msgstr ""
+
+msgctxt "#33200"
+msgid "Average Download Speed"
 msgstr ""
 
 msgctxt "#33201"
@@ -300,6 +304,10 @@ msgctxt "#34006"
 msgid "Older Videos"
 msgstr ""
 
+msgctxt "#34009"
+msgid "Select player mode:"
+msgstr ""
+
 msgctxt "#34010"
 msgid "Pick the desired bandwidth:"
 msgstr ""
@@ -325,7 +333,7 @@ msgid "[I]- Recent Videos -[/I]"
 msgstr ""
 
 msgctxt "#34100"
-msgid "Stream is not available yet!"
+msgid "Stream is not available"
 msgstr ""
 
 msgctxt "#34101"

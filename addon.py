@@ -57,11 +57,11 @@ try:
 
     elif action == 'clear':
         from resources.lib.indexers import navigator
-        navigator.navigator().clearCache()
+        navigator.navigator().clear_cache()
 
     elif action == 'login':
         from resources.lib.indexers import navigator
-        navigator.navigator().cacheAuth()
+        navigator.navigator().cache_auth()
 
     elif action == 'refresh':
         from resources.lib.modules import control

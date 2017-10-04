@@ -4,6 +4,7 @@ import json
 import re
 import sys
 import urllib
+from urlparse import urlparse
 
 import auth
 import auth_helper
@@ -17,7 +18,13 @@ import threading
 import scraper_live
 
 HISTORY_URL_API = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s'
+PLAYER_SLUG = 'android'
+PLAYER_VERSION = '1.1.24'
 
+# "urn:uuid:1077efec-c0b2-4d02-ace3-3c1e52e2fb4b": "org.w3.clearkey",
+# "urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed": "com.widevine.alpha",
+# "urn:uuid:9a04f079-9840-4286-ab92-e65be0885f95": "com.microsoft.playready",
+# "urn:uuid:f239e769-efa3-4850-9c16-a903c6932efb": "com.adobe.primetime"
 
 class Player(xbmc.Player):
     def __init__(self):
@@ -38,7 +45,9 @@ class Player(xbmc.Player):
         if not info or 'channel' not in info:
             return
 
-        if 'encrypted' in info and info['encrypted'] == 'true':
+        encrypted = 'encrypted' in info and info['encrypted']
+
+        if encrypted and not control.is_inputstream_available():
             control.infoDialog(message=control.lang(34103).encode('utf-8'), icon='Wr')
             return
 
@@ -84,7 +93,12 @@ class Player(xbmc.Player):
 
         self.isLive = 'livefeed' in meta and meta['livefeed'] == 'true'
 
-        self.url, mime_type, stopEvent = hlshelper.pick_bandwidth(url)
+        parsed_url = urlparse(url)
+        if parsed_url.path.endswith(".m3u8"):
+            self.url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
+        else:
+            self.url = url
+            mime_type, stopEvent, cookies = 'video/mp4', None, None
 
         if self.url is None:
             if stopEvent:
@@ -100,13 +114,24 @@ class Player(xbmc.Player):
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=meta)
 
-        if mime_type:
-            item.setMimeType(mime_type)
-
         item.setContentLookup(False)
 
-        item.setProperty('inputstream.adaptive.manifest_type', 'hls')
-        item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+        if encrypted:
+            licence_url = info['protection_url']
+
+            mime_type = 'application/dash+xml'
+            item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
+            # item.setProperty('inputstream.adaptive.manifest_type', 'ism')
+            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha') # 'com.microsoft.playready'
+            item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
+            # item.setProperty('inputstream.adaptive.license_data', licence_url)
+
+        if mime_type:
+            item.setMimeType(mime_type)
+        elif not cookies:
+            item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
         control.resolve(int(sys.argv[1]), True, item)
 
@@ -138,7 +163,7 @@ class Player(xbmc.Player):
     def onPlayBackStarted(self):
         # Will be called when xbmc starts playing a file
         control.log("Playback has started!")
-        if self.offset > 0: self.seekTime(float(self.offset))
+        # if self.offset > 0: self.seekTime(float(self.offset))
 
     def onPlayBackEnded(self):
         # Will be called when xbmc stops playing a file
@@ -172,10 +197,26 @@ class Player(xbmc.Player):
 
         playlist_json = playlist_json['videos'][0]
 
+        resource = None
+        encrypted = False
+
         for node in playlist_json['resources']:
-            if any("ios" in s for s in node['players']):
+            if 'encrypted' in node and node['encrypted'] and any('android_native' in s for s in node['players']) and any('widevine' in s for s in node['content_protection']):
+                encrypted = True
                 resource = node
                 break
+
+        if not resource:
+            for node in playlist_json['resources']:
+                if 'height' in node and node['height'] == 720 and any('desktop' in s for s in node['players']):
+                    resource = node
+                    break
+
+        if not resource:
+            for node in playlist_json['resources']:
+                if any(PLAYER_SLUG in s for s in node['players']):
+                    resource = node
+                    break
 
         if (resource or None) is None:
             control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
@@ -191,7 +232,7 @@ class Player(xbmc.Player):
         authenticator = getattr(auth, provider)()
         credentials = authenticator.authenticate(playlist_json["provider_id"], username, password)
 
-        hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=1.1.23&player=ios' % (video_id, resource_id)
+        hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
         hash_json = client.request(hash_url, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
 
         if not hash_json or 'message' in hash_json and hash_json['message']:
@@ -209,13 +250,15 @@ class Player(xbmc.Player):
             "category": playlist_json["category"],
             "subscriber_only": playlist_json["subscriber_only"],
             "exhibited_at": playlist_json["exhibited_at"],
-            "player": "ios",
+            "player": PLAYER_SLUG,
             "url": resource["url"],
             "query_string_template": resource["query_string_template"],
             "thumbUri": resource["thumbUri"] if 'thumbUri' in resource else None,
             "hash": hash_json["hash"],
             "user": hash_json["user"] if 'user' in hash_json else None,
-            "encrypted": resource['encrypted'] if 'encrypted' in resource else 'false',
+            "encrypted": encrypted,
+            "protection_url": resource['content_protection']['widevine']['server'].replace('{{deviceId}}', 'NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ==') if encrypted else None,
+            "protection_type": 'widevine' if encrypted else None,
             "credentials": credentials
         }
 

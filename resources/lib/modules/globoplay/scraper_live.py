@@ -289,7 +289,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
                     castandrole_raw = cast_raw[1].strip().split('Elenco de dublagem:')
                     if len(castandrole_raw) > 1: #Dubladores e seus personagens
                         castandrole_raw = castandrole_raw[1].split('Outras Vozes:')
-                        castandrole = [(c.strip().split(':')[1].strip(), c.strip().split(':')[0].strip()) for c in castandrole_raw[0].split('/')]
+                        castandrole = [(c.strip().split(':')[1].strip(), c.strip().split(':')[0].strip()) for c in castandrole_raw[0].split('/')] if len(castandrole_raw[0].split('/')) > 0 else None
                         if len(castandrole_raw) > 1: #Outros dubladores sem papel definido
                             castandrole = [(c.strip(), 'Outros') for c in castandrole_raw[1].split('/')]
             except Exception as ex:

@@ -14,6 +14,7 @@ GLOBOSAT_SIMULCAST_URL = 'http://api.simulcast.globosat.tv/globosatplay'
 PREMIERE_LIVE_JSON = GLOBOSAT_URL + '/premierefc/ao-vivo/add-on/jogos-ao-vivo/520142353f8adb4c90000008.json'
 PREMIERE_UPCOMING_JSON = GLOBOSAT_URL + '/premierefc/ao-vivo/add-on/proximos-jogos/520142353f8adb4c90000006.json'
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
+PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
 
 artPath = control.artPath()
 
@@ -30,7 +31,7 @@ def get_basic_live_channels():
     channel_info = client.request(GLOBOSAT_API_CHANNELS % page, headers=headers)
     results = channel_info['results']
     # loop through pages
-    while channel_info['next'] <> None:
+    while channel_info['next'] is not None:
         page += 1
         channel_info = client.request(GLOBOSAT_API_CHANNELS % page, headers=headers)
         results.update(channel_info['results'])
@@ -38,8 +39,6 @@ def get_basic_live_channels():
     headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
     channel_info = client.request(GLOBOSAT_SIMULCAST_URL, headers=headers)
     simulcast_results = channel_info['results']
-
-    timestamp = (datetime.datetime.utcnow()).strftime('%Y%m%d%H%M%S%f')
 
     for result in results:
         if len(result['transmissions']) == 0: pass
@@ -65,7 +64,7 @@ def get_basic_live_channels():
             item.update({
                     'sorttitle': transmission['title'],
                     'logo': result['color_logo'],
-                    'clearlogo': result['color_logo'], #result['white_logo'],
+                    'clearlogo': result['color_logo'],
                     'clearart': result['white_logo'],
                     'banner': result['white_horizontal_logo'],
                     'color': result['color'],
@@ -100,6 +99,7 @@ def get_combate_live_channels():
 
     return live
 
+
 def get_premiere_live_channels():
 
     live = []
@@ -118,7 +118,7 @@ def get_premiere_live_channels():
 
     if len(live_games) == 1:
         return [__get_game_data(live_games[0], {
-            'slug': 'premierefc',
+            'slug': 'premiere-fc',
             'studio': 'Premiere FC',
             'sorttitle': 'Premiere FC',
             'logo': PREMIERE_LOGO,
@@ -161,6 +161,47 @@ def get_premiere_live_channels():
     })
 
     return live
+
+
+def get_premiere_live_24h_channels():
+
+    live = []
+
+    headers = {'Accept-Encoding': 'gzip'}
+    live_channels = client.request(PREMIERE_24H_SIMULCAST, headers=headers)
+
+    studio = 'Premiere Clubes'
+
+    for channel in live_channels:
+        program_date = util.strptime_workaround(channel['starts_at']) + datetime.timedelta(hours=3) + util.get_utc_delta() if not channel['starts_at'] is None else datetime.datetime.now()
+        live_text = ' (' + control.lang(32004) + ')' if channel['live'] else ''
+        title = studio + ('[I] - ' + (channel['description'] or '') + '[/I]' if channel['description'] else '') + live_text
+
+        live.append({
+            'slug': 'premiere-fc',
+            'name': title,
+            'studio': studio,
+            'title': channel['description'],
+            'tvshowtitle': channel['description'],
+            'sorttitle': studio,
+            'logo': PREMIERE_LOGO,
+            'clearlogo': PREMIERE_LOGO,
+            'fanart': channel['image_url'],
+            'thumb': channel['snapshot_url'] + '?v=' + str(int(time.time())),
+            'playable': 'true',
+            'plot': channel['description'],
+            'id': int(channel['media_globovideos_id']),
+            'channel_id': int(channel['channel_globovideos_id']),
+            'duration': int(channel['duration'] or 0) / 1000,
+            'isFolder': 'false',
+            'live': channel['live'],
+            'livefeed': 'true',
+            'brplayprovider': 'globosat',
+            'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
+        })
+
+    return live
+
 
 def get_premiere_games(meta):
 

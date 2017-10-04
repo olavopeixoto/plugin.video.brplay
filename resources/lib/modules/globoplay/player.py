@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 import json
 import re
 import sys
 import urllib
 import xbmc
 import auth
+from urlparse import urlparse
 from resources.lib.modules import hlshelper
 from resources.lib.modules import client
 from resources.lib.modules import control
@@ -11,10 +14,9 @@ from resources.lib.modules.util import get_signed_hashes
 
 import threading
 
-PLAYER_VERSION = '1.1.23'
-PLAYER_SLUG = 'ios'
-
 HISTORY_URL = 'https://api.user.video.globo.com/watch_history/'
+PLAYER_SLUG = 'android'
+PLAYER_VERSION = '1.1.24'
 
 
 class Player(xbmc.Player):
@@ -46,7 +48,7 @@ class Player(xbmc.Player):
 
     def onPlayBackStarted(self):
         control.log("PLAYBACK STARTED")
-        if self.offset > 0: self.seekTime(float(self.offset))
+        # if self.offset > 0: self.seekTime(float(self.offset))
 
     def play_stream(self, id, meta):
 
@@ -92,7 +94,7 @@ class Player(xbmc.Player):
             "plot": info["title"],
             "plotoutline": info["title"],
             "title": title
-        });
+        })
 
         poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
@@ -103,7 +105,12 @@ class Player(xbmc.Player):
 
         self.isLive = 'live' in meta and meta['live']
 
-        self.url, mime_type, stopEvent = hlshelper.pick_bandwidth(url)
+        parsed_url = urlparse(url)
+        if parsed_url.path.endswith(".m3u8"):
+            self.url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
+        else:
+            self.url = url
+            mime_type, stopEvent, cookies = 'video/mp4', None, None
 
         if self.url is None:
             if stopEvent:
@@ -119,13 +126,24 @@ class Player(xbmc.Player):
         item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
         item.setProperty('IsPlayable', 'true')
 
-        if mime_type:
-            item.setMimeType(mime_type)
-
         item.setContentLookup(False)
 
-        item.setProperty('inputstream.adaptive.manifest_type', 'hls')
-        item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+        if mime_type:
+            item.setMimeType(mime_type)
+        elif not cookies:
+            item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+
+        # if self.offset > 0:
+        #     duration = float(meta['duration']) if 'duration' in meta else 0
+        #     if duration > 0:
+        #         item.setProperty('StartPercent', str((self.offset / duration) * 100))
+
+        # if self.offset > 0:
+        #     item.setProperty('resumetime', str(self.offset))
+        #     duration = float(meta['duration']) if 'duration' in meta else self.offset
+        #     duration = duration * 1000.0
+        #     item.setProperty('totaltime', str(duration))
 
         control.resolve(syshandle, True, item)
 
@@ -176,10 +194,16 @@ class Player(xbmc.Player):
 
         playlistJson = playlistJson['videos'][0]
 
-        for node in playlistJson['resources']:
-            if any(PLAYER_SLUG in s for s in node['players']):
+        for node in playlistJson['resources']: # prefer mp4
+            if 'height' in node and node['height'] == 720 and any("desktop" in s for s in node['players']):
                 resource = node
                 break
+
+        if resource is None:
+            for node in playlistJson['resources']: # fallback to hls
+                if any(PLAYER_SLUG in s for s in node['players']):
+                    resource = node
+                    break
 
         if resource is None:
             control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
@@ -250,7 +274,8 @@ class Player(xbmc.Player):
             "thumbUri": None,
             "hash": hashJson["hash"],
             "user": None,
-            "credentials": credentials
+            "credentials": credentials,
+            "encrypted": False
         }
 
     def __getLiveVideoInfo(self, id, geolocation):
@@ -324,7 +349,8 @@ class Player(xbmc.Player):
             "thumbUri": hashJson["thumbUri"],
             "hash": hashJson["hash"],
             "user": hashJson["user"],
-            "credentials": credentials
+            "credentials": credentials,
+            "encrypted": False
         }
 
     def save_video_progress(self, credentials, program_id, video_id, milliseconds_watched, fully_watched=False):
@@ -345,3 +371,7 @@ class Player(xbmc.Player):
             "Content-Type": "application/x-www-form-urlencoded",
             "User-Agent": "Globo Play/0 (iPhone)"
         }, post=post_data)
+
+        # import xbmcgui
+        # WINDOW = xbmcgui.Window(12006)
+        # WINDOW.setProperty("InfoLabelName", "the new value")

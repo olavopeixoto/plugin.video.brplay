@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.14" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.15" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.beautifulsoup" version="3.2.1"/>
@@ -22,8 +22,11 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.14
-			- inputstream.adaptive addon support (enable Krypton and Leia playback)
+		<news>0.0.15
+			- added Premiere Clube 24h live channel
+			- InputStream.Adaptive bug fixes
+			- Adaptive Downloader Proxy optimizations
+			- DRM content (Megapix) support (Kodi 18 Leia required)
         </news>
 	</extension>
 </addon>

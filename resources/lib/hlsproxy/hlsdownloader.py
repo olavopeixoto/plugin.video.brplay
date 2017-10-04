@@ -169,50 +169,42 @@ def get_url(url, timeout=15, return_response=False, stream=False):
     global clientHeader
     global use_proxy
 
-    try:
-        post = None
+    post = None
 
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
 
-        if clientHeader:
-            for n, v in clientHeader:
-                headers[n] = v
+    if clientHeader:
+        for n, v in clientHeader:
+            headers[n] = v
 
-        proxies = {}
+    proxies = {}
 
-        if use_proxy and gproxy:
-            proxies = {"http": gproxy, "https": gproxy}
+    if use_proxy and gproxy:
+        proxies = {"http": gproxy, "https": gproxy}
 
+    log("REQUESTING URL : %s" % repr(url))
+
+    if post:
+        response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
+    else:
+        response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
+
+    # IF 403 RETRY WITH PROXY
+    if not use_proxy and gproxy and response.status_code == 403:
+        proxies = {"http": gproxy, "https": gproxy}
+        use_proxy = True
         if post:
             response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
         else:
             response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
 
-        # IF 403 RETRY WITH PROXY
-        if not use_proxy and gproxy and response.status_code == 403:
-            proxies = {"http": gproxy, "https": gproxy}
-            use_proxy = True
-            if post:
-                response = session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
-            else:
-                response = session.get(url, headers=headers, proxies=proxies, verify=False, timeout=timeout, stream=stream)
+    response.raise_for_status()
 
-        response.raise_for_status()
-
-        if return_response:
-            return response
-        else:
-            return response.content
-
-    except Exception as e:
-        traceback.print_exc()
-        return None
-
-
-def send_back(data, file):
-    file.write(data)
-    file.flush()
+    if return_response:
+        return response
+    else:
+        return response.content
 
 
 def queue_processor(queue, file, stop_event):
@@ -220,14 +212,16 @@ def queue_processor(queue, file, stop_event):
         data = queue.get()
         file.write(data)
         file.flush()
-        queue.task_done()
 
 
 def download_chunks(URL, chunk_size=2048):
-    response = get_url_with_retry(URL, timeout=6, return_response=True, stream=True)
+    try:
+        response = get_url(URL, timeout=6, return_response=True, stream=True)
 
-    for chunk in response.iter_content(chunk_size=chunk_size):
-        yield chunk
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            yield chunk
+    except Exception as ex:
+        traceback.print_exc()
 
 
 def load_playlist_from_uri(uri):
@@ -337,7 +331,6 @@ def download_loop(url, queue, maxbitrate=0, stopEvent=None):
                     decryptor = AES.new(key, AES.MODE_CBC, iv)
 
                 segment_size = 0.0
-                # chunk_size = 2048 if not segment.key else int(playlist.stream_info.bandwidth)
                 chunk_size = int(playlist.stream_info.bandwidth)
                 for chunk_index, chunk in enumerate(download_chunks(segment.absolute_uri, chunk_size=chunk_size)):
                     if stopEvent and stopEvent.isSet():
@@ -360,7 +353,7 @@ def download_loop(url, queue, maxbitrate=0, stopEvent=None):
 
                 real_measured_bandwidth = float(manifest_playlist.playlists[current_bandwidth_index].stream_info.bandwidth) * (float(segment.duration) / elapsed)
 
-                average_download_speed = movingAvgBandwidthCalculator(average_download_speed, decay, real_measured_bandwidth)
+                average_download_speed = moving_average_bandwidth_calculator(average_download_speed, decay, real_measured_bandwidth)
 
                 download_rate = real_measured_bandwidth / playlist.stream_info.bandwidth
 
@@ -375,7 +368,7 @@ def download_loop(url, queue, maxbitrate=0, stopEvent=None):
                     log("CURRENT BANDWIDTH: %s" % current_bandwidth)
                     log("SELECTING NEW BITRATE. MAXBITRATE: %s" % maxbitrate)
 
-                    if download_rate <= 1 and queue.qsize() == 0:
+                    if download_rate < 1 and queue.qsize() == 0:
                         average_download_speed = 0
 
                     current_bandwidth_index = find_bandwidth_index(manifest_playlist, min(maxbitrate, average_download_speed))
@@ -390,18 +383,17 @@ def download_loop(url, queue, maxbitrate=0, stopEvent=None):
                         is_bitrate_change = True
                         break
 
-            except Exception:
+            except Exception as ex:
+                log_error('ERROR PROCESSING SEGMENT %s: %s' % (segment_number, repr(ex)))
                 traceback.print_exc()
-                log_error('ERROR PROCESSING SEGMENT %s: %s' % (segment_number, Exception.message))
-                pass
 
-        if media_list.is_endlist and not is_bitrate_change:
+        if (media_list.is_endlist or media_list.playlist_type == 'VOD') and not is_bitrate_change:
             log("IS END LIST. BYE...")
             return
 
 
 # https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
-def movingAvgBandwidthCalculator(average, decay, real_bandwidth):
+def moving_average_bandwidth_calculator(average, decay, real_bandwidth):
     return decay * real_bandwidth + (1 - decay) * average if average > 0 else real_bandwidth
 
 

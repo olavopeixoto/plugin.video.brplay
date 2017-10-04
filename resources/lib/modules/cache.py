@@ -103,7 +103,7 @@ def delete_file():
 
 def clear(table=None):
     try:
-        if table == None: table = ['rel_list', 'rel_lib']
+        if table is None: table = ['rel_list', 'rel_lib']
         elif not type(table) == list: table = [table]
 
         dbcon = database.connect(control.cacheFile)

@@ -225,8 +225,8 @@ msgid "Streaming"
 msgstr "Streaming"
 
 msgctxt "#33101"
-msgid "Bandwidth"
-msgstr "Largura de Banda"
+msgid "Player Mode"
+msgstr "Modo de Reprodução"
 
 msgctxt "#33102"
 msgid "Adaptive"
@@ -251,6 +251,10 @@ msgstr "Média"
 msgctxt "#33107"
 msgid "Low"
 msgstr "Mínima"
+
+msgctxt "#33200"
+msgid "Average Download Speed"
+msgstr "Média de Velocidade de Download"
 
 msgctxt "#33201"
 msgid "Proxy Type"
@@ -300,6 +304,10 @@ msgctxt "#34006"
 msgid "Older Videos"
 msgstr "Vídeos Mais Antigos"
 
+msgctxt "#34009"
+msgid "Select player mode:"
+msgstr "Escolha o modo de reprodução:"
+
 msgctxt "#34010"
 msgid "Pick the desired bandwidth:"
 msgstr "Escolha a Largura de Banda Desejada:"
@@ -325,8 +333,8 @@ msgid "[I]- Recent Videos -[/I]"
 msgstr "[I]- Vídeos Recentes -[/I]"
 
 msgctxt "#34100"
-msgid "Stream is not available yet!"
-msgstr "Vídeo ainda não disponível!"
+msgid "Stream is not available"
+msgstr "Vídeo não disponível"
 
 msgctxt "#34101"
 msgid "Video Info Not Found"

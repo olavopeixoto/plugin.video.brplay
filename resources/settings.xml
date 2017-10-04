@@ -6,7 +6,7 @@
 		<!-- 31003 = Proxy -->
 		<setting type="lsep" label="31003" />
 		<setting id="use_proxy" type="bool" label="31004" default="true" />
-		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)"/>
+		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)" />
 		<setting type="sep" />
 
 		<!-- 33001 = Streaming -->
@@ -26,6 +26,7 @@
 		<!-- 33203 = Redirect  	-->
 		<!-- 33204 = Redirect Buffered  	-->
 		<setting id="proxy_type" type="enum" label="33201" lvalues="33202|33203|33204" default="1" visible="eq(-1,1)"/>
+		<!--<setting id="average_download_speed" type="number" option="float" label="33200" range="0,999999999999" default="0" enable="false" visible="eq(-2,1)"/>-->
 		<setting type="sep" />
 
 		<setting type="lsep" label="GloboPlay"></setting>

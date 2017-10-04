@@ -38,14 +38,16 @@ def get_authorized_channels():
 
     channels = []
 
-    pkgs = client.request(channels_url, headers={"Accept-Encoding": "gzip"})['pacotes']
+    pkgs_response = client.request(channels_url, headers={"Accept-Encoding": "gzip"})
+
+    control.log("-- PACKAGES: %s" % repr(pkgs_response))
+
+    pkgs = pkgs_response['pacotes']
 
     channel_ids = []
     for pkg in pkgs:
         for channel in pkg['canais']:
-            if channel['slug'] == 'telecine-zone' \
-                    or channel['slug'] == 'megapix' \
-                    or channel['slug'] == 'telecine':
+            if channel['slug'] == 'telecine-zone':
                 continue
 
             elif channel['id_globo_videos'] not in channel_ids:
@@ -224,19 +226,22 @@ def get_tracks(channel_id=None):
 
 
 def get_track_list(id):
+    videos = []
+
     headers = {
         'Accept-Encoding': 'gzip',
         'Authorization': GLOBOSAT_API_AUTHORIZATION
     }
     track_list = client.request(GLOBOSAT_TRACKS_ITEM % id, headers=headers)
 
-    results = track_list['results']
+    results = track_list['results'] if track_list and 'results' in track_list else None
 
-    while track_list['next'] is not None:
+    if results is None:
+        return videos
+
+    while (track_list['next'] if track_list and 'next' in track_list else None) is not None:
         track_list = client.request(track_list['next'], headers=headers)
         results += track_list['results']
-
-    videos = []
 
     for item in results:
 
