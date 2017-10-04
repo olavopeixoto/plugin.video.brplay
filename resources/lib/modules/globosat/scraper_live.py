@@ -22,6 +22,7 @@ COMBATE_LOGO = os.path.join(artPath, 'logo_combate.png')
 PREMIERE_LOGO = os.path.join(artPath, 'logo_premiere.png')
 PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')
 
+
 def get_basic_live_channels():
 
     live = []
@@ -172,29 +173,31 @@ def get_premiere_live_24h_channels():
 
     studio = 'Premiere Clubes'
 
-    for channel in live_channels:
-        program_date = util.strptime_workaround(channel['starts_at']) + datetime.timedelta(hours=3) + util.get_utc_delta() if not channel['starts_at'] is None else datetime.datetime.now()
-        live_text = ' (' + control.lang(32004) + ')' if channel['live'] else ''
-        title = studio + ('[I] - ' + (channel['name'] or '') + '[/I]' if channel['name'] else '') + live_text
+    control.log("-- PREMIERE CLUBES SIMULCAST: %s" % repr(live_channels))
+
+    for channel_data in live_channels:
+        program_date = util.strptime_workaround(channel_data['starts_at'][0:19]) + datetime.timedelta(hours=3) + util.get_utc_delta() if channel_data and 'starts_at' in channel_data and channel_data['starts_at'] is not None else datetime.datetime.now()
+        live_text = ' (' + control.lang(32004) + ')' if channel_data['live'] else ''
+        title = studio + ('[I] - ' + (channel_data['name'] or '') + '[/I]' if channel_data['name'] else '') + live_text
 
         live.append({
             'slug': 'premiere-fc',
             'name': title,
             'studio': studio,
-            'title': channel['description'],
-            'tvshowtitle': channel['name'],
+            'title': channel_data['description'],
+            'tvshowtitle': channel_data['name'],
             'sorttitle': studio,
             'logo': PREMIERE_LOGO,
             'clearlogo': PREMIERE_LOGO,
-            'fanart': channel['image_url'],
-            'thumb': channel['snapshot_url'] + '?v=' + str(int(time.time())),
+            'fanart': channel_data['image_url'],
+            'thumb': channel_data['snapshot_url'] + '?v=' + str(int(time.time())),
             'playable': 'true',
-            'plot': channel['description'],
-            'id': int(channel['media_globovideos_id']),
-            'channel_id': int(channel['channel_globovideos_id']),
-            'duration': int(channel['duration'] or 0) / 1000,
+            'plot': channel_data['description'],
+            'id': int(channel_data['media_globovideos_id']),
+            'channel_id': int(channel_data['channel_globovideos_id']),
+            'duration': int(channel_data['duration'] or 0) / 1000,
             'isFolder': 'false',
-            'live': channel['live'],
+            'live': channel_data['live'],
             'livefeed': 'true',
             'brplayprovider': 'globosat',
             'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),

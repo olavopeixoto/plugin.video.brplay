@@ -36,6 +36,7 @@ class struct(object):
     def get(self, key):
         return self.__dict__.get(key)
 
+
 CI_MPAA_Dict = {
     'L':'G',
     'LI':'G',
@@ -53,8 +54,10 @@ CI_MPAA_Dict = {
 #     except:
 #         return
 
+
 def getMPAAFromCI(ci):
     return CI_MPAA_Dict[ci]
+
 
 def getBestBitrateUrl(plugin, streams):
     '''
@@ -69,12 +72,14 @@ def getBestBitrateUrl(plugin, streams):
     plugin.log.debug('video choosen url: %s' % streams[str(best)])
     return streams[str(best)]
 
+
 def merge_dicts(x, *argv):
     '''Given two or more dicts, merge them into a new dict as a shallow copy.'''
     z = x.copy()
     for y in argv:
         z.update(y)
     return z
+
 
 def slugify(string):
     '''
@@ -131,15 +136,18 @@ def get_signed_hashes(a):
     a = type(a) == list and a or [a]
     return map(P, a)
 
+
 G = 3600
 H = "=0xAC10FD"
 table1 = string.maketrans('/+', '_-')
+
 
 def J(a):
     # def I has been replaced with hashlib.md5.digest
     # def rstr2b64 has been replaced with b64encode
     digest = hashlib.md5(a + H[1:]).digest()
     return base64.b64encode(digest).translate(table1, '=')
+
 
 def K(a):
     # def I has been replaced with hashlib.md5.digest
@@ -148,8 +156,10 @@ def K(a):
     digest = hashlib.md5(a + H[1:]).digest()
     return base64.b16encode(digest).replace('=', '')
 
+
 def L():
     return '%010d' % random.randint(1, 1e10)
+
 
 def M(a):
     b, c, d, e = (a[0:2], a[2:12], a[12:22], a[22:44])
@@ -157,8 +167,10 @@ def M(a):
     h = J('%s'*3 % (e, f, g))
     return '%s'*7 % ('05', b, c, d, f, g, h)
 
+
 def N():
     return int(time.time())
+
 
 def O(a):
     b, c, d, e, f, g, h = (
@@ -167,14 +179,17 @@ def O(a):
     i = J('%s'*3 % (f, g, h))
     return '%s'*7 % (b, c, d, e, g, h, i)
 
+
 def P(a):
     b, c, d, e, f = ('04', '03', '02', '', a[0:2])
     return (f == b and O(a) or
             (f == c or f == d) and M(a) or e)
 
+
 def get_utc_delta():
     import datetime as dt
     return get_total_hours(dt.datetime.now() - dt.datetime.utcnow())
+
 
 def strptime(date_string, format):
     import time
@@ -183,6 +198,7 @@ def strptime(date_string, format):
         return datetime.strptime(date_string, format)
     except TypeError:
         return datetime(*(time.strptime(date_string, format)[0:6]))
+
 
 def strptime_workaround(date_string, format='%Y-%m-%dT%H:%M:%S'):
     import time
@@ -194,6 +210,7 @@ def strptime_workaround(date_string, format='%Y-%m-%dT%H:%M:%S'):
             return datetime(*(time.strptime(date_string, format)[0:6]))
         except Exception:
             return datetime.strptime(date_string[0:19], format)
+
 
 def get_total_seconds(timedelta):
     return (timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
@@ -208,7 +225,8 @@ def get_total_hours(timedelta):
     hours = int(round(((timedelta.microseconds + (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6) / 3600.0))
     return dt.timedelta(hours=hours)
 
-def addUrlParameters(url, params):
+
+def add_url_parameters(url, params):
 
     url_parts = list(urlparse.urlparse(url))
     query = dict(urlparse.parse_qsl(url_parts[4]))

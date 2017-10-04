@@ -63,7 +63,7 @@ def get_videos(url):
         oldUrl = url
         while next_page != None and next_page['data-page'] != None and next_page['data-orderby'] != None:
 
-            url = util.addUrlParameters(url, {
+            url = util.add_url_parameters(url, {
                 'pagina': int(next_page['data-page']) + 1,
                 'ordem': next_page['data-orderby']
             })
@@ -129,7 +129,7 @@ def get_videos(url):
         #More Videos
         if next_page != None and next_page['data-page'] != None and next_page['data-orderby'] != None:
 
-            next_page_url = util.addUrlParameters(url, {
+            next_page_url = util.add_url_parameters(url, {
                 'pagina': int(next_page['data-page']) + 1,
                 'ordem': next_page['data-orderby']
             })
