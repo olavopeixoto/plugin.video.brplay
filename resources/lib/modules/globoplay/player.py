@@ -194,6 +194,8 @@ class Player(xbmc.Player):
 
         playlistJson = playlistJson['videos'][0]
 
+        resource = None
+
         for node in playlistJson['resources']: # prefer mp4
             if 'height' in node and node['height'] == 720 and any("desktop" in s for s in node['players']):
                 resource = node
