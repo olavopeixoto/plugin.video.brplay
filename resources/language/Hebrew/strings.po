@@ -1,0 +1,368 @@
+# Addon Name: BR Play
+# Addon id: plugin.video.brplay
+# Addon Provider: brplayer
+msgid ""
+msgstr ""
+"Project-Id-Version: plugin.video.brplay\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2017-10-20 07:53+0300\n"
+"Last-Translator: A. Dambledore\n"
+"Language-Team: Eng2Heb\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: he_IL\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.0.4\n"
+
+msgctxt "#31200"
+msgid "Globosat Play"
+msgstr "ניגון Globosat"
+
+msgctxt "#31110"
+msgid "User"
+msgstr "משתמש"
+
+msgctxt "#31109"
+msgid "Password"
+msgstr "סיסמה"
+
+msgctxt "#31210"
+msgid "TV Provider"
+msgstr "ספק הטלוויזיה"
+
+msgctxt "#31100"
+msgid "Globo Play"
+msgstr "נגן Globo"
+
+msgctxt "#31111"
+msgid "Affiliate"
+msgstr "שותפים"
+
+msgctxt "#31112"
+msgid "Rio de Janeiro"
+msgstr "Rio de Janeiro"
+
+msgctxt "#31113"
+msgid "Sao Paulo"
+msgstr "Sao Paulo"
+
+msgctxt "#31114"
+msgid "Brasilia"
+msgstr "Brasilia"
+
+msgctxt "#31115"
+msgid "Belo Horizonte"
+msgstr "Belo Horizonte"
+
+msgctxt "#31116"
+msgid "All"
+msgstr "All"
+
+msgctxt "#31117"
+msgid "Recife"
+msgstr "Recife"
+
+msgctxt "#31118"
+msgid "Salvador"
+msgstr "Salvador"
+
+msgctxt "#31119"
+msgid "Fortaleza"
+msgstr "Fortaleza"
+
+msgctxt "#31120"
+msgid "Aracaju"
+msgstr "Aracaju"
+
+msgctxt "#31121"
+msgid "Maceio"
+msgstr "Maceio"
+
+msgctxt "#31122"
+msgid "Cuiaba"
+msgstr "Cuiaba"
+
+msgctxt "#31123"
+msgid "Porto Alegre"
+msgstr "Porto Alegre"
+
+msgctxt "#31124"
+msgid "Florianopolis"
+msgstr "Florianopolis"
+
+msgctxt "#31125"
+msgid "Curitiba"
+msgstr "Curitiba"
+
+msgctxt "#31126"
+msgid "Vitoria"
+msgstr "Vitoria"
+
+msgctxt "#31127"
+msgid "Goiania"
+msgstr "Goiania"
+
+msgctxt "#31128"
+msgid "Campo Grande"
+msgstr "Campo Grande"
+
+msgctxt "#31129"
+msgid "Manaus"
+msgstr "Manaus"
+
+msgctxt "#31130"
+msgid "Belem"
+msgstr "Belem"
+
+msgctxt "#31131"
+msgid "Macapa"
+msgstr "Macapa"
+
+msgctxt "#31132"
+msgid "Palmas"
+msgstr "Palmas"
+
+msgctxt "#31133"
+msgid "Rio Branco"
+msgstr "Rio Branco"
+
+msgctxt "#31134"
+msgid "Teresina"
+msgstr "Teresina"
+
+msgctxt "#31135"
+msgid "Sao Luis"
+msgstr "Sao Luis"
+
+msgctxt "#31136"
+msgid "Joao Pessoa"
+msgstr "Joao Pessoa"
+
+msgctxt "#31137"
+msgid "Natal"
+msgstr "Natal"
+
+msgctxt "#31003"
+msgid "Proxy"
+msgstr "פרוקסי"
+
+msgctxt "#31004"
+msgid "Use Proxy"
+msgstr "שימוש בפרוקסי"
+
+msgctxt "#32003"
+msgid "Authentication Error. Invalid user or password."
+msgstr "שגיאת אימות. משתמש לא חוקי או סיסמה."
+
+msgctxt "#32001"
+msgid "Live TV"
+msgstr "‎טלוויזיה"
+
+msgctxt "#32002"
+msgid "On Demand"
+msgstr "לפי דרישה"
+
+msgctxt "#32004"
+msgid "Live"
+msgstr "שידור חי"
+
+msgctxt "#32310"
+msgid "General"
+msgstr "כללי"
+
+msgctxt "#32346"
+msgid "Accounts"
+msgstr "חשבון"
+
+msgctxt "#32010"
+msgid "Search"
+msgstr "חיפוש"
+
+msgctxt "#32056"
+msgid "Are you sure?"
+msgstr "האם להחיל את השינויים?"
+
+msgctxt "#32057"
+msgid "Process Complete"
+msgstr "התהליך הושלם"
+
+msgctxt "#32502"
+msgid "Resume from %s"
+msgstr "המשך מ־%s"
+
+msgctxt "#32503"
+msgid "Resume"
+msgstr "תקציר"
+
+msgctxt "#32072"
+msgid "Refresh"
+msgstr "רענן"
+
+msgctxt "#32073"
+msgid "Add to Globosat favorites"
+msgstr "הוסף למועדפי Globosat"
+
+msgctxt "#32074"
+msgid "Remove from Globosat favorites"
+msgstr "הסר למועדפי Globosat"
+
+msgctxt "#32075"
+msgid "Add to Globosat Watch Later"
+msgstr "הוסף ל- Globosat - לצפייה בהמשך"
+
+msgctxt "#32076"
+msgid "Remove from Globosat Watch Later"
+msgstr "הסר מ- Globosat - לצפייה בהמשך"
+
+msgctxt "#32080"
+msgid "Featured"
+msgstr "מוצגים"
+
+msgctxt "#32090"
+msgid "Favorites"
+msgstr "מועדפים"
+
+msgctxt "#32095"
+msgid "Watch Later"
+msgstr "צפה בהמשך"
+
+msgctxt "#32096"
+msgid "Watch History"
+msgstr "היסטורית צפייה"
+
+msgctxt "#33001"
+msgid "Streaming"
+msgstr "הזרמת וידאו"
+
+msgctxt "#33101"
+msgid "Player Mode"
+msgstr "מצב נגן"
+
+msgctxt "#33102"
+msgid "Adaptive"
+msgstr "סתגלתנות (Adaptive)"
+
+msgctxt "#33103"
+msgid "Auto"
+msgstr "אוטומטי"
+
+msgctxt "#33104"
+msgid "Manual"
+msgstr "ידני"
+
+msgctxt "#33105"
+msgid "Max"
+msgstr "מקסימום"
+
+msgctxt "#33106"
+msgid "Medium"
+msgstr "בינונית"
+
+msgctxt "#33107"
+msgid "Low"
+msgstr "נמוכה"
+
+msgctxt "#33200"
+msgid "Average Download Speed"
+msgstr "מהירות ההורדה הממוצעת"
+
+msgctxt "#33201"
+msgid "Proxy Type"
+msgstr "סוג פרוקסי"
+
+msgctxt "#33202"
+msgid "Downloader"
+msgstr "מנהל הורדה"
+
+msgctxt "#33203"
+msgid "Redirect"
+msgstr "הפניה"
+
+msgctxt "#33204"
+msgid "Redirect Buffered"
+msgstr "ניתוב אגירה"
+
+msgctxt "#33301"
+msgid "Show Full Videos Only"
+msgstr "הצג וידאו מלא בלבד"
+
+msgctxt "#33401"
+msgid "Show Adult Content"
+msgstr "הצג תוכן למבוגרים"
+
+msgctxt "#33402"
+msgid "Use Pagination"
+msgstr "הצג עימוד"
+
+msgctxt "#33501"
+msgid "Clear Cache"
+msgstr "נקה זיכרון מטמון"
+
+msgctxt "#33502"
+msgid "Addon Maintenance"
+msgstr "תחזוקת הרחבה"
+
+msgctxt "#34004"
+msgid "More Videos"
+msgstr "סרטונים נוספים"
+
+msgctxt "#34005"
+msgid "By Date"
+msgstr "לפי תאריך"
+
+msgctxt "#34006"
+msgid "Older Videos"
+msgstr "סרטים ישנים יותר"
+
+msgctxt "#34009"
+msgid "Select player mode:"
+msgstr "בחר מצב נגן:"
+
+msgctxt "#34010"
+msgid "Pick the desired bandwidth:"
+msgstr "בחר את רוחב הפס הרצוי:"
+
+msgctxt "#34011"
+msgid "[I]- Featured -[/I]"
+msgstr "[I]- מציג -[/I]"
+
+msgctxt "#34012"
+msgid "[I]- Most Watched -[/I]"
+msgstr "[I]- הכי נצפה -[/I]"
+
+msgctxt "#34013"
+msgid "[I]- Continue Watching -[/I]"
+msgstr "[I]- המשך צפיה -[/I]"
+
+msgctxt "#34014"
+msgid "[I]- Favorites -[/I]"
+msgstr "[I]- מועדפים -[/I]"
+
+msgctxt "#34015"
+msgid "[I]- Recent Videos -[/I]"
+msgstr "[I]- סרטי וידאו אחרונים -[/I]"
+
+msgctxt "#34100"
+msgid "Stream is not available"
+msgstr "אין הזרמה זמינה"
+
+msgctxt "#34101"
+msgid "Video Info Not Found"
+msgstr "לא נמצא מידע וידאו"
+
+msgctxt "#34102"
+msgid "Video Resource Not Found"
+msgstr "לא אותר מקור וידאו"
+
+msgctxt "#34103"
+msgid "Content is DRM encrypted it won't play in Kodi at this moment"
+msgstr "התוכן מוגן על ידי DRM מוצפן ולא ניתן לניגון בקודי ברגע זה"
+
+msgctxt "#34104"
+msgid "Not Authorised"
+msgstr "אין לך הרשאה"
+
+msgctxt "#34105"
+msgid "Authentication Failed"
+msgstr "האימות נכשל"
