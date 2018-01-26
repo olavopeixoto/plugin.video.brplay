@@ -18,6 +18,7 @@ GLOBO_FANART = scraper_vod.GLOBO_FANART
 
 CALENDAR_ICON = os.path.join(control.artPath(), 'calendar.png')
 NEXT_ICON = os.path.join(control.artPath(), 'next.png')
+REPLAY_ICON = os.path.join(control.artPath(), 'returning-tvshows.png')
 
 
 class Vod:
@@ -674,6 +675,10 @@ class Vod:
             fanart = GLOBO_FANART
 
             art = {'fanart': fanart}
+
+            if str(subcategory).lower() == 'replay':
+                art.update({'thumb': REPLAY_ICON})
+
             item.setArt(art)
 
             item.setProperty('Fanart_Image', fanart)

@@ -278,16 +278,16 @@ def get_globo_programs():
     programs = [{'category': json['title'].capitalize(), 'programs': [{
                             'id': j['id'],
                             'name': j['title'],
-                            'poster': j['assets']['poster_web'] if 'poster_web' in j['assets'] else j['assets']['poster_mobile'] if 'poster_mobile' in j['assets'] else None,
-                            'fanart': j['assets']['tvos_background_4k'] if control.is_4k_enabled and 'tvos_background_4k' in j['assets'] else j['assets']['background_tv'],
+                            'poster': j['assets']['poster_web'] if control.is_4k_images_enabled and 'poster_web' in j['assets'] else j['assets']['poster_mobile'] if 'poster_mobile' in j['assets'] else j['assets']['poster_tv'] if 'poster_tv' in j['assets'] else None,
+                            'fanart': j['assets']['tvos_background_4k'] if control.is_4k_images_enabled and 'tvos_background_4k' in j['assets'] else j['assets']['background_tv'],
                             'clearlogo': GLOBO_LOGO,
                             'kind': 'movies' if j['type'] == 'filmes' else (j['type'] or 'default'),
                             'brplayprovider': 'globoplay'
                         } for j in json['programs']], 'subcategories': [{'category': j['title'].capitalize(), 'programs': [{
                             'id': p['id'],
                             'name': p['title'],
-                            'poster': p['assets']['poster_web'] if 'poster_web' in p['assets'] else p['assets']['poster_mobile'] if 'poster_mobile' in p['assets'] else None,
-                            'fanart': p['assets']['tvos_background_4k'] if control.is_4k_enabled and 'tvos_background_4k' in p['assets'] else p['assets']['background_tv'],
+                            'poster': p['assets']['poster_web'] if control.is_4k_images_enabled and 'poster_web' in p['assets'] else p['assets']['poster_mobile'] if 'poster_mobile' in p['assets'] else p['assets']['poster_tv'] if 'poster_tv' in p['assets'] else None,
+                            'fanart': p['assets']['tvos_background_4k'] if control.is_4k_images_enabled and 'tvos_background_4k' in p['assets'] else p['assets']['background_tv'],
                             'clearlogo': GLOBO_LOGO,
                             'kind': 'movies' if p['type'] == 'filmes' else (p['type'] or 'default'),
                             'brplayprovider': 'globoplay'
@@ -523,9 +523,9 @@ def get_programs_by_region(region):
             programs.append({
                 'id': program['id'],
                 'title': program['title'],
-                'description': program['description'],
-                'poster': assets['poster_web'],
-                'fanart': assets['tvos_background_4k'] if control.is_4k_enabled and 'tvos_background_4k' in assets else assets['background_tv'],
+                'plot': program['description'],
+                'poster': assets['poster_web'] if control.is_4k_images_enabled and 'poster_web' in assets else assets['poster_mobile'] if 'poster_mobile' in assets else assets['poster_tv'] if 'poster_tv' in assets else None,
+                'fanart': assets['tvos_background_4k'] if control.is_4k_images_enabled and 'tvos_background_4k' in assets else assets['background_tv'],
                 'brplayprovider': 'globoplay'
             })
 
@@ -570,8 +570,8 @@ def __get_program_info(id):
     return {
                 'id': program['id'],
                 'title': program['title'],
-                'description': program['description'],
-                'poster': assets['poster_web'],
-                'fanart': assets['tvos_background_4k'] if control.is_4k_enabled and 'tvos_background_4k' in assets else assets['background_tv'],
+                'plot': program['description'],
+                'poster': assets['poster_web'] if control.is_4k_images_enabled and 'poster_web' in assets else assets['poster_mobile'] if 'poster_mobile' in assets else assets['poster_tv'] if 'poster_tv' in assets else None,
+                'fanart': assets['tvos_background_4k'] if control.is_4k_images_enabled and 'tvos_background_4k' in assets else assets['background_tv'],
                 'brplayprovider': 'globoplay'
             }

@@ -179,6 +179,8 @@ ignore_channel_authorization = xbmcaddon.Addon().getSetting('ignore_channel_auth
 
 is_4k_enabled =  xbmcaddon.Addon().getSetting('enable_4k') == 'true'
 
+is_4k_images_enabled =  xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true'
+
 
 def get_current_brasilia_utc_offset():
     try:

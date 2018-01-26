@@ -72,8 +72,9 @@
 
 		<setting type="sep" />
 
-		<setting id="enable_4k" type="bool" label="Use 4K when available" default="true" />
-		<setting id="enable_hdr" type="bool" label="Use HDR when available" default="true" visible="eq(-1,true)"/>
+		<setting id="enable_4k" type="bool" label="Enable 4K when available" default="true" />
+		<setting id="enable_hdr" type="bool" label="Enable HDR when available" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
+		<setting id="enable_4k_fanart" type="bool" label="Enable high resolution images when available" default="true" visible="eq(-2,true)" enable="eq(-2,true)"/>
 		<setting id="prefer_dash" type="bool" label="Prefer Dash over HLS" default="false" visible="System.HasAddon(inputstream.adaptive)"/>
 		<setting id="disable_inputstream_adaptive" type="bool" label="Disable InputStream.Adaptive" default="false" visible="System.HasAddon(inputstream.adaptive)"/>
 	</category>
