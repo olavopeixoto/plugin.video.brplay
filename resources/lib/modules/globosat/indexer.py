@@ -21,9 +21,9 @@ class Indexer:
         [i.start() for i in threads]
         [i.join() for i in threads]
 
-        authorized_channels = [channel for channel in self.get_authorized_channels() if channel["live"]]
-
-        live = [channel for channel in live if self.is_in(channel, authorized_channels)]
+        if not control.ignore_channel_authorization:
+            authorized_channels = [channel for channel in self.get_authorized_channels() if channel["live"]]
+            live = [channel for channel in live if self.is_in(channel, authorized_channels)]
 
         return live
 

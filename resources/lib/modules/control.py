@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import urlparse, os, sys, json, threading
+import os, json, threading
 
 import xbmc, xbmcaddon, xbmcplugin, xbmcgui, xbmcvfs
-
-integer = 1000
 
 lang = xbmcaddon.Addon().getLocalizedString
 
@@ -13,6 +11,8 @@ lang2 = xbmc.getLocalizedString
 setting = xbmcaddon.Addon().getSetting
 
 setSetting = xbmcaddon.Addon().setSetting
+
+openSettings = xbmcaddon.Addon().openSettings
 
 addon = xbmcaddon.Addon
 
@@ -143,8 +143,6 @@ listDir = xbmcvfs.listdir
 
 transPath = xbmc.translatePath
 
-log = xbmc.log
-
 skinPath = xbmc.translatePath('special://skin/')
 
 tempPath = xbmc.translatePath('special://temp/')
@@ -176,6 +174,23 @@ proxy_url = xbmcaddon.Addon().getSetting('proxy_url') if xbmcaddon.Addon().getSe
 show_adult_content = xbmcaddon.Addon().getSetting('show_adult') == 'true'
 
 __inputstream_addon_available = None
+
+ignore_channel_authorization = xbmcaddon.Addon().getSetting('ignore_channel_authorization') == 'true'
+
+is_4k_enabled =  xbmcaddon.Addon().getSetting('enable_4k') == 'true'
+
+
+def get_current_brasilia_utc_offset():
+    try:
+        import pytz
+        import datetime
+        import resources.lib.modules.util as util
+
+        sp_timezone = pytz.timezone('America/Sao_Paulo')
+        return util.get_total_seconds(datetime.datetime.now(sp_timezone).utcoffset()) / 60 / 60
+    except Exception as ex:
+        log("TIMEZONE ERROR: %s" % repr(ex))
+        return -3
 
 
 def get_inputstream_addon():
@@ -416,3 +431,8 @@ def clear_credentials():
     setSetting("sexyhot_credentials", None)
     setSetting("globosat_credentials", None)
     setSetting("globoplay_credentials", None)
+
+
+def log(msg):
+    if setting('enable_log') == 'true':
+        xbmc.log(msg, xbmc.LOGNOTICE)  # xbmc.LOGDEBUG

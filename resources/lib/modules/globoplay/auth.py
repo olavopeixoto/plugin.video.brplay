@@ -48,15 +48,17 @@ class auth:
                 self._save_credentials()
             else:
                 control.log('wrong username or password')
-                #self.notify(32001)
-                control.infoDialog('[%s] %s' % (self.__class__.__name__, control.infoLabel(32003)), icon='ERROR')
-                pass
+                message = '[%s] %s' % (self.__class__.__name__, control.lang(32003))
+                control.infoDialog(message, icon='ERROR')
+                return None
         elif self.is_authenticated():
             control.log('already authenticated')
-            pass
         else:
-            control.log('no username set to authenticate')
-            pass
+            control.log_warning('no username set to authenticate')
+            message = 'Missing user credentials'
+            control.infoDialog(message, icon='ERROR')
+            control.openSettings()
+            return None
 
         control.log(repr(self.credentials))
 

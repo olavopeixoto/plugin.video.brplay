@@ -268,10 +268,6 @@ msgctxt "#33203"
 msgid "Redirect"
 msgstr ""
 
-msgctxt "#33204"
-msgid "Redirect Buffered"
-msgstr ""
-
 msgctxt "#33301"
 msgid "Show Full Videos Only"
 msgstr ""
@@ -284,12 +280,20 @@ msgctxt "#33402"
 msgid "Use Pagination"
 msgstr ""
 
+msgctxt "#33403"
+msgid "Ignore Channel Authorization"
+msgstr ""
+
 msgctxt "#33501"
 msgid "Clear Cache"
 msgstr ""
 
 msgctxt "#33502"
 msgid "Addon Maintenance"
+msgstr ""
+
+msgctxt "#33503"
+msgid "Clear Credentials"
 msgstr ""
 
 msgctxt "#34004"
@@ -302,6 +306,10 @@ msgstr ""
 
 msgctxt "#34006"
 msgid "Older Videos"
+msgstr ""
+
+msgctxt "#34007"
+msgid "More Videos"
 msgstr ""
 
 msgctxt "#34009"
@@ -345,7 +353,7 @@ msgid "Video Resource Not Found"
 msgstr ""
 
 msgctxt "#34103"
-msgid "Content is DRM encrypted it won't play in Kodi at this moment"
+msgid "Content is DRM encrypted you need Kodi Leia (18) or later wih inputstream.adaptive addon enabled"
 msgstr ""
 
 msgctxt "#34104"
@@ -354,4 +362,12 @@ msgstr ""
 
 msgctxt "#34105"
 msgid "Authentication Failed"
+msgstr ""
+
+msgctxt "#34106"
+msgid "Local Programmes"
+msgstr ""
+
+msgctxt "#34107"
+msgid "4K - HDR"
 msgstr ""

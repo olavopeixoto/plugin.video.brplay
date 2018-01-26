@@ -161,9 +161,30 @@ class Vod:
 
         self.episodes_directory(watch_history, provider='globosat')
 
-    def get_programs_by_categories(self, category):
+    def get_programs_by_category(self, category):
         categories = cache.get(globoplay.Indexer().get_category_programs, 1, category)
-        self.programs_directory(categories)
+        subcategories = cache.get(globoplay.Indexer().get_category_subcategories, 1, category)
+        self.programs_directory(categories, subcategories, category)
+
+    def get_programs_by_subcategory(self, category, subcategory):
+        subcategories = cache.get(globoplay.Indexer().get_category_programs, 1, category, subcategory)
+        self.programs_directory(subcategories)
+
+    def get_states(self):
+        states = cache.get(globoplay.Indexer().get_states, 1)
+        self.state_directory(states)
+
+    def get_4k(self):
+        programs = cache.get(globoplay.Indexer().get_4k, 1)
+        self.programs_directory(programs)
+
+    def get_regions(self, state):
+        regions = cache.get(globoplay.Indexer().get_regions, 1, state)
+        self.region_directory(regions)
+
+    def get_programs_by_region(self, region):
+        programs = cache.get(globoplay.Indexer().get_programs_by_region, 1, region)
+        self.programs_directory(programs)
 
     def get_event_videos(self, category, url):
         if url is None or url == 'None':
@@ -229,12 +250,12 @@ class Vod:
         episodes, next_page, total_pages = globoplay.Indexer().get_videos_by_category(category, page)
         self.episodes_directory(episodes, category, next_page, total_pages, 'openextra', poster=poster)
 
-    def get_videos_by_program(self, program_id, page=1, poster=None, provider=None):
-        episodes, nextpage, total_pages, days = cache.get(globoplay.Indexer().get_videos_by_program, 1, program_id, page)
+    def get_videos_by_program(self, program_id, page=1, poster=None, provider=None, bingewatch=False):
+        episodes, nextpage, total_pages, days = cache.get(globoplay.Indexer().get_videos_by_program, 1, program_id, page, bingewatch)
         self.episodes_directory(episodes, program_id, nextpage, total_pages, days=days, poster=poster, provider=provider)
 
-    def get_videos_by_program_date(self, program_id, date, poster=None, provider=None):
-        episodes = cache.get(globoplay.Indexer().get_videos_by_program_date, 1, program_id, date)
+    def get_videos_by_program_date(self, program_id, date, poster=None, provider=None, bingewatch=False):
+        episodes = cache.get(globoplay.Indexer().get_videos_by_program_date, 1, program_id, date, bingewatch)
         self.episodes_directory(episodes, program_id, poster=poster, provider=provider)
 
     def get_fighters(self, letter):
@@ -294,6 +315,7 @@ class Vod:
             meta.update({'mediatype': 'video'})
             meta.update({'overlay': 6})
             meta.update({'title': label})
+            meta.update({'date': day})
 
             url = '%s?action=openvideos&provider=%s&program_id=%s&date=%s' % (sysaddon, provider, program_id, day)
 
@@ -308,6 +330,8 @@ class Vod:
             item.setInfo(type='video', infoLabels=meta)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATE)
 
         control.content(syshandle, 'episodes')
         control.directory(syshandle, cacheToDisc=False)
@@ -381,7 +405,7 @@ class Vod:
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
-            item.setMimeType("application/vnd.apple.mpegurl")
+            # item.setMimeType("application/vnd.apple.mpegurl")
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
 
@@ -522,14 +546,17 @@ class Vod:
                         cm.append((addWatchLater, 'RunPlugin(%s?action=addwatchlater&id_globo_videos=%s)' % (sysaddon,video['id'])))
                 item.addContextMenuItems(cm)
 
-                item.setMimeType("application/vnd.apple.mpegurl")
+                # item.setMimeType("application/vnd.apple.mpegurl")
 
                 control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
 
         if next_page:
-            # 34006 = "Older Videos"
-            label = control.lang(34006).encode('utf-8')
-            
+            if 'bingewatch' in meta and meta['bingewatch']:
+                label = control.lang(34007).encode('utf-8')
+            else:
+                # 34006 = "Older Videos"
+                label = control.lang(34006).encode('utf-8')
+
             meta = {}
             meta.update({'mediatype': 'video'})
             meta.update({'overlay': 6})
@@ -549,12 +576,15 @@ class Vod:
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+        if not next_page and next_action == 'openvideos':
+            control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATE)
+        else:
+            control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_UNSORTED)
 
         control.content(syshandle, 'episodes')
         control.directory(syshandle, cacheToDisc=False)
 
-    def programs_directory(self, items):
+    def programs_directory(self, items, folders=[], category=None):
         if items is None or len(items) == 0:
             control.idle() ; sys.exit()
 
@@ -574,6 +604,8 @@ class Vod:
                 is_movie = 'kind' in program and program['kind'] == 'movies'
 
                 is_playable = is_music_video or is_movie
+
+                is_bingewatch = 'kind' in program and program['kind'] == 'bingewatch'
 
                 meta = program
                 meta.update({
@@ -607,7 +639,7 @@ class Vod:
                     sysmeta = urllib.quote_plus(json.dumps(meta))
                     url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], program['id'], sysmeta)
                 else:
-                    url = '%s?action=openvideos&provider=%s&program_id=%s&poster=%s' % (sysaddon, program['brplayprovider'], program['id'], thumb)
+                    url = '%s?action=openvideos&provider=%s&program_id=%s&poster=%s&bingewatch=%s' % (sysaddon, program['brplayprovider'], program['id'], thumb, is_bingewatch)
 
                 cm = []
                 cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
@@ -617,9 +649,9 @@ class Vod:
                 item.setProperty('IsPlayable', 'true' if is_playable else 'false')
                 item.setInfo(type='video', infoLabels = meta)
 
-                if is_playable:
-                    item.setMimeType("application/vnd.apple.mpegurl")
-                    has_playable_item = True
+                # if is_playable:
+                #     item.setMimeType("application/vnd.apple.mpegurl")
+                #     has_playable_item = True
 
                 control.addItem(handle=syshandle, url=url, listitem=item, isFolder=not is_playable)
 
@@ -629,6 +661,31 @@ class Vod:
         #     control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL)
         # else:
         #     control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+
+        for subcategory in folders:
+            label = subcategory
+            meta = {}
+            meta.update({'title': subcategory})
+
+            url = '%s?action=opencategory&provider=%s&category=%s&subcategory=%s' % (sysaddon, 'globoplay', urllib.quote_plus(category), urllib.quote_plus(subcategory))
+
+            item = control.item(label=label)
+
+            fanart = GLOBO_FANART
+
+            art = {'fanart': fanart}
+            item.setArt(art)
+
+            item.setProperty('Fanart_Image', fanart)
+
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels=meta)
+
+            cm = []
+            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            item.addContextMenuItems(cm)
+
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
         control.content(syshandle, 'tvshows')
         control.directory(syshandle, cacheToDisc=False)
@@ -688,6 +745,57 @@ class Vod:
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        # 4K Content
+        if control.is_4k_enabled:
+            label = control.lang(34107).encode('utf-8')
+            meta = {}
+            meta.update({'title': label})
+
+            url = '%s?action=open4k&provider=%s' % (sysaddon, provider)
+
+            item = control.item(label=label)
+
+            fanart = GLOBO_FANART
+
+            art = {'fanart': fanart}
+            item.setArt(art)
+
+            item.setProperty('Fanart_Image', fanart)
+
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels=meta)
+
+            cm = []
+            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            item.addContextMenuItems(cm)
+
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        # Programas Locais
+        label = control.lang(34106).encode('utf-8')
+        meta = {}
+        meta.update({'title': label})
+
+        url = '%s?action=openlocal&provider=%s' % (sysaddon, provider)
+
+        item = control.item(label=label)
+
+        fanart = GLOBO_FANART
+
+        art = {'fanart': fanart}
+        item.setArt(art)
+
+        item.setProperty('Fanart_Image', fanart)
+
+        item.setProperty('IsPlayable', "false")
+        item.setInfo(type='video', infoLabels=meta)
+
+        cm = []
+        cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+        item.addContextMenuItems(cm)
+
+        control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
@@ -813,6 +921,86 @@ class Vod:
             # item.setArt(art)
 
             # item.setProperty('Fanart_Image', fanart)
+
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels = meta)
+
+            cm = []
+            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            item.addContextMenuItems(cm)
+
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+
+        control.content(syshandle, 'files')
+        control.directory(syshandle, cacheToDisc=False)
+
+    def state_directory(self, items, provider='globoplay'):
+        if items is None or len(items) == 0:
+            control.idle() ; sys.exit()
+
+        sysaddon = sys.argv[0]
+        syshandle = int(sys.argv[1])
+
+        # 32072 = "Refresh"
+        refreshMenu = control.lang(32072).encode('utf-8')
+
+        for state in items:
+            label = state
+            meta = {}
+            meta.update({'title': state})
+
+            url = '%s?action=openlocal&provider=%s&state=%s' % (sysaddon, provider, state)
+
+            item = control.item(label=label)
+
+            fanart = GLOBO_FANART
+
+            art = {'fanart': fanart}
+            item.setArt(art)
+
+            item.setProperty('Fanart_Image', fanart)
+
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels = meta)
+
+            cm = []
+            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            item.addContextMenuItems(cm)
+
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+
+        control.content(syshandle, 'files')
+        control.directory(syshandle, cacheToDisc=False)
+
+    def region_directory(self, items, provider='globoplay'):
+        if items is None or len(items) == 0:
+            control.idle() ; sys.exit()
+
+        sysaddon = sys.argv[0]
+        syshandle = int(sys.argv[1])
+
+        # 32072 = "Refresh"
+        refreshMenu = control.lang(32072).encode('utf-8')
+
+        for region in items:
+            label = region['region_group_name'] + " (%s)" % region['affiliate_name']
+            meta = {}
+            meta.update({'title': label})
+
+            url = '%s?action=openlocal&provider=%s&region=%s' % (sysaddon, provider, region['affiliate_code'])
+
+            item = control.item(label=label)
+
+            fanart = GLOBO_FANART
+
+            art = {'fanart': fanart}
+            item.setArt(art)
+
+            item.setProperty('Fanart_Image', fanart)
 
             item.setProperty('IsPlayable', "false")
             item.setInfo(type='video', infoLabels = meta)

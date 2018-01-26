@@ -62,7 +62,7 @@ class auth:
                     control.log("returning cached session key: %s" % sessionId)
                 return token, sessionId
 
-        control.log("requesting token from provider: %s (%s)" % (self.PROVIDER_ID,self.OAUTH_URL))
+        control.log("requesting token from provider: %s (%s)" % (self.PROVIDER_ID, self.OAUTH_URL))
 
         # get a client_id token
         r1 = self.session.get(self.OAUTH_URL, proxies=self.proxy, headers={'Accept-Encoding': 'gzip'}, verify=False)
@@ -176,14 +176,17 @@ class auth:
                 self._save_credentials()
             else:
                 control.log('wrong username or password')
-                control.infoDialog('[%s] %s' % (self.__class__.__name__, control.infoLabel(32003)), icon='ERROR')
-                pass
+                control.infoDialog('[%s] %s' % (self.__class__.__name__, control.lang('32003')), icon='ERROR')
+                return None
         elif self.is_authenticated(provider_id):
             control.log('already authenticated')
             pass
         else:
-            control.log('no username set to authenticate')
-            pass
+            control.log_warning('no username set to authenticate')
+            message = 'Missing user credentials'
+            control.infoDialog(message, icon='ERROR')
+            control.openSettings()
+            return None
 
         control.log("credentials: %s" % repr(self.credentials))
 

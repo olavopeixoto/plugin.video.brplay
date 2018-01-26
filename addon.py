@@ -49,6 +49,16 @@ try:
 
     poster = params.get('poster')
 
+    bingewatch = (params.get('bingewatch') or 'false').lower() == "true"
+
+    children_id = params.get('children_id')
+
+    state = params.get('state')
+
+    region = params.get('region')
+
+    subcategory = params.get('subcategory')
+
     #Actions
 
     if action is None:
@@ -58,6 +68,10 @@ try:
     elif action == 'clear':
         from resources.lib.indexers import navigator
         navigator.navigator().clear_cache()
+
+    elif action == 'clearAuth':
+        from resources.lib.indexers import navigator
+        navigator.navigator().clear_credentials()
 
     elif action == 'login':
         from resources.lib.indexers import navigator
@@ -131,7 +145,7 @@ try:
 
     elif action == 'openvideos' and date:
         from resources.lib.indexers import vod
-        vod.Vod().get_videos_by_program_date(program_id, date, poster, provider)
+        vod.Vod().get_videos_by_program_date(program_id, date, poster, provider, bingewatch)
 
 
     ###GLOBOSAT PLAY
@@ -157,7 +171,7 @@ try:
     elif action == 'openvideos' and provider == 'globosat':
         from resources.lib.indexers import vod
         page = page or 1
-        vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globosat')
+        vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globosat', bingewatch)
 
     elif action == 'playvod' and provider == 'globosat':
         from resources.lib.modules.globosat import player
@@ -204,18 +218,42 @@ try:
         from resources.lib.indexers import vod
         vod.Vod().get_videos_by_category(category, int(page or 1), poster)
 
+    elif action == 'opencategory' and provider == 'globoplay' and subcategory is not None:
+        from resources.lib.indexers import vod
+        vod.Vod().get_programs_by_subcategory(category, subcategory)
+
     elif action == 'opencategory' and provider == 'globoplay':
         from resources.lib.indexers import vod
-        vod.Vod().get_programs_by_categories(category)
+        vod.Vod().get_programs_by_category(category)
+
+    elif action == 'openlocal' and region is not None and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        vod.Vod().get_programs_by_region(region)
+
+    elif action == 'openlocal' and state is not None and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        vod.Vod().get_regions(state)
+
+    elif action == 'openlocal' and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        vod.Vod().get_states()
 
     elif action == 'openvideos' and provider == 'globoplay':
         from resources.lib.indexers import vod
         page = page or 1
-        vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay')
+        vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay', bingewatch)
 
     elif action == 'playvod' and provider == 'globoplay':
         from resources.lib.modules.globoplay import player
         player.Player().play_stream(id_globo_videos, meta)
+
+    elif action == 'playvod' and provider == 'globoplay':
+        from resources.lib.modules.globoplay import player
+        player.Player().play_stream(id_globo_videos, meta, children_id)
+
+    elif action == 'open4k' and provider == 'globoplay':
+        from resources.lib.indexers import vod
+        vod.Vod().get_4k()
 
 
     ###SEXY HOT

@@ -1,4 +1,5 @@
 import xbmc
+from resources.lib.modules import control
 
 
 class ProxyPlayer(xbmc.Player):
@@ -6,7 +7,7 @@ class ProxyPlayer(xbmc.Player):
         xbmc.Player.__init__(self)
 
     def log(msg):
-        xbmc.log(msg, level=xbmc.LOGNOTICE)
+        control.log(msg)
 
     def onPlayBackStarted(self):
         self.log('Now im playing... %s' % url)

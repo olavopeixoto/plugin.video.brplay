@@ -6,9 +6,7 @@ import auth_helper
 import urllib
 import requests
 
-GLOBOSAT_API_URL = 'https://api.vod.globosat.tv/globosatplay'
 GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
-GLOBOSAT_API_CHANNELS = GLOBOSAT_API_URL + '/channels.json?page=%d'
 GLOBOSAT_SEARCH = 'https://globosatplay.globo.com/busca/pagina/%s.json?q=%s'
 GLOBOSAT_FEATURED = 'https://api.vod.globosat.tv/globosatplay/featured.json'
 GLOBOSAT_TRACKS = 'https://api.vod.globosat.tv/globosatplay/tracks.json'
@@ -22,7 +20,7 @@ GLOBOSAT_BASE_WATCH_LATER = 'https://api.vod.globosat.tv/globosatplay/watch_late
 GLOBOSAT_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&page=%s&per_page=%s'
 GLOBOSAT_DEL_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&id=%s'
 
-GLOBOSAT_WATCH_HISTORY = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s&page%s&per_page=%s'
+GLOBOSAT_WATCH_HISTORY = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s&page=%s&per_page=%s'
 
 artPath = control.artPath()
 
@@ -388,7 +386,7 @@ def get_watch_later(page=1):
     results = watch_later_list['data']
 
     while watch_later_list['next'] is not None:
-        watch_later_list = client.request(watch_later_list['next'], headers=headers)
+        watch_later_list = client.request(GLOBOSAT_WATCH_LATER % (token, watch_later_list['next'], 50), headers=headers)
         results += watch_later_list['data']
 
     videos = []
@@ -404,15 +402,11 @@ def get_watch_later(page=1):
             'plot': item['description'],
             'tagline': None,
             'duration': float(item['duration_in_milliseconds']) / 1000.0,
-            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel'][
-                'color_logo'],
-            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else
-            item['channel']['color_logo'],
-            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item[
-                'card_image'],
+            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
+            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
+            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item['card_image'],
             'thumb': item['thumb_image'],
-            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item[
-                'background_image_tv_cropped'],
+            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item['background_image_tv_cropped'],
             'mediatype': 'episode',
             'brplayprovider': 'globosat'
         }
@@ -459,12 +453,7 @@ def del_watch_later(video_id):
 
 def get_watch_history(page=1):
 
-    # GET /globosatplay/watch_history.json?token=bd97dc379d3648d23b69257160a40c6e&amp;page=1&amp;per_page=50 HTTP/1.1
-    # Host: api.vod.globosat.tv
-    # Accept-Language: en-US
-    # Accept-Encoding: gzip
-    # version: 2
-    # Authorization: token b4b4fb9581bcc0352173c23d81a26518455cc521
+    page_size = 50
 
     headers = {
         'Accept-Encoding': 'gzip',
@@ -474,12 +463,12 @@ def get_watch_history(page=1):
 
     token = auth_helper.get_globosat_token()
 
-    watch_later_list = client.request(GLOBOSAT_WATCH_HISTORY % (token, page, 50), headers=headers)
+    watch_later_list = client.request(GLOBOSAT_WATCH_HISTORY % (token, page, page_size), headers=headers)
 
     results = watch_later_list['data']
 
     while watch_later_list['next'] is not None:
-        watch_later_list = client.request(watch_later_list['next'], headers=headers)
+        watch_later_list = client.request(GLOBOSAT_WATCH_HISTORY % (token, watch_later_list['next'], page_size), headers=headers)
         results += watch_later_list['data']
 
     videos = []
@@ -489,23 +478,18 @@ def get_watch_history(page=1):
     for item in results:
         video = {
             'id': item['id_globo_videos'],
-            'label': item['channel']['title'] + (
-            ' - ' + item['program']['title'] if 'program' in item and item['program'] else '') + ' - ' + item['title'],
+            'label': item['channel']['title'] + (' - ' + item['program']['title'] if 'program' in item and item['program'] else '') + ' - ' + item['title'],
             'title': item['title'],
             'tvshowtitle': item['program']['title'] if 'program' in item and item['program'] else item['title'],
             'studio': item['channel']['title'],
             'plot': item['description'],
             'tagline': None,
             'duration': float(item['duration_in_milliseconds']) / 1000.0,
-            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel'][
-                'color_logo'],
-            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else
-            item['channel']['color_logo'],
-            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item[
-                'card_image'],
+            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
+            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
+            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item['card_image'],
             'thumb': item['thumb_image'],
-            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item[
-                'background_image'],
+            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item['background_image'],
             'mediatype': 'episode',
             'brplayprovider': 'globosat',
             'milliseconds_watched': int(item['watched_seconds']) * 1000

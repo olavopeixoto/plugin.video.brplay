@@ -1,61 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-	<!-- 32310 = General -->
-	<category label="32310">
-
-		<!-- 31003 = Proxy -->
-		<setting type="lsep" label="31003" />
-		<setting id="use_proxy" type="bool" label="31004" default="true" />
-		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)" />
-		<setting type="sep" />
-
-		<!-- 33001 = Streaming -->
-		<setting type="lsep" label="33001" />
-
-		<!-- 33101 = Bandwidth 	-->
-		<!-- 33103 = Auto   	-->
-        <!-- 33102 = Adaptive 	-->
-		<!-- 33104 = Manual 	-->
-		<!-- 33105 = Max 		-->
-		<!-- 33106 = Medium 	-->
-		<!-- 33107 = Low 		-->
-		<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104|33105|33106|33107" default="0" />
-
-		<!-- 33201 = Proxy Type -->
-		<!-- 33202 = Downloader -->
-		<!-- 33203 = Redirect  	-->
-		<!-- 33204 = Redirect Buffered  	-->
-		<setting id="proxy_type" type="enum" label="33201" lvalues="33202|33203|33204" default="1" visible="eq(-1,1)"/>
-		<!--<setting id="average_download_speed" type="number" option="float" label="33200" range="0,999999999999" default="0" enable="false" visible="eq(-2,1)"/>-->
-		<setting type="sep" />
-
-		<setting type="lsep" label="GloboPlay"></setting>
-
-		<!-- 33301 = Show Full Videos Only -->
-		<setting id="globo_play_full_videos" type="bool" label="33301" default="true" />
-		<setting type="sep" />
-
-		<setting type="lsep" label="Sexy Hot"></setting>
-
-		<!-- 33401 = Show Adult Content -->
-		<!-- 33402 = Use Pagination -->
-		<setting id="show_adult" type="bool" label="33401" default="true" />
-		<setting id="sexy_hot_pagination" type="bool" label="33402" default="true" enable="eq(-1,true)"/>
-		<setting type="sep" />
-
-		<!-- 33501 = Clear Cache -->
-		<!-- 33502 = Addon Maintenance -->
-		<setting type="lsep" label="33502"></setting>
-		<setting id="clear" type="action" label="33501" action="RunPlugin(plugin://plugin.video.brplay/?action=clear)"/>
-		<setting type="sep" />
-
-	</category>
-
 	<!-- 32346 = Accounts -->
 	<category label="32346">
-
-		<!-- 32200 = Globosat Play -->
-		<setting type="lsep" label="31200"></setting>
 
 		<!-- 31210 = TV Provider -->
 		<setting id="globosat_provider" type="labelenum" label="31210" values="NET|TV Oi|Sky|Vivo|Globosat Guest|Claro|Multiplay|ORM Cabo" default="TV Oi" />
@@ -102,5 +48,68 @@
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
 		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117" default="1" />
 		<setting type="sep" />
+	</category>
+
+	<category label="33001">
+		<setting id="use_proxy" type="bool" label="31004" default="true" />
+		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)" />
+		<setting type="sep" />
+
+		<!-- 33101 = Bandwidth 	-->
+		<!-- 33103 = Auto   	-->
+        <!-- 33102 = Adaptive 	-->
+		<!-- 33104 = Manual 	-->
+		<!-- 33105 = Max 		-->
+		<!-- 33106 = Medium 	-->
+		<!-- 33107 = Low 		-->
+		<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104|33105|33106|33107" default="0" />
+
+		<!-- 33201 = Proxy Type -->
+		<!-- 33202 = Downloader -->
+		<!-- 33203 = Redirect  	-->
+		<setting id="proxy_type" type="enum" label="33201" lvalues="33202|33203" default="1" visible="eq(-1,1)"/>
+		<!--<setting id="average_download_speed" type="number" option="float" label="33200" range="0,999999999999" default="0" enable="false" visible="eq(-2,1)"/>-->
+
+		<setting type="sep" />
+
+		<setting id="enable_4k" type="bool" label="Use 4K when available" default="true" />
+		<setting id="enable_hdr" type="bool" label="Use HDR when available" default="true" visible="eq(-1,true)"/>
+		<setting id="prefer_dash" type="bool" label="Prefer Dash over HLS" default="false" visible="System.HasAddon(inputstream.adaptive)"/>
+		<setting id="disable_inputstream_adaptive" type="bool" label="Disable InputStream.Adaptive" default="false" visible="System.HasAddon(inputstream.adaptive)"/>
+	</category>
+
+	<!-- 32310 = General -->
+	<category label="32310">
+
+		<setting type="lsep" label="Globo Play"></setting>
+
+		<!-- 33301 = Show Full Videos Only -->
+		<setting id="globo_play_full_videos" type="bool" label="33301" default="true" />
+		<setting id="play_children" type="bool" label="Play multi part videos as playlist" default="true" />
+		<setting type="sep" />
+
+		<setting type="lsep" label="Globosat Play"></setting>
+
+		<setting id="ignore_channel_authorization" type="bool" label="33403" default="false"/>
+		<setting type="sep" />
+
+		<setting type="lsep" label="SexyHot"></setting>
+
+		<!-- 33401 = Show Adult Content -->
+		<!-- 33402 = Use Pagination -->
+		<setting id="show_adult" type="bool" label="33401" default="true" />
+		<setting id="sexy_hot_pagination" type="bool" label="33402" default="true" enable="eq(-1,true)"/>
+		<setting type="sep" />
+
+		<!-- 33501 = Clear Cache -->
+		<!-- 33502 = Addon Maintenance -->
+		<setting type="lsep" label="33502"></setting>
+		<setting id="clear" type="action" label="33501" action="RunPlugin(plugin://plugin.video.brplay/?action=clear)"/>
+		<setting id="clearAuth" type="action" label="33503" action="RunPlugin(plugin://plugin.video.brplay/?action=clearAuth)"/>
+		<setting type="sep" />
+
+		<setting type="lsep" label="Debug"></setting>
+		<setting id="enable_log" type="bool" label="Debug Log" default="false" />
+
 	</category>
 </settings>

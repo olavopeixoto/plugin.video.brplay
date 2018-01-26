@@ -12,10 +12,12 @@ from resources.lib.modules import util
 from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules import hlshelper
+from resources.lib.modules.globoplay import resourceshelper
 
 import xbmc
 import threading
 import scraper_live
+
 
 HISTORY_URL_API = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s'
 PLAYER_SLUG = 'android'
@@ -36,10 +38,14 @@ class Player(xbmc.Player):
 
         if id is None: return
 
-        info = self.__get_video_info(id)
+        info = resourceshelper.get_video_info(id)
 
-        if not info or 'channel' not in info:
+        control.log("INFO: %s" % repr(info))
+
+        if not info or info is None or 'channel' not in info:
             return
+
+        hash, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'])
 
         encrypted = 'encrypted' in info and info['encrypted']
 
@@ -49,15 +55,13 @@ class Player(xbmc.Player):
 
         title = info['channel']
 
-        signed_hashes = util.get_signed_hashes(info['hash'])
-
         query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
 
         query_string = query_string % {
-            'hash': signed_hashes[0],
+            'hash': hash,
             'key': 'app',
             'openClosed': 'F' if info['subscriber_only'] else 'A',
-            'user': info['user'] if info['subscriber_only'] else ''
+            'user': user if info['subscriber_only'] else ''
         }
 
         url = '?'.join([info['url'], query_string])
@@ -112,22 +116,26 @@ class Player(xbmc.Player):
 
         item.setContentLookup(False)
 
-        if encrypted:
-            licence_url = info['protection_url']
+        if encrypted or parsed_url.path.endswith(".mpd"):
+            if encrypted:
+                licence_url = info['protection_url']
+                item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')  # 'com.microsoft.playready'
+                item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
+                # item.setProperty('inputstream.adaptive.license_data', licence_url)
 
             mime_type = 'application/dash+xml'
             item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-            # item.setProperty('inputstream.adaptive.manifest_type', 'ism')
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
-            item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha') # 'com.microsoft.playready'
-            item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
-            # item.setProperty('inputstream.adaptive.license_data', licence_url)
+            # item.setProperty('inputstream.adaptive.manifest_type', 'ism')
 
         if mime_type:
             item.setMimeType(mime_type)
         elif not cookies:
             item.setProperty('inputstream.adaptive.manifest_type', 'hls')
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+
+        if 'subtitles' in info and info['subtitles'] and len(info['subtitles']) > 0:
+            item.setSubtitles([sub['url'] for sub in info['subtitles']])
 
         control.resolve(int(sys.argv[1]), True, item)
 
@@ -138,16 +146,22 @@ class Player(xbmc.Player):
 
         self.video_id = info['id'] if 'id' in info else None
 
+        first_run = True
         last_time = 0.0
         while not self.stopPlayingEvent.isSet():
             if control.monitor.abortRequested():
                 control.log("Abort requested")
                 break
-            if self.isPlaying() and not self.isLive:
-                current_time = self.getTime()
-                if current_time - last_time > 5 or (last_time == 0 and current_time > 1):
-                    last_time = current_time
-                    self.save_video_progress(self.token, self.video_id, current_time)
+
+            if self.isPlaying():
+                if first_run:
+                    self.showSubtitles(False)
+                    first_run = False
+                if not self.isLive:
+                    current_time = self.getTime()
+                    if current_time - last_time > 5 or (last_time == 0 and current_time > 1):
+                        last_time = current_time
+                        self.save_video_progress(self.token, self.video_id, current_time)
             control.sleep(1000)
 
         if stopEvent:
@@ -175,50 +189,12 @@ class Player(xbmc.Player):
         # if self.stopPlayingEvent:
         #     self.stopPlayingEvent.set()
 
-    def __get_video_info(self, video_id):
-
+    def sign_resource(self, provider_id, resource_id, video_id, player, version):
         proxy = control.proxy_url
         proxy = None if proxy is None or proxy == '' else {
             'http': proxy,
             'https': proxy,
         }
-
-        playlist_url = 'http://api.globovideos.com/videos/%s/playlist'
-        playlist_json = client.request(playlist_url % video_id, headers={"Accept-Encoding": "gzip"})
-
-        if 'videos' not in playlist_json or len(playlist_json['videos']) == 0:
-            control.infoDialog(message=control.lang(34101).encode('utf-8'), sound=True, icon='ERROR')
-            return None
-            # raise Exception("Player version not found.")
-
-        playlist_json = playlist_json['videos'][0]
-
-        resource = None
-        encrypted = False
-
-        for node in playlist_json['resources']:
-            if 'encrypted' in node and node['encrypted'] and any('android_native' in s for s in node['players']) and any('widevine' in s for s in node['content_protection']):
-                encrypted = True
-                resource = node
-                break
-
-        if not resource:
-            for node in playlist_json['resources']:
-                if 'height' in node and node['height'] == 720 and any('desktop' in s for s in node['players']):
-                    resource = node
-                    break
-
-        if not resource:
-            for node in playlist_json['resources']:
-                if any(PLAYER_SLUG in s for s in node['players']):
-                    resource = node
-                    break
-
-        if (resource or None) is None:
-            control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
-            return None
-
-        resource_id = resource['_id']
 
         provider = control.setting('globosat_provider').lower().replace(' ', '_')
         username = control.setting('globosat_username')
@@ -226,7 +202,7 @@ class Player(xbmc.Player):
 
         # authenticate
         authenticator = getattr(auth, provider)()
-        credentials = authenticator.authenticate(playlist_json["provider_id"], username, password)
+        credentials = authenticator.authenticate(provider_id, username, password)
 
         hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
         hash_json = client.request(hash_url, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
@@ -235,44 +211,29 @@ class Player(xbmc.Player):
             control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
             return None
 
-        return {
-            "id": playlist_json["id"],
-            "title": playlist_json["title"],
-            "program": playlist_json["program"],
-            "program_id": playlist_json["program_id"],
-            "provider_id": playlist_json["provider_id"],
-            "channel": playlist_json["channel"],
-            "channel_id": playlist_json["channel_id"],
-            "category": playlist_json["category"],
-            "subscriber_only": playlist_json["subscriber_only"],
-            "exhibited_at": playlist_json["exhibited_at"],
-            "player": PLAYER_SLUG,
-            "url": resource["url"],
-            "query_string_template": resource["query_string_template"],
-            "thumbUri": resource["thumbUri"] if 'thumbUri' in resource else None,
-            "hash": hash_json["hash"],
-            "user": hash_json["user"] if 'user' in hash_json else None,
-            "encrypted": encrypted,
-            "protection_url": resource['content_protection']['widevine']['server'].replace('{{deviceId}}', 'NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ==') if encrypted else None,
-            "protection_type": 'widevine' if encrypted else None,
-            "credentials": credentials
-        }
+        hash = util.get_signed_hashes(hash_json['hash'])[0]
+
+        return hash, hash_json["user"] if 'user' in hash_json else None, credentials
 
     def save_video_progress(self, token, video_id, watched_seconds):
 
-        post_data = {
-            'watched_seconds': int(round((watched_seconds))),
-            'id': video_id
-        }
+        try:
+            post_data = {
+                'watched_seconds': int(round((watched_seconds))),
+                'id': video_id
+            }
 
-        url = HISTORY_URL_API % token
-        headers = {
-            "Accept-Encoding": "gzip",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "version": "2",
-            "Authorization": scraper_live.GLOBOSAT_API_AUTHORIZATION
-        }
+            url = HISTORY_URL_API % token
+            headers = {
+                "Accept-Encoding": "gzip",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "version": "2",
+                "Authorization": scraper_live.GLOBOSAT_API_AUTHORIZATION
+            }
 
-        post_data = urllib.urlencode(post_data)
+            post_data = urllib.urlencode(post_data)
 
-        client.request(url, error=True, mobile=True, headers=headers, post=post_data)
+            client.request(url, error=True, mobile=True, headers=headers, post=post_data)
+
+        except Exception as ex:
+            control.log("ERROR SAVING VIDEO PROGRESS (GLOBO PLAY): %s" % repr(ex))

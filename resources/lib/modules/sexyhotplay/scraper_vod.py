@@ -6,22 +6,22 @@ from BeautifulSoup import BeautifulSoup as bs
 
 artPath = control.artPath()
 
+
 def getChannels():
 
-    channels = []
-
-    channels.append({
-                'slug': 'sexyhot',
-                'name': 'Sexyhot',
-                'logo': os.path.join(artPath, 'logo_sexyhot.png'),
-                'fanart': os.path.join(artPath, 'fanart_sexyhot.png'),
-                'playable': 'false',
-                'plot': None,
-                'id': None,
-                'isFolder': 'true'
-                })
+    channels = [{
+        'slug': 'sexyhot',
+        'name': 'Sexyhot',
+        'logo': os.path.join(artPath, 'logo_sexyhot.png'),
+        'fanart': os.path.join(artPath, 'fanart_sexyhot.png'),
+        'playable': 'false',
+        'plot': None,
+        'id': None,
+        'isFolder': 'true'
+    }]
 
     return channels
+
 
 def get_categories():
 
@@ -44,6 +44,7 @@ def get_categories():
         })
 
     return results
+
 
 def get_videos(url):
     from datetime import timedelta

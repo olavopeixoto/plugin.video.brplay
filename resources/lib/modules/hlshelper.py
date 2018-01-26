@@ -2,12 +2,15 @@ import xbmcgui,xbmc
 
 from resources.lib.modules import control
 import resources.lib.modules.m3u8 as m3u8
-from resources.lib.hlsproxy.proxy import hlsProxy
+from resources.lib.hlsproxy.proxy import HlsProxy
 
 try:
     import http.cookiejar as cookielib
 except:
     import cookielib
+
+__url_resolver__ = None
+
 
 def get_max_bandwidth():
     bandwidth_setting_temp = control.setting('bandwidth')
@@ -49,6 +52,7 @@ def get_max_bandwidth():
 
 
 def pick_bandwidth(url):
+    global __url_resolver__
 
     bandwidth_setting_temp = control.setting('bandwidth')
 
@@ -82,10 +86,9 @@ def pick_bandwidth(url):
     if bandwidth_setting == 'Manual':
         option_adaptive_downloader = '%s %s' % (control.lang(33102).encode('utf-8'), control.lang(33202).encode('utf-8'))
         option_adaptive_redirect = '%s %s' % (control.lang(33102).encode('utf-8'), control.lang(33203).encode('utf-8'))
-        option_adaptive_redirect_buffered = '%s %s' % (control.lang(33102).encode('utf-8'), control.lang(33204).encode('utf-8'))
         option_auto = control.lang(33103).encode('utf-8')
         option_manual = control.lang(33104).encode('utf-8')
-        options = [option_auto, option_adaptive_downloader, option_adaptive_redirect, option_adaptive_redirect_buffered, option_manual]
+        options = [option_auto, option_adaptive_downloader, option_adaptive_redirect, option_manual]
         dialog = xbmcgui.Dialog()
         bandwidth_option = dialog.select(control.lang(34010).encode('utf-8'), options)
         if bandwidth_option<0:
@@ -99,9 +102,6 @@ def pick_bandwidth(url):
             bandwidth_setting = 'Adaptive'
             player_type = 'Redirect'
         elif bandwidth_option == 3:
-            bandwidth_setting = 'Adaptive'
-            player_type = 'Redirect Buffered'
-        elif bandwidth_option == 4:
             bandwidth_setting = 'Manual'
 
     if bandwidth_setting == 'Auto':
@@ -115,7 +115,9 @@ def pick_bandwidth(url):
 
         proxy = control.proxy_url
         maxbandwidth = get_max_bandwidth()
-        url_resolver = hlsProxy()
+
+        if __url_resolver__ is None:
+            __url_resolver__ = HlsProxy()
 
         if player_type == 'Downloader':
             from resources.lib.hlsproxy.hlsdownloader import HLSDownloader
@@ -124,14 +126,9 @@ def pick_bandwidth(url):
             from resources.lib.hlsproxy.hlswriter import HLSWriter
             player = HLSWriter
 
-        if player_type == 'Redirect':
-            player.DOWNLOAD_IN_BACKGROUND = False
-        elif player_type != 'Downloader':
-            player.DOWNLOAD_IN_BACKGROUND = True
+        url, mime_type = __url_resolver__.resolve(url, proxy=proxy, maxbitrate=maxbandwidth, player=player)
 
-        url, mime_type = url_resolver.resolve(url, proxy=proxy, maxbitrate=maxbandwidth, player=player)
-
-        return url, mime_type, url_resolver.stopEvent, None
+        return url, mime_type, __url_resolver__.stop_event, None
 
     playlist, cookies = m3u8.load(url)
 
@@ -175,6 +172,6 @@ def pick_bandwidth(url):
     else:
         url = '%s|Cookie=%s' % (playlist.playlists[bandwidth_options[bandwidth]['index']].absolute_uri, cookies_str)
 
-    xbmc.log("FINAL URL: %s" % url, level=xbmc.LOGNOTICE)
+    control.log("FINAL URL: %s" % url)
 
     return url, None, None, cookies_str

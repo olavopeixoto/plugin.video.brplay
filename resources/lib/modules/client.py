@@ -49,6 +49,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
 
         try: headers.update(headers)
         except: headers = {}
+
         if 'User-Agent' in headers:
             pass
         elif not mobile == True:
@@ -204,6 +205,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         control.log("Request ERROR: %s" % str(e))
         return
 
+
 def printCookieDict(cookie_dict):
     cookie_string = ""
     for name in cookie_dict:
@@ -231,7 +233,7 @@ def parseDOM(html, name='', attrs=None, ret=False):
 
     if not name.strip():
         return ''
-    
+
     if not isinstance(attrs, dict):
         return ''
 
@@ -251,7 +253,7 @@ def parseDOM(html, name='', attrs=None, ret=False):
                 if not this_list and ' ' not in attrs[key]:
                     pattern = '''(<%s [^>]*%s=%s[^>]*>)''' % (name, key, attrs[key])
                     this_list = re.findall(pattern, item, re.M | re. S | re.I)
-        
+
                 if last_list is None:
                     last_list = this_list
                 else:

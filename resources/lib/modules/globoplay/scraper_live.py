@@ -165,7 +165,7 @@ def __get_affiliate_live_channels(affiliate):
 
     program_description = get_program_description(live_program['program_id_epg'], live_program['program_id'], code)
 
-    control.log("program_description: %s" % repr(program_description))
+    control.log("globo live (%s) program_description: %s" % (code, repr(program_description)))
 
     item = {
         'plot': None,
@@ -180,8 +180,8 @@ def __get_affiliate_live_channels(affiliate):
 
     item.pop('datetimeutc', None)
 
-    title = program_description['title'] if 'title' in program_description else 'N/A'
-    subtitle = program_description['subtitle'] if 'subtitle' in program_description else 'N/A'
+    title = program_description['title'] if 'title' in program_description else live_program['title']
+    subtitle = program_description['subtitle'] if 'subtitle' in program_description else live_program['title']
 
     item.update({
         'slug': 'globo',
@@ -196,9 +196,17 @@ def __get_affiliate_live_channels(affiliate):
         'playable': 'true',
         'id': liveglobo,
         'channel_id': 196,
-        'live': True,
-        'fanart': GLOBO_FANART
+        'live': True
     })
+
+    if 'fanart' not in item or not item['fanart']:
+        item.update({'fanart': GLOBO_FANART})
+
+    # if 'poster' not in item or not item['poster']:
+    #     item.update({'poster': live_program['poster']})
+
+    if 'thumb' not in item or not item['thumb']:
+        item.update({'thumb': live_program['poster']})
 
     return item
 
@@ -224,8 +232,10 @@ def __get_live_program(affiliate='RJ'):
 
 def get_program_description(program_id_epg, program_id, affiliate='RJ'):
 
-    today = datetime.datetime.utcnow() - datetime.timedelta(hours=8)  # GMT-3 epg timezone - Schedule starts at 5am = GMT-8
-    today = today if not today is None else datetime.datetime.utcnow() - datetime.timedelta(hours=8)  # GMT-3 - Schedule starts at 5am = GMT-8
+    utc_timezone = control.get_current_brasilia_utc_offset()
+
+    today = datetime.datetime.utcnow() - datetime.timedelta(hours=(5-utc_timezone))  # GMT-3 epg timezone - Schedule starts at 5am = GMT-8
+    today = today if not today is None else datetime.datetime.utcnow() - datetime.timedelta(hours=(5-utc_timezone))  # GMT-3 - Schedule starts at 5am = GMT-8
     today_string = datetime.datetime.strftime(today, '%Y-%m-%d')
 
     day_schedule = __get_or_add_full_day_schedule_cache(today_string, affiliate, 24)
@@ -273,6 +283,8 @@ def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
 
 def __get_full_day_schedule(today, affiliate='RJ'):
 
+    utc_timezone = control.get_current_brasilia_utc_offset()
+
     url = "https://api.globoplay.com.br/v1/epg/%s/praca/%s?api_key=%s" % (today, affiliate, GLOBOPLAY_APIKEY)
     headers = {'Accept-Encoding': 'gzip'}
     slots = client.request(url, headers=headers)['gradeProgramacao']['slots']
@@ -296,7 +308,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
                 control.log("ERROR POPULATING CAST: %s" % repr(ex))
                 pass
 
-        program_datetime_utc = util.strptime_workaround(slot['data_exibicao_e_horario']) + datetime.timedelta(hours=3)
+        program_datetime_utc = util.strptime_workaround(slot['data_exibicao_e_horario']) + datetime.timedelta(hours=(-utc_timezone))
         program_datetime = program_datetime_utc + util.get_utc_delta()
 
         # program_local_date_string = datetime.datetime.strftime(program_datetime, '%d/%m/%Y %H:%M')
@@ -308,7 +320,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             showtitle = slot['nome'] if 'nome' in slot else None
 
         next_start = slots[index+1]['data_exibicao_e_horario'] if index+1 < len(slots) else None
-        next_start = (util.strptime_workaround(next_start) + datetime.timedelta(hours=3) + util.get_utc_delta()) if next_start else datetime.datetime.now()
+        next_start = (util.strptime_workaround(next_start) + datetime.timedelta(hours=(-utc_timezone)) + util.get_utc_delta()) if next_start else datetime.datetime.now()
 
         item = {
             "tagline": slot['chamada'] if 'chamada' in slot else slot['nome'],
@@ -323,7 +335,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             "thumb": slot['imagem'],
             "logo": slot['logo'],
             "clearlogo": slot['logo'],
-            "poster": slot['poster'] if 'poster' in slot else 'None',
+            "poster": slot['poster'] if 'poster' in slot else None,
             "subtitle": slot['nome'],
             "title": title,
             "plot": slot['resumo'] if 'resumo' in slot else None, #program_local_date_string + ' - ' + (slot['resumo'] if 'resumo' in slot else showtitle.replace(' - ', '\n') if showtitle and len(showtitle) > 0 else slot['nome_programa']),

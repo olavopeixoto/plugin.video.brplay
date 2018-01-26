@@ -25,6 +25,36 @@ PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')
 
 
 def get_basic_live_channels():
+    # return get_basic_live_channels_from_simulcast_only()
+    return get_basic_live_channels_from_api()
+
+
+def get_basic_live_channels_from_simulcast_only():
+    live = []
+    simulcast_results = []
+
+    __get_globosat_simulcast(simulcast_results)
+
+    for simulcast_result in simulcast_results:
+
+        simulcast_data = __get_simulcast_data(simulcast_result) if not simulcast_result is None else {}
+
+        item = {
+            'plot': None,
+            'duration': None,
+            'brplayprovider': 'globosat',
+            'playable': 'true',
+            'livefeed': 'true'
+        }
+
+        item.update(simulcast_data)
+
+        live.append(item)
+
+    return live
+
+
+def get_basic_live_channels_from_api():
 
     live = []
     results = []
@@ -61,9 +91,9 @@ def get_basic_live_channels():
 
             item.update({
                     'sorttitle': transmission['title'],
-                    'logo': result['color_logo'],
-                    'clearlogo': result['color_logo'],
-                    'clearart': result['white_logo'],
+                    'logo': result['color_logo'] or result['white_logo'],
+                    'clearlogo': result['color_logo'] or result['white_logo'],
+                    'clearart': result['white_logo'] or result['color_logo'],
                     'banner': result['white_horizontal_logo'],
                     'color': result['color'],
                     'fanart': transmission['items'][0]['image'],
@@ -189,12 +219,14 @@ def get_premiere_live_24h_channels():
 
     studio = 'Premiere Clubes'
 
-    control.log("-- PREMIERE CLUBES SIMULCAST: %s" % repr(live_channels))
+    # control.log("-- PREMIERE CLUBES SIMULCAST: %s" % repr(live_channels))
 
     for channel_data in live_channels:
         program_date = util.strptime_workaround(channel_data['starts_at'][0:19]) + datetime.timedelta(hours=3) + util.get_utc_delta() if channel_data and 'starts_at' in channel_data and channel_data['starts_at'] is not None else datetime.datetime.now()
         live_text = ' (' + control.lang(32004) + ')' if channel_data['live'] else ''
-        title = studio + ('[I] - ' + (channel_data['name'] or '') + '[/I]' if channel_data['name'] else '') + live_text
+        studio = channel_data['channel']['title']
+        title = studio + ('[I] - ' + channel_data['name'] + '[/I]' if channel_data['name'] else '') + live_text
+
 
         live.append({
             'slug': 'premiere-fc',
@@ -210,7 +242,7 @@ def get_premiere_live_24h_channels():
             'playable': 'true',
             'plot': channel_data['description'],
             'id': int(channel_data['media_globovideos_id']),
-            'channel_id': int(channel_data['channel_globovideos_id']),
+            'channel_id': int(channel_data['channel']['globovideos_id']),
             'duration': int(channel_data['duration'] or 0) / 1000,
             'isFolder': 'false',
             'live': channel_data['live'],
@@ -247,7 +279,7 @@ def __get_game_data(game, meta, offline):
     meta.update({
         'name': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
         'label2': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
-        'playable': 'true' if game['id_midia'] != None else 'false',
+        'playable': 'true' if game['id_midia'] is not None else 'false',
         'plot': game['estadio'],
         'plotoutline': game['data'],
         'id': game['id_midia'],
@@ -268,8 +300,10 @@ def __get_game_data(game, meta, offline):
 
 def __get_simulcast_data(result):
 
+    utc_timezone = control.get_current_brasilia_utc_offset()
+
     live_text = ' (' + control.lang(32004) + ')' if result['live'] else ''
-    program_date = util.strptime_workaround(result['day'], '%d/%m/%Y %H:%M') + datetime.timedelta(hours=3) + util.get_utc_delta() if not result['day'] is None else datetime.datetime.now()
+    program_date = util.strptime_workaround(result['day'], '%d/%m/%Y %H:%M') + datetime.timedelta(hours=-utc_timezone) + util.get_utc_delta() if not result['day'] is None else datetime.datetime.now()
     # program_local_date_string = datetime.datetime.strftime(program_date, '%d/%m/%Y %H:%M')
     # duration_str = (' - ' + str(result['duration'] or 0) + ' minutos') if (result['duration'] or 0) > 0 else ''
     title = result['channel']['title'] + ('[I] - ' + (result['title'] or '') + '[/I]' if result['title'] else '') + live_text
@@ -282,8 +316,8 @@ def __get_simulcast_data(result):
         'title': result['subtitle'],
         'tvshowtitle': result['title'] if result['title'] else None,
         'sorttitle': result['channel']['title'],
-        # 'logo': None,
-        # 'color': None,
+        'logo': None,
+        'color': result['channel']['color'],
         'fanart': result['thumb_cms'],
         'thumb': result['channel']['url_snapshot'] + '?v=' + str(int(time.time())),
         'live': result['live'],

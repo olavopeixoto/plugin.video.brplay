@@ -60,6 +60,16 @@ class navigator:
 
         cache.delete_file()
 
+        control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
+
+    def clear_credentials(self):
+        control.idle()
+
+        yes = control.yesnoDialog(control.lang(32056).encode('utf-8'), '', '')
+
+        if not yes:
+            return
+
         control.clear_credentials()
 
         control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
