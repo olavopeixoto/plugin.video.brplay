@@ -10,6 +10,7 @@ from resources.lib.modules import control
 from resources.lib.modules import workers
 from resources.lib.modules.globoplay import indexer as globoplay
 from resources.lib.modules.globosat import indexer as globosat
+from resources.lib.modules.futuraplay import scraper_live as futuraplay
 
 
 class Live:
@@ -27,6 +28,8 @@ class Live:
 
         if control.is_globosat_available():
             threads.append(workers.Thread(self.append_result, globosat.Indexer().get_live, live))
+
+        threads.append(workers.Thread(self.append_result, futuraplay.get_live_channels, live))
 
         [i.start() for i in threads]
         [i.join() for i in threads]
@@ -72,7 +75,8 @@ class Live:
 
     def channel_directory(self, items):
         if items is None or len(items) == 0:
-            control.idle(); sys.exit()
+            control.idle()
+            sys.exit()
 
         sysaddon = sys.argv[0]
 
@@ -105,11 +109,9 @@ class Live:
 
             url = channel['url'] if 'url' in channel else '%s?action=playlive&provider=%s&id_globo_videos=%s&isFolder=%s&meta=%s&t=%s' % (sysaddon, brplayprovider, id_globo_videos, isFolder, sysmeta, self.systime)
 
-            cm = []
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
 
-            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
-
-            if isOld == True:
+            if isOld is True:
                 cm.append((control.lang2(19033).encode('utf-8'), 'Action(Info)'))
 
             item = control.item(label=label)

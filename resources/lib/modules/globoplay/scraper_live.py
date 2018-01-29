@@ -186,7 +186,7 @@ def __get_affiliate_live_channels(affiliate):
     item.update({
         'slug': 'globo',
         'name': 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + title + '[/I]',
-        'title': subtitle, #'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
+        'title': subtitle,  # 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
         'tvshowtitle': title,
         'sorttitle': 'Globo ' + re.sub(r'\d+','',code),
         'clearlogo': GLOBO_LOGO,
@@ -257,7 +257,7 @@ def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
         t1 = int(match[1])
         t2 = int(time.time())
         update = (abs(t2 - t1) / 3600) >= int(timeout)
-        if update == False:
+        if update is False:
             control.log("Returning globoplay_schedule cached response for affiliate %s and date_str %s" % (affiliate, date_str))
             return response
     except Exception as ex:

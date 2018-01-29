@@ -98,7 +98,7 @@ class Player(xbmc.Player):
                 item = items[0]
             else:
                 control.log("PLAY SINGLE RESOURCE!")
-                hash, user, self.credentials = self.sign_resource(info['resource_id'], info["id"], info['player'], info['version'])
+                hash, user, self.credentials = self.sign_resource(info['resource_id'], info["id"], info['player'], info['version'], meta['anonymous'] if 'anonymous' in meta else False)
                 info['hash'] = hash
                 info['user'] = user
                 item, self.url, stopEvent = self.__get_list_item(meta, info)
@@ -145,7 +145,7 @@ class Player(xbmc.Player):
         hash = info['hash']
         user = info['user']
 
-        title = info['title'] #or meta['title'] if 'title' in meta else None
+        title = info['title']  # or meta['title'] if 'title' in meta else None
 
         query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
 
@@ -185,7 +185,7 @@ class Player(xbmc.Player):
                 control.log("Setting stop event for proxy player")
                 stopEvent.set()
             control.infoDialog(message=control.lang(34100).encode('utf-8'), icon='ERROR')
-            return
+            return None, None, None
 
         control.log("Resolved URL: %s" % repr(url))
 
@@ -310,19 +310,23 @@ class Player(xbmc.Player):
             "encrypted": False
         }
 
-    def sign_resource(self, resource_id, video_id, player, version):
+    def sign_resource(self, resource_id, video_id, player, version, anonymous=False):
         proxy = control.proxy_url
         proxy = None if proxy is None or proxy == '' else {
             'http': proxy,
             'https': proxy,
         }
 
-        username = control.setting('globoplay_username')
-        password = control.setting('globoplay_password')
+        if not anonymous:
+            username = control.setting('globoplay_username')
+            password = control.setting('globoplay_password')
 
-        # authenticate
-        credentials = auth.auth().authenticate(username, password)
-        hashUrl = 'http://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
+            # authenticate
+            credentials = auth.auth().authenticate(username, password)
+        else:
+            credentials = None
+
+        hashUrl = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
         hashJson = client.request(hashUrl, cookie=credentials, mobile=False, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
 
         if not hashJson or 'hash' not in hashJson:
