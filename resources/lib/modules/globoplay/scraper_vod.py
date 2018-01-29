@@ -282,6 +282,7 @@ def get_globo_programs():
                             'fanart': j['assets']['tvos_background_4k'] if control.is_4k_images_enabled and 'tvos_background_4k' in j['assets'] else j['assets']['background_tv'],
                             'clearlogo': GLOBO_LOGO,
                             'kind': 'movies' if j['type'] == 'filmes' else (j['type'] or 'default'),
+                            'plot': j['description'] if 'description' in j else '',
                             'brplayprovider': 'globoplay'
                         } for j in json['programs']], 'subcategories': [{'category': j['title'].capitalize(), 'programs': [{
                             'id': p['id'],
@@ -290,6 +291,7 @@ def get_globo_programs():
                             'fanart': p['assets']['tvos_background_4k'] if control.is_4k_images_enabled and 'tvos_background_4k' in p['assets'] else p['assets']['background_tv'],
                             'clearlogo': GLOBO_LOGO,
                             'kind': 'movies' if p['type'] == 'filmes' else (p['type'] or 'default'),
+                            'plot': p['description'] if 'description' in j else '',
                             'brplayprovider': 'globoplay'
                         } for p in j['programs']]} for j in json['subcategories']]} for json in categories_json]
 

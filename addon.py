@@ -32,7 +32,8 @@ try:
 
     provider = params.get('provider')
 
-    metaJson = json.loads(meta) if meta != None else None
+    metaJson = json.loads(meta) if meta is not None else None
+
     isFolder = params.get('isFolder')
 
     url = params.get('url')
@@ -64,6 +65,10 @@ try:
     if action is None:
         from resources.lib.indexers import navigator
         navigator.navigator().root()
+
+    elif action == 'settings':
+        from resources.lib.indexers import navigator
+        navigator.navigator().openSettings()
 
     elif action == 'clear':
         from resources.lib.indexers import navigator

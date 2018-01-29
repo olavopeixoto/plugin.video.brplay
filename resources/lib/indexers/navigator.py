@@ -11,29 +11,37 @@ from resources.lib.modules import control, cache
 sysaddon = sys.argv[0]
 syshandle = int(sys.argv[1])
 
-artPath = control.artPath() ; addonFanart = control.addonFanart()
+artPath = control.artPath()
+addonFanart = control.addonFanart()
 
 # traktCredentials = trakt.getTraktCredentialsInfo()
 # traktIndicators = trakt.getTraktIndicatorsInfo()
 
 class navigator:
     def root(self):
-        self.add_directory_item(32001, 'liveChannels', 'live.png', 'DefaultLive.png')
-        self.add_directory_item(32002, 'vodChannels', 'ondemand.png', 'DefaultOnDemand.png')
+        if control.is_globosat_available() or control.is_globoplay_available():
+            self.add_directory_item(32001, 'liveChannels', 'live.png', 'live.png')
+            self.add_directory_item(32002, 'vodChannels', 'ondemand.png', 'ondemand.png')
+        else:
+            self.add_directory_item(32005, 'settings', 'tools.png', 'tools.png')
 
         if control.is_globosat_available():
-            self.add_directory_item(32080, 'featured', 'featured.png', 'DefaultMovies.png')
-            self.add_directory_item(32090, 'favorites', 'favorites.png', 'DefaultMovies.png')
-            self.add_directory_item(32095, 'watchlater', 'userlists.png', 'DefaultMovies.png')
-            self.add_directory_item(32096, 'watchhistory', 'years.png', 'DefaultMovies.png')
+            self.add_directory_item(32080, 'featured', 'featured.png', 'featured.png')
+            self.add_directory_item(32090, 'favorites', 'favorites.png', 'favorites.png')
+            self.add_directory_item(32095, 'watchlater', 'userlists.png', 'userlists.png')
+            self.add_directory_item(32096, 'watchhistory', 'years.png', 'years.png')
 
-        self.add_directory_item(32010, 'searchMenu', 'search.png', 'DefaultMovies.png')
+        if control.is_globosat_available() or control.is_globoplay_available():
+            self.add_directory_item(32010, 'searchMenu', 'search.png', 'search.png')
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
         control.content(syshandle, 'files')
 
         self.end_directory()
+
+    def openSettings(self):
+        control.openSettings('globosat_provider')
 
     def searchMenu(self):
         control.idle()

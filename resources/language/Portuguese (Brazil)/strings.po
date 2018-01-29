@@ -152,6 +152,10 @@ msgctxt "#32002"
 msgid "On Demand"
 msgstr "Canais sob Demanda"
 
+msgctxt "#32005"
+msgid "Login"
+msgstr "Login"
+
 msgctxt "#32004"
 msgid "Live"
 msgstr "Ao Vivo"

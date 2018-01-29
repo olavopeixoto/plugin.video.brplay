@@ -19,6 +19,7 @@ GLOBO_FANART = scraper_vod.GLOBO_FANART
 CALENDAR_ICON = os.path.join(control.artPath(), 'calendar.png')
 NEXT_ICON = os.path.join(control.artPath(), 'next.png')
 REPLAY_ICON = os.path.join(control.artPath(), 'returning-tvshows.png')
+REPLAY_ICON_POSTER = os.path.join(control.artPath(), 'returning-tvshows-poster.png')
 
 
 class Vod:
@@ -51,7 +52,7 @@ class Vod:
             channels += globosat.Indexer().get_vod()
 
         if control.is_globoplay_available():
-             channels += globoplay.Indexer().get_vod()
+            channels += globoplay.Indexer().get_vod()
 
         channels = sorted(channels, key=lambda k: k['name'])
 
@@ -587,7 +588,8 @@ class Vod:
 
     def programs_directory(self, items, folders=[], category=None):
         if items is None or len(items) == 0:
-            control.idle() ; sys.exit()
+            control.idle()
+            sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
@@ -678,6 +680,7 @@ class Vod:
 
             if str(subcategory).lower() == 'replay':
                 art.update({'thumb': REPLAY_ICON})
+                art.update({'poster': REPLAY_ICON_POSTER})
 
             item.setArt(art)
 
@@ -697,7 +700,8 @@ class Vod:
 
     def category_directory(self, items, extras, provider='globoplay'):
         if items is None or len(items) == 0:
-            control.idle() ; sys.exit()
+            control.idle()
+            sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
