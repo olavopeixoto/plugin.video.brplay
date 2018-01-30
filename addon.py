@@ -217,11 +217,18 @@ try:
 
     elif action == 'openchannel' and provider == 'globoplay':
         from resources.lib.indexers import vod
-        vod.Vod().get_channel_categories()
+        if slug == 'futura':
+            vod.Vod().get_channel_categories(slug=slug)
+        else:
+            vod.Vod().get_channel_categories()
 
     elif action == 'openextra' and provider == 'globoplay':
         from resources.lib.indexers import vod
         vod.Vod().get_videos_by_category(category, int(page or 1), poster)
+
+    elif action == 'opencategory' and provider == 'futura':
+        from resources.lib.indexers import vod
+        vod.Vod().open_futura_menu(category)
 
     elif action == 'opencategory' and provider == 'globoplay' and subcategory is not None:
         from resources.lib.indexers import vod

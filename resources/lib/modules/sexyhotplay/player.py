@@ -19,6 +19,7 @@ class Player(xbmc.Player):
         super(xbmc.Player, self).__init__()
         self.stopPlayingEvent = None
         self.retry = 0
+        self.url = None
 
     def play_vod(self, id, meta):
 
@@ -49,12 +50,14 @@ class Player(xbmc.Player):
 
         query_string = query_string % {
             'hash': signed_hashes[0],
-            'key': 'html5'
+            'key': 'app',
+            'openClosed': 'F' if info['subscriber_only'] else 'A',
+            'user': info["user"] if info['subscriber_only'] else ''
         }
 
-        url = '?'.join([info['url'], query_string])
+        self.url = '?'.join([info['url'], query_string])
 
-        control.log("live media url: %s" % url)
+        control.log("live media url: %s" % self.url)
 
         try:
             meta = json.loads(meta)
@@ -69,12 +72,12 @@ class Player(xbmc.Player):
 
         meta.update({
             "genre": info["category"],
-        });
+        })
 
         poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
 
-        url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
+        url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(self.url)
         control.log("Resolved URL: %s" % repr(url))
 
         if self.url is None:
@@ -177,7 +180,7 @@ class Player(xbmc.Player):
         playlistJson = playlistJson['videos'][0]
 
         for node in playlistJson['resources']:
-            if any("ios" in s for s in node['players']):
+            if any("android" in s for s in node['players']):
                 resource = node
                 break
 
@@ -195,12 +198,17 @@ class Player(xbmc.Player):
         authenticator = getattr(auth, provider)()
         credentials = authenticator.authenticate(playlistJson["provider_id"], username, password, False)
 
-        hashUrl = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=1.1.23&player=ios' % (
-        id, resource_id)
+        hashUrl = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=1.1.24&player=android' % (id, resource_id)
 
         control.log("HASH URL: %s" % hashUrl)
 
-        hashJson = client.request(hashUrl, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"})
+        proxy = control.proxy_url
+        proxy = None if proxy is None or proxy == '' else {
+            'http': proxy,
+            'https': proxy,
+        }
+
+        hashJson = client.request(hashUrl, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
 
         control.log("HASH JSON: %s" % repr(hashJson))
 
@@ -219,9 +227,10 @@ class Player(xbmc.Player):
             "category": playlistJson["category"],
             "subscriber_only": playlistJson["subscriber_only"],
             "exhibited_at": playlistJson["exhibited_at"],
-            "player": "ios",
+            "player": "android",
             "url": resource["url"],
             "query_string_template": resource["query_string_template"],
             "thumbUri": None,  # resource["thumbUri"],
-            "hash": hashJson["hash"]
+            "hash": hashJson["hash"],
+            "user": hashJson["user"] if 'user' in hashJson else None
         }

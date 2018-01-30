@@ -10,7 +10,9 @@ from resources.lib.modules.globoplay import scraper_vod
 from resources.lib.modules.globosat import indexer as globosat
 from resources.lib.modules import control
 from resources.lib.modules.globoplay import indexer as globoplay
+from resources.lib.modules.futuraplay import scraper_vod as futuraplay
 from resources.lib.modules.globosat import scraper_combate
+from resources.lib.modules.futuraplay import scraper_vod as scraper_futura
 from resources.lib.modules import cache
 from resources.lib.modules import workers
 
@@ -54,6 +56,8 @@ class Vod:
         if control.is_globoplay_available():
             channels += globoplay.Indexer().get_vod()
 
+        channels += futuraplay.get_channels()
+
         channels = sorted(channels, key=lambda k: k['name'])
 
         return channels
@@ -66,10 +70,17 @@ class Vod:
         if slug == 'combate':
             categories = cache.get(scraper_combate.get_combate_categories, 1)
             self.category_combate_directory(categories)
+        elif slug == 'futura':
+            categories = cache.get(scraper_futura.get_menu, 1)
+            self.category_futura_directory(categories)
         else:
             categories = cache.get(globoplay.Indexer().get_channel_categories, 1)
             extras = cache.get(globoplay.Indexer().get_extra_categories, 1)
             self.category_directory(categories, extras)
+
+    def open_futura_menu(self, category):
+        categories = cache.get(scraper_futura.get_menu, 1, category)
+        self.category_futura_directory(categories)
 
     def get_extras(self):
         from resources.lib.modules.globosat import scraper_vod
@@ -820,11 +831,13 @@ class Vod:
         syshandle = int(sys.argv[1])
 
         #addonPoster, addonBanner = control.addonPoster(), control.addonBanner()
-
         #addonFanart, settingFanart = control.addonFanart(), control.setting('fanart')
 
-        try: isOld = False ; control.item().getArt('type')
-        except: isOld = True
+        try:
+            isOld = False
+            control.item().getArt('type')
+        except:
+            isOld = True
 
         # isPlayable = 'true' #if not 'plugin' in control.infoLabel('Container.PluginName') else 'false'
 
@@ -837,66 +850,64 @@ class Vod:
 
         for i in items:
             # try:
-                label = i['name']
-                meta = dict((k,v) for k, v in i.iteritems() if not v == '0')
-                meta.update({'mediatype': 'video'}) #string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
-                meta.update({'playcount': 0, 'overlay': 6})
-                meta.update({'duration': i['duration']}) if 'duration' in i else None
-                meta.update({'title': i['title']}) if 'title' in i else None
-                meta.update({'tagline': i['tagline']}) if 'tagline' in i else None
-                # meta.update({'aired': i['datetime']}) if 'datetime' in i else None
-                # meta.update({'dateadded': i['datetime']}) if 'datetime' in i else None
+            label = i['name']
+            meta = dict((k,v) for k, v in i.iteritems() if not v == '0')
+            meta.update({'mediatype': 'video'})  # string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+            meta.update({'playcount': 0, 'overlay': 6})
+            meta.update({'duration': i['duration']}) if 'duration' in i else None
+            meta.update({'title': i['title']}) if 'title' in i else None
+            meta.update({'tagline': i['tagline']}) if 'tagline' in i else None
+            # meta.update({'aired': i['datetime']}) if 'datetime' in i else None
+            # meta.update({'dateadded': i['datetime']}) if 'datetime' in i else None
 
-                #"StartTime", "EndTime", "ChannelNumber" and "ChannelName"
+            #"StartTime", "EndTime", "ChannelNumber" and "ChannelName"
 
-                sysmeta = urllib.quote_plus(json.dumps(meta))
-                id_globo_videos = i['id']
-                id_cms = i['id_cms'] if 'id_cms' in i else None
-                slug = i['slug'] if 'slug' in i else None
-                brplayprovider = i['brplayprovider']
+            sysmeta = urllib.quote_plus(json.dumps(meta))
+            id_globo_videos = i['id']
+            id_cms = i['id_cms'] if 'id_cms' in i and i['id_cms'] is not None else ''
+            slug = i['slug'] if 'slug' in i and i['slug'] is not None else ''
+            brplayprovider = i['brplayprovider']
 
-                url = '%s?action=openchannel&provider=%s&id_globo_videos=%s&id_cms=%s&slug=%s&meta=%s&t=%s' % (sysaddon, brplayprovider, id_globo_videos, id_cms, slug, sysmeta, self.systime)
+            url = '%s?action=openchannel&provider=%s&id_globo_videos=%s&id_cms=%s&slug=%s&meta=%s&t=%s' % (sysaddon, str(brplayprovider), id_globo_videos, id_cms, urllib.quote_plus(slug), sysmeta, self.systime)
 
-                cm = []
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
 
-                #cm.append((queueMenu, 'RunPlugin(%s?action=queueItem)' % sysaddon))
+            #cm.append((queueMenu, 'RunPlugin(%s?action=queueItem)' % sysaddon))
 
-                cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            if isOld is True:
+                cm.append((control.lang2(19033).encode('utf-8'), 'Action(Info)'))
 
-                if isOld == True:
-                    cm.append((control.lang2(19033).encode('utf-8'), 'Action(Info)'))
+            item = control.item(label=label)
 
-                item = control.item(label=label)
+            art = {}
 
-                art = {}
+            # if 'poster2' in i and not i['poster2'] == '0':
+            #     art.update({'icon': i['poster2'], 'thumb': i['poster2'], 'poster': i['poster2']})
+            # elif 'poster' in i and not i['poster'] == '0':
+            #     art.update({'icon': i['poster'], 'thumb': i['poster'], 'poster': i['poster']})
+            # else:
+            #     art.update({'icon': addonPoster, 'thumb': addonPoster, 'poster': addonPoster})
 
-                # if 'poster2' in i and not i['poster2'] == '0':
-                #     art.update({'icon': i['poster2'], 'thumb': i['poster2'], 'poster': i['poster2']})
-                # elif 'poster' in i and not i['poster'] == '0':
-                #     art.update({'icon': i['poster'], 'thumb': i['poster'], 'poster': i['poster']})
-                # else:
-                #     art.update({'icon': addonPoster, 'thumb': addonPoster, 'poster': addonPoster})
+            art.update({'icon': i['logo'], 'thumb': i['logo'], 'poster': i['logo']})
 
-                art.update({'icon': i['logo'], 'thumb': i['logo'], 'poster': i['logo']})
+            #art.update({'banner': addonBanner})
 
-                #art.update({'banner': addonBanner})
+            # if settingFanart == 'true' and 'fanart' in i and not i['fanart'] == '0':
+            #     item.setProperty('Fanart_Image', i['fanart'])
+            # elif not addonFanart is None:
+            #     item.setProperty('Fanart_Image', addonFanart)
 
-                # if settingFanart == 'true' and 'fanart' in i and not i['fanart'] == '0':
-                #     item.setProperty('Fanart_Image', i['fanart'])
-                # elif not addonFanart is None:
-                #     item.setProperty('Fanart_Image', addonFanart)
+            if 'fanart' in i:
+                item.setProperty('Fanart_Image', i['fanart'])
+            else:
+                item.setProperty('Fanart_Image', control.addonFanart())
 
-                if 'fanart' in i:
-                    item.setProperty('Fanart_Image', i['fanart'])
-                else:
-                    item.setProperty('Fanart_Image', control.addonFanart())
+            item.setArt(art)
+            item.addContextMenuItems(cm)
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels = meta)
 
-                item.setArt(art)
-                item.addContextMenuItems(cm)
-                item.setProperty('IsPlayable', "false")
-                item.setInfo(type='video', infoLabels = meta)
-
-                control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
             # except:
             #     pass
 
@@ -932,6 +943,51 @@ class Vod:
             # item.setProperty('Fanart_Image', fanart)
 
             item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels = meta)
+
+            cm = []
+            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            item.addContextMenuItems(cm)
+
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+
+        control.content(syshandle, 'files')
+        control.directory(syshandle, cacheToDisc=False)
+
+    def category_futura_directory(self, items):
+        if items is None or len(items) == 0: control.idle() ; sys.exit()
+
+        sysaddon = sys.argv[0]
+        syshandle = int(sys.argv[1])
+
+        # 32072 = "Refresh"
+        refreshMenu = control.lang(32072).encode('utf-8')
+
+        for item in items:
+            title = item['title']
+            label = title
+            slug = item['slug'] if 'slug' in item else None
+            meta = {}
+            meta.update({'title': title})
+
+            is_playable = 'IsPlayable' in item and item['IsPlayable'] == 'true'
+            provider = item['brplayprovider'] if 'brplayprovider' in item else None
+
+            if is_playable:
+                url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, provider, item['id'], urllib.quote_plus(json.dumps(meta)))
+            else:
+                url = '%s?action=opencategory&provider=%s&category=%s' % (sysaddon, 'futura', urllib.quote_plus(slug))
+
+            item = control.item(label=label)
+
+            # art = {'icon': GLOBO_LOGO, 'thumb': GLOBO_LOGO, 'fanart': fanart}
+            # item.setArt(art)
+
+            # item.setProperty('Fanart_Image', fanart)
+
+            item.setProperty('IsPlayable', "true" if is_playable else 'false')
             item.setInfo(type='video', infoLabels = meta)
 
             cm = []

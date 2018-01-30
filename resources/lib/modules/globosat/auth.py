@@ -89,13 +89,13 @@ class auth:
             control.log('COOKIES: %s' % repr(dict(r3.cookies)))
 
             # control.log('VERIFYING HISTORY: %s' % pickle.dumps(r3))
-            # if r3.history:
-            #     control.log('HAS HISTORY (%s): %s' % (len(r3.history), repr(r3.history)))
-            #     last_response = r3.history[-1]
-            #     control.log('HISTORY COOKIES: %s' % dict(last_response.cookies))
-
+            if r3.history:
+                # control.log('HAS HISTORY (%s): %s' % (len(r3.history), repr(r3.history)))
+                last_response = r3.history[-1]
+                control.log('HISTORY COOKIES: %s' % dict(last_response.cookies))
+                token = dict(last_response.cookies)['ef77eccddf5ecefbb05d2218321937ff3c3de07ba4c9bc2ecae71312']
             sessionId = dict(r3.cookies)['sexyhotplay_sessionid']
-            token = qp.replace('code=', '')
+            # token = qp.replace('code=', '')
 
         self.credentials.update({
             ("token_%s" % str(self.PROVIDER_ID)): token,
