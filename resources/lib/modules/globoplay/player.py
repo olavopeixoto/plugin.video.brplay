@@ -66,7 +66,7 @@ class Player(xbmc.Player):
 
         self.isLive = False
 
-        if 'live' in meta and meta['live'] is True:
+        if 'livefeed' in meta and meta['livefeed'] == 'true':
             control.log("PLAY LIVE!")
             self.isLive = True
             info = self.__getLiveVideoInfo(id, meta['affiliate'] if 'affiliate' in meta else None)
@@ -337,7 +337,7 @@ class Player(xbmc.Player):
 
         hash = get_signed_hashes(hashJson['hash'])[0]
 
-        return hash, None, credentials
+        return hash, hashJson['user'] if 'user' in hashJson else None, credentials
 
     def save_video_progress(self, credentials, program_id, video_id, milliseconds_watched, fully_watched=False):
 

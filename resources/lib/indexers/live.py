@@ -9,6 +9,7 @@ import resources.lib.modules.util as util
 from resources.lib.modules import control
 from resources.lib.modules import workers
 from resources.lib.modules.globoplay import indexer as globoplay
+from resources.lib.modules.globoplay import scraper_live as globoplay_live
 from resources.lib.modules.globosat import indexer as globosat
 from resources.lib.modules.futuraplay import scraper_live as futuraplay
 
@@ -66,8 +67,15 @@ class Live:
     def append_result(self, fn, list, *args):
         list += fn(*args)
 
-    def get_subitems(self, meta):
+    def get_subitems_pfc(self, meta):
         live = globosat.Indexer().get_pfc(meta)
+
+        self.channel_directory(live)
+
+        return live
+
+    def get_subitems_bbb(self, program_id):
+        live = globoplay_live.get_multicam(program_id)
 
         self.channel_directory(live)
 

@@ -437,4 +437,4 @@ def clear_credentials():
 
 def log(msg):
     if setting('enable_log') == 'true':
-        xbmc.log(msg, xbmc.LOGNOTICE)  # xbmc.LOGDEBUG
+        xbmc.log('[plugin.video.brplay] - ' + msg, xbmc.LOGNOTICE)  # xbmc.LOGDEBUG

@@ -5,6 +5,9 @@ from resources.lib.modules import control
 from resources.lib.modules import client
 from resources.lib.modules import util
 from resources.lib.modules import workers
+from resources.lib.modules import cache
+import re
+import json
 
 GLOBOSAT_URL = 'http://globosatplay.globo.com'
 GLOBOSAT_API_URL = 'http://api.vod.globosat.tv/globosatplay'
@@ -17,16 +20,23 @@ PREMIERE_UPCOMING_JSON = GLOBOSAT_URL + '/premierefc/ao-vivo/add-on/proximos-jog
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
 PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
 
+GLOBOSAT_TRANSMISSIONS = GLOBOSAT_API_URL + '/transmissions.json?page=%s'
+GLOBOSAT_LIVE_JSON = GLOBOSAT_URL + '/xhr/transmissoes/ao-vivo.json'
+
+#UNIVERSAL CHANNEL
+#https://api.globovideos.com/videos/5497510/playlist
+
 artPath = control.artPath()
 
 COMBATE_LOGO = os.path.join(artPath, 'logo_combate.png')
 PREMIERE_LOGO = os.path.join(artPath, 'logo_premiere.png')
-PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')
+PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')  # https://s02.video.glbimg.com/x720/2752761.jpg
 
 
 def get_basic_live_channels():
-    # return get_basic_live_channels_from_simulcast_only()
-    return get_basic_live_channels_from_api()
+    # return get_basic_live_channels_from_simulcast_only() + get_universal_live()
+    return get_basic_live_channels_from_api() + get_universal_live()
+    # return get_transmissions_live_channels_from_json() + get_universal_live()
 
 
 def get_basic_live_channels_from_simulcast_only():
@@ -52,6 +62,135 @@ def get_basic_live_channels_from_simulcast_only():
         live.append(item)
 
     return live
+
+
+def get_transmissions_live_channels_from_json():
+    transmissions = []
+
+    threads = [
+        workers.Thread(__get_transmissions_page, transmissions, 1),
+        workers.Thread(__get_transmissions_page, transmissions, 2)
+    ]
+    [i.start() for i in threads]
+    [i.join() for i in threads]
+
+    channels = []
+
+    for transmission in transmissions:
+        updated_at = util.strptime_workaround(transmission['updated_at'], '%Y-%m-%dT%H:%M:%SZ')
+
+        if updated_at > datetime.datetime.utcnow() - datetime.timedelta(hours=24):
+            if transmission['status'] == "ativa":
+                for item in transmission['items']:
+
+                    title = transmission['title']
+                    if item['title'] != str(item['id_globo_videos']):
+                        title = title + item['title']
+                    channel = {
+                        'slug': str(item['id_globo_videos']),
+                        'name': title,
+                        'studio': transmission['title'],
+                        'title': title,
+                        'plot': None,
+                        'duration': None,
+                        'sorttitle': title,
+                        'thumb': item['image'],
+                        'logo': None,
+                        'clearlogo': None,
+                        'clearart': None,
+                        'banner': None,
+                        'color': None,
+                        'fanart': None,
+                        'id': item['id_globo_videos'],
+                        'channel_id': transmission['id_channel'],
+                        'brplayprovider': 'globosat',
+                        'playable': 'true',
+                        'livefeed': 'true',
+                        # 'dateadded': datetime.datetime.strftime(updated_at, '%Y-%m-%d %H:%M:%S')
+                    }
+
+                    channels.append(channel)
+
+    return channels
+
+
+def get_universal_live():
+
+    title = 'Universal Channel'
+    logo = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/2014/11/14/2eac19898a33a0fcbfbe9fa3265f70e5.png'
+    id = 5497510
+
+    return [{
+                'slug': 'universal-channel',
+                'name': title,
+                'studio': title,
+                'title': title,
+                'sorttitle': title,
+                'thumb': 'https://live-thumbs.video.globo.com/univ24ha/snapshot/?v=' + str(int(time.time())),
+                'logo': logo,
+                'clearlogo': logo,
+                'clearart': logo,
+                'banner': None,
+                'color': None,
+                'fanart': 'https://s03.video.glbimg.com/x720/5497510.jpg',
+                'id': id,
+                'channel_id': 1997,
+                'brplayprovider': 'globosat',
+                'playable': 'true',
+                'livefeed': 'true',
+                'dateadded': None, #datetime.datetime.strftime(updated_at, '%Y-%m-%d %H:%M:%S'),
+                'plot': None,
+                'duration': None,
+            }]
+
+
+def __get_transmissions_page(results, page=1):
+    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
+    transmissions = client.request(GLOBOSAT_TRANSMISSIONS % page, headers=headers)
+    if transmissions and 'results' in transmissions:
+        results += transmissions['results']
+
+    # loop through pages
+    # while channel_info['next'] is not None:
+    #     page += 1
+    #     channel_info = client.request(GLOBOSAT_TRANSMISSIONS % page, headers=headers)
+    #     results += channel_info['results']
+
+
+def get_bbb_channels():
+    html = cache.get(client.request, 1, 'https://globosatplay.globo.com/bbb/ao-vivo/')
+    config_json = json.loads(re.findall('window.initialState\s*=\s*([\s\S]*?)<\/script>', html)[0])
+
+    channels = config_json['channels']
+    signals = []
+    channel = channels['channels'][0]
+    for index, signal in enumerate(channels['signals']):
+        title = signal['title']
+        logo = channel['logotipoXl']
+        signals.append({
+            'slug': channel['productId'] + str(index),
+            'name': title,
+            'studio': 'Rede Globo',
+            'title': title,
+            'sorttitle': title,
+            'thumb': signal['thumbUrl'] + '?v=' + str(int(time.time())),
+            'logo': logo,
+            'clearlogo': logo,
+            'clearart': logo,
+            'banner': None,
+            'color': None,
+            'fanart': signal['background'],
+            'id': signal['videoId'],
+            'channel_id': channel['id'],
+            'brplayprovider': 'globosat',
+            'playable': 'true',
+            'livefeed': 'true',
+            'dateadded': None,  # datetime.datetime.strftime(updated_at, '%Y-%m-%d %H:%M:%S'),
+            'plot': None,
+            'duration': None,
+        })
+
+    return signals
 
 
 def get_basic_live_channels_from_api():
@@ -190,7 +329,6 @@ def get_premiere_live_channels():
         'title': 'Ao Vivo' if not offline else u'Veja a Programação',
         'tvshowtitle': tvshowtitle,
         'sorttitle': 'Premiere FC',
-        'logo': PREMIERE_LOGO,
         'clearlogo': PREMIERE_LOGO,
         'fanart': PREMIERE_FANART,
         'thumb': PREMIERE_FANART,
@@ -205,6 +343,7 @@ def get_premiere_live_channels():
         'initials1': live_games[0]['time_mandante']['sigla'],
         'initials2': live_games[0]['time_visitante']['sigla'],
         'gamedetails': live_games[0]['campeonato'] + extra_games_str,
+        'brplayprovider': 'premierefc' if offline else None
     })
 
     return live
@@ -226,7 +365,6 @@ def get_premiere_live_24h_channels():
         live_text = ' (' + control.lang(32004) + ')' if channel_data['live'] else ''
         studio = channel_data['channel']['title']
         title = studio + ('[I] - ' + channel_data['name'] + '[/I]' if channel_data['name'] else '') + live_text
-
 
         live.append({
             'slug': 'premiere-fc',
@@ -254,28 +392,28 @@ def get_premiere_live_24h_channels():
     return live
 
 
-def get_premiere_games(meta):
+def get_premiere_games(meta={}, online_only=False):
 
     live = []
     offline = False
 
     headers = {'Accept-Encoding': 'gzip'}
     live_games = client.request(PREMIERE_LIVE_JSON, headers=headers)['jogos']
-    if len(live_games) == 0:
+    if len(live_games) == 0 and not online_only:
         offline=True
         live_games = client.request(PREMIERE_UPCOMING_JSON, headers=headers)['jogos']
 
     for game in live_games:
         livemeta = meta.copy()
-        #offlineText = u' (' + game['data'] + u')' if offline else u''
-        #tvshowtitle = game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')'
-        #plot =  game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')' + u'. ' + game['data']
         live.append(__get_game_data(game, livemeta, offline))
 
     return live
 
 
 def __get_game_data(game, meta, offline):
+    # offlineText = u' (' + game['data'] + u')' if offline else u''
+    # tvshowtitle = game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')'
+    # plot =  game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')' + u'. ' + game['data']
     meta.update({
         'name': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
         'label2': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],

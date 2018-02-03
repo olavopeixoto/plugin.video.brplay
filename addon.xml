@@ -26,6 +26,9 @@
 		<news>0.0.17
 			- Support for 4k content
 			- Support for local programming
+			- Support for Futura Live Channel
+			- Suport for BBB (Globosat and GloboPlay)
+			- Suport for Universal Channel Live
         </news>
 	</extension>
 </addon>

@@ -4,14 +4,19 @@ from resources.lib.modules import control
 from resources.lib.modules import client
 from resources.lib.modules import util
 from resources.lib.modules import workers
+from resources.lib.modules import cache
 import datetime,re
 from sqlite3 import dbapi2 as database
 import time
+from scraper_vod import GLOBOPLAY_CONFIGURATION
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
 GLOBO_FANART = control.addonFanart()
 
 GLOBOPLAY_APIKEY = '35978230038e762dd8e21281776ab3c9'
+
+LOGO_BBB = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/2014/12/1/7e69a2767aebc18453c523637722733d.png'
+FANART_BBB = 'http://s01.video.glbimg.com/x720/244881.jpg'
 
 
 def get_globo_live_id():
@@ -89,7 +94,33 @@ def get_live_channels():
     else:
         affiliates = [affiliate]
 
+    config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
+
+    multicams = config['multicamLabel']
+
     live = []
+    for index, multicam in enumerate(multicams):
+        title = '%s %s' % (multicam['pre-name'], multicam['pos-name'])
+        live.append({
+            'slug': 'multicam' + str(index),
+            'name': title,
+            'studio': 'Rede Globo',
+            'title': title,
+            'tvshowtitle': title,
+            'sorttitle': title,
+            'logo': LOGO_BBB,
+            'clearlogo': LOGO_BBB,
+            'fanart': FANART_BBB,
+            'thumb': FANART_BBB,
+            'playable': 'false',
+            'plot': None,
+            'id': multicam['programId'],
+            'channel_id': config['channel_id'],
+            'duration': None,
+            'isFolder': 'true',
+            'brplayprovider': 'multicam'
+        })
+
     threads = [workers.Thread(__append_result, __get_affiliate_live_channels, live, affiliate) for affiliate in affiliates]
     [i.start() for i in threads]
     [i.join() for i in threads]
@@ -196,7 +227,8 @@ def __get_affiliate_live_channels(affiliate):
         'playable': 'true',
         'id': liveglobo,
         'channel_id': 196,
-        'live': True
+        'live': True,
+        'livefeed': 'true'
     })
 
     if 'fanart' not in item or not item['fanart']:
@@ -373,3 +405,31 @@ def __get_full_day_schedule(today, affiliate='RJ'):
         result.append(item)
 
     return result
+
+
+def get_multicam(program_id):
+
+    headers = {'Accept-Encoding': 'gzip'}
+    url = 'https://api.globoplay.com.br/v1/programs/%s/live?api_key=%s' % (program_id, GLOBOPLAY_APIKEY)
+    response = client.request(url, headers=headers)
+
+    return [{
+        'plot': None,
+        'duration': None,
+        'brplayprovider': 'globoplay',
+        'logo': LOGO_BBB,
+        'slug': 'multicam_' + channel['description'].replace(' ','_').lower(),
+        'name': channel['description'],
+        'title': channel['description'],
+        'tvshowtitle': response['title'],
+        'sorttitle': "%02d" % (i,),
+        'clearlogo': LOGO_BBB,
+        'studio': 'Rede Globo',
+        'playable': 'true',
+        'id': channel['id'],
+        'channel_id': 196,
+        'live': True,
+        'livefeed': 'false',  #force vod hash
+        'fanart': FANART_BBB,
+        'thumb': channel['thumb'] + '?v=' + str(int(time.time()))
+    } for i, channel in enumerate(response['channels'])]

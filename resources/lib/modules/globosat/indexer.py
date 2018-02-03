@@ -16,6 +16,8 @@ class Indexer:
             workers.Thread(self.__append_result, scraper.get_basic_live_channels, live),
             workers.Thread(self.__append_result, scraper.get_combate_live_channels, live),
             workers.Thread(self.__append_result, scraper.get_premiere_live_channels, live),
+            workers.Thread(self.__append_result, scraper.get_bbb_channels, live),
+            # workers.Thread(self.__append_result, scraper.get_premiere_games, live, {}, True),
             workers.Thread(self.__append_result, scraper.get_premiere_live_24h_channels, live)
         ]
         [i.start() for i in threads]
@@ -30,6 +32,9 @@ class Indexer:
     def is_in(self, live, authorized_channels):
         for channel in authorized_channels:
             if channel['id'] == live['channel_id']:
+                if channel['logo'] and str(channel['id']) in ['2001', '2002']:  # sportv2/sportv3 logo fix hack
+                    live['logo'] = channel['logo']
+                    live['clearlogo'] = channel['logo']
                 return True
 
         return False
@@ -57,7 +62,7 @@ class Indexer:
     def get_vod(self):
         vod = self.get_authorized_channels()
 
-        vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-")]  # and not channel["slug"].startswith("big-brother-brasil")]
+        vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-") and not channel["slug"].startswith("big-brother-brasil")]
 
         for item in vod:
             item["brplayprovider"] = "globosat" if item['slug'] != 'sexyhot' else 'sexyhot'

@@ -184,10 +184,10 @@ class Player(xbmc.Player):
 
     def onPlayBackStopped(self):
         # Will be called when user stops xbmc playing a file
-        control.log("setting event in onPlayBackStopped ")
+        control.log("setting event in onPlayBackStopped")
 
-        # if self.stopPlayingEvent:
-        #     self.stopPlayingEvent.set()
+        if self.stopPlayingEvent:
+            self.stopPlayingEvent.set()
 
     def sign_resource(self, provider_id, resource_id, video_id, player, version):
         proxy = control.proxy_url

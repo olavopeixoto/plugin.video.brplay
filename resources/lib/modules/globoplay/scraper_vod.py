@@ -6,6 +6,7 @@ import resources.lib.modules.util as util
 from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules import workers
+from resources.lib.modules import cache
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
 GLOBO_FANART = 'https://s02.video.glbimg.com/x720/4452349.jpg'
@@ -536,8 +537,7 @@ def get_programs_by_region(region):
 
 def get_4k():
 
-    headers = {'Accept-Encoding': 'gzip'}
-    config = client.request(GLOBOPLAY_CONFIGURATION, headers=headers)
+    config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
 
     if not config or 'features' not in config or 'videos4k' not in config['features']:
         return []
