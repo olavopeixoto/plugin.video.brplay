@@ -8,6 +8,7 @@ from resources.lib.modules import workers
 from resources.lib.modules import cache
 import re
 import json
+import csv
 
 GLOBOSAT_URL = 'http://globosatplay.globo.com'
 GLOBOSAT_API_URL = 'http://api.vod.globosat.tv/globosatplay'
@@ -34,9 +35,9 @@ PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')  # https://s0
 
 
 def get_basic_live_channels():
-    # return get_basic_live_channels_from_simulcast_only() + get_universal_live()
-    return get_basic_live_channels_from_api() + get_universal_live()
-    # return get_transmissions_live_channels_from_json() + get_universal_live()
+    # return get_basic_live_channels_from_simulcast_only() + get_sportv4_live()
+    return get_basic_live_channels_from_api() + get_sportv4_live()
+    # return get_transmissions_live_channels_from_json() + get_sportv4_live()
 
 
 def get_basic_live_channels_from_simulcast_only():
@@ -114,18 +115,62 @@ def get_transmissions_live_channels_from_json():
     return channels
 
 
-def get_universal_live():
+def get_sportv4_live():
 
-    title = 'Universal Channel'
-    logo = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/2014/11/14/2eac19898a33a0fcbfbe9fa3265f70e5.png'
-    id = 5497510
+    title = 'SporTV 4'
+    logo = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/2014/11/14/74c21fae4de1e884063ff2329950b9b4.png' #os.path.join(control.artPath(), 'sportv4.png'),
+    id = 5125939
 
     return [{
-                'slug': 'universal-channel',
+                'slug': 'sportv4',
                 'name': title,
                 'studio': title,
                 'title': title,
                 'sorttitle': title,
+                'thumb': 'https://live-thumbs.video.globo.com/spo424ha/snapshot/?v=' + str(int(time.time())),
+                'logo': logo,
+                'clearlogo': logo,
+                'clearart': logo,
+                'banner': None,
+                'color': None,
+                'fanart': 'https://s03.video.glbimg.com/x720/5125939.jpg',
+                'id': id,
+                'channel_id': 2024,
+                'brplayprovider': 'globosat',
+                'playable': 'true',
+                'livefeed': 'true',
+                'dateadded': None,
+                'plot': None,
+                'duration': None,
+            }]
+
+
+def get_universal_live():
+
+    studio = 'Universal Channel'
+    logo = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/2014/11/14/2eac19898a33a0fcbfbe9fa3265f70e5.png'
+    id = 5497510
+
+    program = __get_universal_epg()
+    title = program['title'] or studio
+    plot = program['plot']
+    dateadded = program['dateadded']
+    duration = program['duration']
+    tvshowtitle = program['tvshowtitle']
+    originaltitle = program['original_title']
+    year = program['year']
+    director = program['director']
+
+    return [{
+                'slug': 'universal-channel',
+                'name': studio + '[I] - ' + title + '[/I]',
+                'studio': studio,
+                'title': title,
+                'sorttitle': studio,
+                'tvshowtitle': tvshowtitle,
+                "originaltitle": originaltitle,
+                'year': year,
+                'director': director,
                 'thumb': 'https://live-thumbs.video.globo.com/univ24ha/snapshot/?v=' + str(int(time.time())),
                 'logo': logo,
                 'clearlogo': logo,
@@ -138,11 +183,75 @@ def get_universal_live():
                 'brplayprovider': 'globosat',
                 'playable': 'true',
                 'livefeed': 'true',
-                'dateadded': None, #datetime.datetime.strftime(updated_at, '%Y-%m-%d %H:%M:%S'),
-                'plot': None,
-                'duration': None,
+                'dateadded': dateadded, #datetime.datetime.strftime(updated_at, '%Y-%m-%d %H:%M:%S'),
+                'plot': plot,
+                'duration': duration
             }]
 
+
+def __get_universal_epg():
+    utc_timezone = control.get_current_brasilia_utc_offset()
+    utc_now = datetime.datetime.today().utcnow()
+    now = utc_now + datetime.timedelta(hours=utc_timezone)
+    epg_url = 'http://ancine.grade.globosat.tv/programada/01253766000140_UniversalChannel%s.csv' % datetime.datetime.strftime(now, '%Y%m%d')  # '20180205'
+    epg_csv = cache.get(client.request, 2, epg_url)
+
+    epg_data = csv.reader(epg_csv.splitlines(), delimiter='\\', quotechar='"')
+
+    for program in list(epg_data):
+        p_date = program[0]
+        p_start = program[1]
+        p_end = program[2]
+        original_title = program[3]
+        director = program[4]
+        title = program[5]
+        tvshow = program[6]
+        episode = program[7]
+        country = program[8]
+        year = program[9]
+        rating = program[10]
+        plot = program[11]
+
+        start_time = util.strptime_workaround(p_date + ' ' + p_start, '%Y%m%d %H:%M') - datetime.timedelta(hours=(utc_timezone))
+        end_time = util.strptime_workaround(p_date + ' ' + p_end, '%Y%m%d %H:%M') - datetime.timedelta(hours=(utc_timezone))
+
+        start_hour = p_start.split(':')[0]
+        end_hour = p_end.split(':')[0]
+        if int(end_hour) < int(start_hour):
+            end_time = end_time + datetime.timedelta(days=1)
+
+        if end_time > utc_now > start_time:
+
+            studio = 'Universal Channel'
+
+            return {
+                'original_title': original_title,
+                'director': director,
+                'title': title,
+                'tvshowtitle': tvshow,
+                'episode': episode,
+                'country': country,
+                'year': year,
+                'rating': rating,
+                'plot': plot,
+                'duration': util.get_total_seconds(end_time - start_time),
+                "dateadded": datetime.datetime.strftime(start_time + util.get_utc_delta(), '%Y-%m-%d %H:%M:%S'),
+                "plotoutline": datetime.datetime.strftime(start_time + util.get_utc_delta(), '%H:%M') + ' - ' + datetime.datetime.strftime(end_time + util.get_utc_delta(), '%H:%M'),
+            }
+
+    return {
+                'original_title': None,
+                'director': None,
+                'title': None,
+                'tvshowtitle': None,
+                'episode': None,
+                'country': None,
+                'year': None,
+                'rating': None,
+                'plot': None,
+                'duration': None,
+                "dateadded": None
+            }
 
 def __get_transmissions_page(results, page=1):
     headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
@@ -158,11 +267,22 @@ def __get_transmissions_page(results, page=1):
 
 
 def get_bbb_channels():
+    signals = []
+
     html = cache.get(client.request, 1, 'https://globosatplay.globo.com/bbb/ao-vivo/')
-    config_json = json.loads(re.findall('window.initialState\s*=\s*([\s\S]*?)<\/script>', html)[0])
+
+    if not html:
+        return signals
+
+    config_string_matches = re.findall('window.initialState\s*=\s*([\s\S]*?)<\/script>', html)
+
+    if not config_string_matches or len(config_string_matches) == 0:
+        return signals
+
+    config_string = config_string_matches[0]
+    config_json = json.loads(config_string)
 
     channels = config_json['channels']
-    signals = []
     channel = channels['channels'][0]
     for index, signal in enumerate(channels['signals']):
         title = signal['title']
@@ -219,7 +339,7 @@ def get_basic_live_channels_from_api():
                     'name': transmission['title'],
                     'studio': transmission['title'],
                     'title': transmission['title'],
-                    'thumb': 'https://live-thumbs.video.globo.com/univ24ha/snapshot/?v=' + str(int(time.time())),
+                    'thumb': None,
                     'plot': None,
                     'duration': None,
                     'brplayprovider': 'globosat',
@@ -239,7 +359,7 @@ def get_basic_live_channels_from_api():
                     'id': transmission['items'][0]['id_globo_videos'],
                     'channel_id': transmission['id_channel'],
                     'brplayprovider': 'globosat',
-                    'thumb': item['thumb'] if 'thumb' in item and item['thumb'] is not None else None,
+                    'thumb': item['thumb'] if 'thumb' in item and item['thumb'] is not None else 'https://s03.video.glbimg.com/x720/%s.jpg' % transmission['items'][0]['id_globo_videos'],
                     'livefeed': 'true'
                     })
 
