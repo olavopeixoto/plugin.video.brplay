@@ -480,8 +480,10 @@ def get_premiere_live_24h_channels():
 
     # control.log("-- PREMIERE CLUBES SIMULCAST: %s" % repr(live_channels))
 
+    utc_timezone = control.get_current_brasilia_utc_offset()
+
     for channel_data in live_channels:
-        program_date = util.strptime_workaround(channel_data['starts_at'][0:19]) + datetime.timedelta(hours=3) + util.get_utc_delta() if channel_data and 'starts_at' in channel_data and channel_data['starts_at'] is not None else datetime.datetime.now()
+        program_date = util.strptime_workaround(channel_data['starts_at'][0:19]) + datetime.timedelta(hours=-utc_timezone) + util.get_utc_delta() if channel_data and 'starts_at' in channel_data and channel_data['starts_at'] is not None else None
         live_text = ' (' + control.lang(32004) + ')' if channel_data['live'] else ''
         studio = channel_data['channel']['title']
         title = studio + ('[I] - ' + channel_data['name'] + '[/I]' if channel_data['name'] else '') + live_text
