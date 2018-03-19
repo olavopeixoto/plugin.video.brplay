@@ -63,7 +63,7 @@ class Indexer:
     def get_vod(self):
         vod = self.get_authorized_channels()
 
-        vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-") and not channel["slug"].startswith("big-brother-brasil")]
+        vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-") and not channel["slug"].startswith("big-brother-brasil") and not channel["slug"].startswith("multishow-")]
 
         for item in vod:
             item["brplayprovider"] = "globosat" if item['slug'] != 'sexyhot' else 'sexyhot'

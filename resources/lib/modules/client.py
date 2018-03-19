@@ -66,7 +66,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             headers['Accept-Language'] = 'en-US'
         if 'X-Requested-With' in headers:
             pass
-        elif XHR == True:
+        elif XHR is True:
             headers['X-Requested-With'] = 'XMLHttpRequest'
         if 'Cookie' in headers:
             pass
@@ -113,11 +113,11 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
 
                     response = urllib2.urlopen(request, timeout=int(timeout))
 
-                elif error == False:
+                elif error is False:
                     return
             elif response.code == 403:
                 raise Exception("Permission Denied")
-            elif error == False:
+            elif error is False:
                 return
 
         if response.code == 403:
@@ -130,17 +130,17 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             except: pass
             try: result = cf
             except: pass
-            if close == True: response.close()
+            if close is True: response.close()
             return result
 
         elif output == 'geturl':
             result = response.geturl()
-            if close == True: response.close()
+            if close is True: response.close()
             return result
 
         elif output == 'headers':
             result = response.headers
-            if close == True: response.close()
+            if close is True: response.close()
             return result
 
         elif output == 'chunk':
@@ -148,7 +148,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             except: content = (2049 * 1024)
             if content < (2048 * 1024): return
             result = response.read(16 * 1024)
-            if close == True: response.close()
+            if close is True: response.close()
             return result
 
         if limit == '0':
@@ -195,10 +195,10 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             except: pass
             try: cookie = cf
             except: pass
-            if close == True: response.close()
-            return (result, response_code, response_headers, headers, cookie)
+            if close is True: response.close()
+            return result, response_code, response_headers, headers, cookie
         else:
-            if close == True: response.close()
+            if close is True: response.close()
             return result
     except Exception, e:
         traceback.print_exc()

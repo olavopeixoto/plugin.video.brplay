@@ -45,7 +45,11 @@ class Player(xbmc.Player):
         if not info or info is None or 'channel' not in info:
             return
 
-        hash, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'])
+        try:
+            hash, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'])
+        except Exception as ex:
+            control.log("ERROR: %s" % repr(ex))
+            return
 
         encrypted = 'encrypted' in info and info['encrypted']
 
@@ -108,6 +112,7 @@ class Player(xbmc.Player):
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
+        control.log("Parsed URL: %s" % repr(parsed_url))
 
         item = control.item(path=self.url)
         item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
@@ -116,25 +121,32 @@ class Player(xbmc.Player):
 
         item.setContentLookup(False)
 
-        if encrypted or parsed_url.path.endswith(".mpd"):
-            if encrypted:
-                licence_url = info['protection_url']
-                item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')  # 'com.microsoft.playready'
-                item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
-                # item.setProperty('inputstream.adaptive.license_data', licence_url)
-
+        if parsed_url.path.endswith(".mpd"):
             mime_type = 'application/dash+xml'
             item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
-            # item.setProperty('inputstream.adaptive.manifest_type', 'ism')
 
+        if parsed_url.path.endswith(".ism/manifest"):
+            mime_type = 'application/vnd.ms-sstr+xml'
+            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            item.setProperty('inputstream.adaptive.manifest_type', 'ism')
+
+        if encrypted:
+            control.log("DRM: %s" % info['drm_scheme'])
+            licence_url = info['protection_url']
+            item.setProperty('inputstream.adaptive.license_type', info['drm_scheme'])
+            if info['drm_scheme'] == 'com.widevine.alpha':
+                item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
         if mime_type:
             item.setMimeType(mime_type)
         elif not cookies:
             item.setProperty('inputstream.adaptive.manifest_type', 'hls')
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
+        control.log("MIME TYPE: %s" % repr(mime_type))
+
         if 'subtitles' in info and info['subtitles'] and len(info['subtitles']) > 0:
+            control.log("FOUND SUBTITLES: %s" % repr([sub['url'] for sub in info['subtitles']]))
             item.setSubtitles([sub['url'] for sub in info['subtitles']])
 
         control.resolve(int(sys.argv[1]), True, item)
@@ -207,7 +219,7 @@ class Player(xbmc.Player):
         hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
         hash_json = client.request(hash_url, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
 
-        if not hash_json or 'message' in hash_json and hash_json['message']:
+        if not hash_json or hash_json is None or 'message' in hash_json and hash_json['message']:
             control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
             return None
 

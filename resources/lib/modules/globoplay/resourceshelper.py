@@ -2,6 +2,8 @@ from resources.lib.modules import control
 from resources.lib.modules import client
 
 PLAYER_VERSION = '1.1.24'
+DEVICE_ID = "NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ"
+DEVICE_ID_KEY = "{{deviceId}}"
 
 
 def get_video_info(video_id, children_id=None):
@@ -27,17 +29,43 @@ def _select_resource(video_id, resources, metadata, title_override=None):
     resource = None
     encrypted = False
     player = 'android'
+    drm_scheme = None
 
     enable_4k = control.is_4k_enabled
     enable_hdr = control.setting('enable_hdr') == 'true'
     prefer_dash = control.setting('prefer_dash') == 'true'
+    prefer_smoothstreaming = control.setting('prefer_smoothstreaming') == 'true'
+    prefer_playready = control.setting('prefer_playready') == 'true'
 
-    for node in resources:
-        if 'players' in node and 'encrypted' in node and node['encrypted'] and any('android_native' in s for s in node['players']) and any('widevine' in s for s in node['content_protection']):
-            encrypted = True
-            resource = node
-            player = 'android_native'
-            break
+    if prefer_smoothstreaming:
+        for node in resources:
+            if 'players' in node and 'encrypted' in node and node['encrypted'] and any('smoothstreaming' in s for s in node['players']) and any('playready' in s for s in node['content_protection']):
+                encrypted = True
+                resource = node
+                player = 'android_native'
+                drm_scheme = 'com.microsoft.playready'
+                server_url = resource['content_protection']['playready']['server']
+                break
+
+    if prefer_playready and not resource:
+        for node in resources:
+            if 'players' in node and 'encrypted' in node and node['encrypted'] and any('android_native' in s for s in node['players']) and any('playready' in s for s in node['content_protection']):
+                encrypted = True
+                resource = node
+                player = 'android_native'
+                drm_scheme = 'com.microsoft.playready'
+                server_url = resource['content_protection']['playready']['server']
+                break
+
+    if not resource:
+        for node in resources:
+            if 'players' in node and 'encrypted' in node and node['encrypted'] and any('android_native' in s for s in node['players']) and any('widevine' in s for s in node['content_protection']):
+                encrypted = True
+                resource = node
+                player = 'android_native'
+                drm_scheme = 'com.widevine.alpha'
+                server_url = resource['content_protection']['widevine']['server']
+                break
 
     if not resource and enable_4k and prefer_dash:
         for node in resources:
@@ -112,7 +140,7 @@ def _select_resource(video_id, resources, metadata, title_override=None):
         "query_string_template": resource["query_string_template"],
         "thumbUri": resource["thumbUri"] if 'thumbUri' in resource else None,
         "encrypted": encrypted,
-        "protection_url": resource['content_protection']['widevine']['server'].replace('{{deviceId}}', 'NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ==') if encrypted else None,
-        "protection_type": 'widevine' if encrypted else None,
+        "drm_scheme": drm_scheme,
+        "protection_url": server_url.replace(DEVICE_ID_KEY, DEVICE_ID) if encrypted else None,
         'subtitles': subtitles
     }

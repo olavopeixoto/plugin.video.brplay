@@ -133,7 +133,7 @@ def get_sportv4_live():
                 'clearart': logo,
                 'banner': None,
                 'color': None,
-                'fanart': 'https://s03.video.glbimg.com/x720/5125939.jpg',
+                'fanart': 'https://s03.video.glbimg.com/x720/%s.jpg' % id,
                 'id': id,
                 'channel_id': 2024,
                 'brplayprovider': 'globosat',
@@ -326,6 +326,8 @@ def get_basic_live_channels_from_api():
     [i.start() for i in threads]
     [i.join() for i in threads]
 
+    channel_id_list = []
+
     for result in results:
         if len(result['transmissions']) == 0:
             pass
@@ -364,6 +366,25 @@ def get_basic_live_channels_from_api():
                     })
 
             live.append(item)
+
+            channel_id_list.append(int(item['channel_id']))
+
+    for simulcast_result in simulcast_results:
+        if simulcast_result is None or int(simulcast_result['channel']['id_globo_videos']) in channel_id_list:
+            continue
+
+        simulcast_data = __get_simulcast_data(simulcast_result)
+
+        item = {
+                'clearlogo': None,
+                'clearart': None,
+                'banner': None,
+                'livefeed': 'true'
+                }
+
+        item.update(simulcast_data)
+
+        live.append(item)
 
     return live
 
@@ -463,7 +484,7 @@ def get_premiere_live_channels():
         'initials1': live_games[0]['time_mandante']['sigla'],
         'initials2': live_games[0]['time_visitante']['sigla'],
         'gamedetails': live_games[0]['campeonato'] + extra_games_str,
-        'brplayprovider': 'premierefc' if offline else None
+        'brplayprovider': 'premierefc'
     })
 
     return live

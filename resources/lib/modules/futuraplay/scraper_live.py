@@ -15,7 +15,7 @@ FUTURA_FANART = 'http://static.futuraplay.org/img/og-image.jpg'
 FUTURA_THUMB = 'https://live-thumbs.video.globo.com/futura24ha/snapshot/'  # 'https://s03.video.glbimg.com/x720/4500346.jpg'
 
 
-def get_globo_live_id():
+def get_live_id():
     return 4500346
 
 
@@ -36,8 +36,8 @@ def get_live_channels():
 
     program_datetime = util.strptime_workaround(program['dia'], '%d/%m/%Y %H:%M') - datetime.timedelta(hours=(utc_timezone))
 
-    start_time = datetime.datetime.strptime(program['hora'], '%H:%M') - datetime.timedelta(hours=(utc_timezone))
-    end_time = datetime.datetime.strptime(program['fim'], '%H:%M:%S') - datetime.timedelta(hours=(utc_timezone))
+    start_time = util.strptime_workaround(program['hora'], '%H:%M') - datetime.timedelta(hours=(utc_timezone))
+    end_time = util.strptime_workaround(program['fim'], '%H:%M:%S') - datetime.timedelta(hours=(utc_timezone))
 
     return [{
         'slug': 'futura',
@@ -52,7 +52,7 @@ def get_live_channels():
         'thumb': FUTURA_THUMB + '?v=' + str(int(time.time())),
         'studio': 'Futura',
         'playable': 'true',
-        'id': get_globo_live_id(),
+        'id': get_live_id(),
         'channel_id': 1985,
         'live': False, # use vod player
         "mediatype": 'episode',

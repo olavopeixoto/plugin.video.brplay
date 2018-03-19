@@ -38,6 +38,8 @@ class Vod:
 
         channels = cache.get(self.__get_vod_channels, 360, table="channels")
 
+        channels = [channel for channel in channels if channel['slug'] != 'multishow-2' and channel['slug'] != 'telecine']
+
         if not control.show_adult_content:
             channels = [channel for channel in channels if not channel["adult"]]
 
