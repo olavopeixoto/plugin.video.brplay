@@ -274,13 +274,18 @@ def get_bbb_channels():
     if not html:
         return signals
 
-    config_string_matches = re.findall('window.initialState\s*=\s*([\s\S]*?)<\/script>', html)
+    config_string_matches = re.findall('window.initialState\s*=\s*({.*})', html)
 
     if not config_string_matches or len(config_string_matches) == 0:
         return signals
 
     config_string = config_string_matches[0]
-    config_json = json.loads(config_string)
+
+    try:
+        config_json = json.loads(config_string)
+    except Exception as ex:
+        control.log("get_bbb_channels ERROR: %s" % ex)
+        return signals
 
     channels = config_json['channels']
     channel = channels['channels'][0]

@@ -14,6 +14,7 @@ import urllib
 import urllib2
 import urlparse
 import traceback
+import uuid
 
 from resources.lib.modules import control, cache
 from resources.lib.modules import workers
@@ -73,7 +74,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         elif not cookie is None:
             headers['Cookie'] = printCookieDict(cookie) if isinstance(cookie, dict) else cookie
 
-        if redirect == False:
+        if redirect is False:
 
             class NoRedirection(urllib2.HTTPErrorProcessor):
                 def http_response(self, request, response): return response
@@ -86,7 +87,8 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
 
         request = urllib2.Request(url, data=post, headers=headers)
 
-        control.log("Url request: %s" % url)
+        rid = uuid.uuid4().hex
+        control.log("Url request (%s): %s" % (rid, url))
 
         try:
             response = urllib2.urlopen(request, timeout=int(timeout))
@@ -114,11 +116,16 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
                     response = urllib2.urlopen(request, timeout=int(timeout))
 
                 elif error is False:
+                    control.log("Response error code (%s): %s" % (rid, response.code))
                     return
             elif response.code == 403:
+                control.log("Response error code (%s): %s" % (rid, response.code))
                 raise Exception("Permission Denied")
             elif error is False:
+                control.log("Response error code (%s): %s" % (rid, response.code))
                 return
+
+        control.log("Response code (%s): %s" % (rid, response.code))
 
         if response.code == 403:
             raise Exception("Permission Denied")
@@ -184,8 +191,9 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             if encoding == 'gzip':
                 result = gzip.GzipFile(fileobj=StringIO.StringIO(result)).read()
 
+        control.log("response (%s): %s" % (rid, result))
+
         if response.headers and response.headers.get('content-type') and ('application/json' in response.headers.get('content-type') or 'text/javascript' in response.headers.get('content-type')):
-            control.log("response: %s" % result)
             return json.loads(result)
 
         if output == 'extended':
