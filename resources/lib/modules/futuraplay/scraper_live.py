@@ -41,7 +41,7 @@ def get_live_channels():
 
     return [{
         'slug': 'futura',
-        'name': 'Futura ' + '[I] - ' + program['subtitulo'] + '[/I]',
+        'name': '[B]Futura[/B] ' + '[I] - ' + program['subtitulo'] + '[/I]',
         'title': program['titulo'] if program['titulo'] != program['titulo_serie'] else None,
         "subtitle": program['subtitulo'] if program['subtitulo'] != program['titulo'] else None,
         "plot": program['sinopse'],

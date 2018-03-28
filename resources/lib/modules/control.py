@@ -167,6 +167,8 @@ isJarvis = infoLabel("System.BuildVersion").startswith("16.")
 
 isKrypton = infoLabel("System.BuildVersion").startswith("17.")
 
+isFTV = skin == 'skin.ftvfred'
+
 cookieFile = os.path.join(tempPath, 'cookies.dat')
 
 proxy_url = xbmcaddon.Addon().getSetting('proxy_url') if xbmcaddon.Addon().getSetting('use_proxy') == 'true' else None

@@ -108,6 +108,7 @@ class Live:
             meta.update({'duration': channel['duration']}) if 'duration' in channel else None
             meta.update({'title': channel['title']}) if 'title' in channel else None
             meta.update({'tagline': channel['tagline']}) if 'tagline' in channel else None
+            meta.update({'year': channel['year']}) if 'year' in channel else None
 
             sysmeta = urllib.quote_plus(json.dumps(meta))
             id_globo_videos = channel['id']

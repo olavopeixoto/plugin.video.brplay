@@ -214,11 +214,13 @@ def __get_affiliate_live_channels(affiliate):
     title = program_description['title'] if 'title' in program_description else live_program['title']
     subtitle = program_description['subtitle'] if 'subtitle' in program_description else live_program['title']
 
+    subtitle_txt = (" / " if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else '') + program_description['subtitle'] if 'subtitle' in program_description else ''
+    tvshowtitle = " (" + (program_description['tvshowtitle'] or '') + subtitle_txt + ")" if 'tvshowtitle' in program_description and program_description['tvshowtitle'] or subtitle_txt else ''
+
     item.update({
         'slug': 'globo',
-        'name': 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + title + '[/I]',
+        'name': '[B]Globo ' + re.sub(r'\d+','',code) + '[/B][I] - ' + title + tvshowtitle + '[/I]',
         'title': subtitle,  # 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
-        'tvshowtitle': title,
         'sorttitle': 'Globo ' + re.sub(r'\d+','',code),
         'clearlogo': GLOBO_LOGO,
         # 'tagline': program_description['title'],
@@ -230,6 +232,9 @@ def __get_affiliate_live_channels(affiliate):
         'live': True,
         'livefeed': 'true'
     })
+
+    if control.isFTV:
+        item.update({'tvshowtitle': title})
 
     if 'fanart' not in item or not item['fanart']:
         item.update({'fanart': GLOBO_FANART})
@@ -349,7 +354,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
         if slot["tipo"] == "confronto":
             showtitle = slot['confronto']['titulo_confronto'] + ' - ' + slot['confronto']['participantes'][0]['nome'] + ' X ' + slot['confronto']['participantes'][1]['nome']
         else:
-            showtitle = slot['nome'] if 'nome' in slot else None
+            showtitle = slot['nome'] if 'nome' in slot and control.isFTV else None
 
         next_start = slots[index+1]['data_exibicao_e_horario'] if index+1 < len(slots) else None
         next_start = (util.strptime_workaround(next_start) + datetime.timedelta(hours=(-utc_timezone)) + util.get_utc_delta()) if next_start else datetime.datetime.now()
@@ -381,10 +386,10 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             'duration': util.get_total_seconds(next_start - program_datetime)
         }
 
-        if showtitle and len(showtitle) > 0:
-            item.update({
-                'tvshowtitle': showtitle
-            })
+        # if showtitle and len(showtitle) > 0:
+        item.update({
+            'tvshowtitle': showtitle
+        })
 
         if slot['tipo'] == 'filme':
             item.update({

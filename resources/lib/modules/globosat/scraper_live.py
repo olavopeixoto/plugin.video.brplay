@@ -117,13 +117,13 @@ def get_transmissions_live_channels_from_json():
 
 def get_sportv4_live():
 
-    title = 'SporTV 4'
+    title = 'E-SporTV'
     logo = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/2014/11/14/74c21fae4de1e884063ff2329950b9b4.png' #os.path.join(control.artPath(), 'sportv4.png'),
     id = 5125939
 
     return [{
                 'slug': 'sportv4',
-                'name': title,
+                'name': "[B]" + title + "[/B]",
                 'studio': title,
                 'title': title,
                 'sorttitle': title,
@@ -157,13 +157,16 @@ def get_universal_live():
     dateadded = program['dateadded']
     duration = program['duration']
     tvshowtitle = program['tvshowtitle']
+    episode = program['episode']
     originaltitle = program['original_title']
     year = program['year']
     director = program['director']
 
+    label = "[B]" + studio + '[/B][I] - ' + tvshowtitle + ((' Ep. ' + episode) if episode else '') + (' / ' if tvshowtitle else '') + title  + '[/I]'
+
     return [{
                 'slug': 'universal-channel',
-                'name': studio + '[I] - ' + title + '[/I]',
+                'name': label,
                 'studio': studio,
                 'title': title,
                 'sorttitle': studio,
@@ -183,7 +186,7 @@ def get_universal_live():
                 'brplayprovider': 'globosat',
                 'playable': 'true',
                 'livefeed': 'true',
-                'dateadded': dateadded, #datetime.datetime.strftime(updated_at, '%Y-%m-%d %H:%M:%S'),
+                'dateadded': dateadded,  # datetime.datetime.strftime(updated_at, '%Y-%m-%d %H:%M:%S'),
                 'plot': plot,
                 'duration': duration
             }]
@@ -561,12 +564,13 @@ def get_premiere_games(meta={}, online_only=False):
 def __get_game_data(game, meta, offline):
     # offlineText = u' (' + game['data'] + u')' if offline else u''
     # tvshowtitle = game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')'
-    # plot =  game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')' + u'. ' + game['data']
+    plot =  game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')' + u'. ' + game['data']
+    label = game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome']
     meta.update({
-        'name': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
+        'name': ((game['data'] + u' - ') if offline else u'') + label if not control.isFTV else label,
         'label2': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
         'playable': 'true' if game['id_midia'] is not None else 'false',
-        'plot': game['estadio'],
+        'plot': game['estadio'] if control.isFTV else plot,
         'plotoutline': game['data'],
         'id': game['id_midia'],
         'logo': game['time_mandante']['escudo'],
@@ -592,13 +596,13 @@ def __get_simulcast_data(result):
     program_date = util.strptime_workaround(result['day'], '%d/%m/%Y %H:%M') + datetime.timedelta(hours=-utc_timezone) + util.get_utc_delta() if not result['day'] is None else datetime.datetime.now()
     # program_local_date_string = datetime.datetime.strftime(program_date, '%d/%m/%Y %H:%M')
     # duration_str = (' - ' + str(result['duration'] or 0) + ' minutos') if (result['duration'] or 0) > 0 else ''
-    title = result['channel']['title'] + ('[I] - ' + (result['title'] or '') + '[/I]' if result['title'] else '') + live_text
 
+    name = "[B]" + result['channel']['title'] + "[/B]" + ('[I] - ' + (result['title'] or '') + '[/I]' if result['title'] else '') + live_text
 
     return {
         'slug': result['channel']['title'].lower(),
         'studio': result['channel']['title'],
-        'name': title,
+        'name': name,
         'title': result['subtitle'],
         'tvshowtitle': result['title'] if result['title'] else None,
         'sorttitle': result['channel']['title'],
@@ -608,7 +612,7 @@ def __get_simulcast_data(result):
         'thumb': result['channel']['url_snapshot'] + '?v=' + str(int(time.time())),
         'live': result['live'],
         'playable': 'true',
-        'plot': ' ', #(result['title'] or '') + ' - ' + (result['subtitle'] or ''), #program_local_date_string + duration_str + '\n' + (result['title'] or '') + '\n' + (result['subtitle'] or ''),
+        'plot': result['subtitle'] or '' if not control.isFTV else ' ', #(result['title'] or '') + ' - ' + (result['subtitle'] or ''), #program_local_date_string + duration_str + '\n' + (result['title'] or '') + '\n' + (result['subtitle'] or ''),
         'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + (datetime.datetime.strftime(program_date + datetime.timedelta(minutes=(result['duration'] or 0)), '%H:%M') if (result['duration'] or 0) > 0 else 'N/A'),
         # 'programTitle': result['subtitle'],
         'id': result['id_midia_live_play'],
