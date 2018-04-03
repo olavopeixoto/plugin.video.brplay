@@ -16,7 +16,7 @@ class Indexer:
             workers.Thread(self.__append_result, scraper.get_basic_live_channels, live),
             workers.Thread(self.__append_result, scraper.get_universal_live, live),
             workers.Thread(self.__append_result, scraper.get_combate_live_channels, live),
-            workers.Thread(self.__append_result, scraper.get_premiere_live_channels, live),
+            workers.Thread(self.__append_result, scraper.get_premiere_live_games, live),
             workers.Thread(self.__append_result, scraper.get_bbb_channels, live),
             # workers.Thread(self.__append_result, scraper.get_premiere_games, live, {}, True),
             workers.Thread(self.__append_result, scraper.get_premiere_live_24h_channels, live)

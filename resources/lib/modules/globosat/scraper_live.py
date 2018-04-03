@@ -297,7 +297,7 @@ def get_bbb_channels():
         logo = channel['logotipoXl']
         signals.append({
             'slug': channel['productId'] + str(index),
-            'name': title,
+            'name': '[B]' + title + '[/B]',
             'studio': 'Rede Globo',
             'title': title,
             'sorttitle': title,
@@ -435,7 +435,7 @@ def get_combate_live_channels():
     return live
 
 
-def get_premiere_live_channels():
+def get_premiere_live_games():
 
     live = []
 
@@ -475,7 +475,7 @@ def get_premiere_live_channels():
     #PREMIERE
     live.append({
         'slug': 'premiere-fc',
-        'name': 'Assista Agora' if not offline else u'Próximos Jogos',
+        'name': '[B]Assista Agora[/B]' if not offline else u'[B]Próximos Jogos[/B]',
         'studio': 'Premiere FC',
         'title': 'Ao Vivo' if not offline else u'Veja a Programação',
         'tvshowtitle': tvshowtitle,
@@ -517,7 +517,7 @@ def get_premiere_live_24h_channels():
         program_date = util.strptime_workaround(channel_data['starts_at'][0:19]) + datetime.timedelta(hours=-utc_timezone) + util.get_utc_delta() if channel_data and 'starts_at' in channel_data and channel_data['starts_at'] is not None else None
         live_text = ' (' + control.lang(32004) + ')' if channel_data['live'] else ''
         studio = channel_data['channel']['title']
-        title = studio + ('[I] - ' + channel_data['name'] + '[/I]' if channel_data['name'] else '') + live_text
+        title = '[B]' + studio + '[/B]' + ('[I] - ' + channel_data['name'] + '[/I]' if channel_data['name'] else '') + live_text
 
         live_channel = {
             'slug': 'premiere-fc',

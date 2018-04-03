@@ -103,7 +103,7 @@ def get_live_channels():
         title = '%s %s' % (multicam['pre-name'], multicam['pos-name'])
         live.append({
             'slug': 'multicam' + str(index),
-            'name': title,
+            'name': '[B]' + title + '[/B]',
             'studio': 'Big Brother Brasil',
             'title': title,
             'tvshowtitle': '',
@@ -434,7 +434,7 @@ def get_multicam(program_id):
         'brplayprovider': 'globoplay',
         'logo': LOGO_BBB,
         'slug': 'multicam_' + channel['description'].replace(' ','_').lower(),
-        'name': channel['description'],
+        'name': '[B]' + channel['description'] + '[/B]',
         'title': channel['description'],
         'tvshowtitle': response['title'] if not control.isFTV else '',
         'sorttitle': "%02d" % (i,),
