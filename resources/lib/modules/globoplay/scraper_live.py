@@ -7,11 +7,11 @@ from resources.lib.modules import workers
 from resources.lib.modules import cache
 import datetime,re
 from sqlite3 import dbapi2 as database
-import time
+import time, os
 from scraper_vod import GLOBOPLAY_CONFIGURATION
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
-GLOBO_FANART = control.addonFanart()
+GLOBO_FANART = os.path.join(control.artPath(), 'globo.jpg')
 
 GLOBOPLAY_APIKEY = '35978230038e762dd8e21281776ab3c9'
 
@@ -104,9 +104,9 @@ def get_live_channels():
         live.append({
             'slug': 'multicam' + str(index),
             'name': title,
-            'studio': 'Rede Globo',
+            'studio': 'Big Brother Brasil',
             'title': title,
-            'tvshowtitle': title,
+            'tvshowtitle': '',
             'sorttitle': title,
             'logo': LOGO_BBB,
             'clearlogo': LOGO_BBB,
@@ -214,12 +214,14 @@ def __get_affiliate_live_channels(affiliate):
     title = program_description['title'] if 'title' in program_description else live_program['title']
     subtitle = program_description['subtitle'] if 'subtitle' in program_description else live_program['title']
 
-    subtitle_txt = (" / " if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else '') + program_description['subtitle'] if 'subtitle' in program_description else ''
-    tvshowtitle = " (" + (program_description['tvshowtitle'] or '') + subtitle_txt + ")" if 'tvshowtitle' in program_description and program_description['tvshowtitle'] or subtitle_txt else ''
+    safe_tvshowtitle = program_description['tvshowtitle'] if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else ''
+    safe_subtitle = program_description['subtitle'] if 'subtitle' in program_description and program_description['subtitle'] and not safe_tvshowtitle.startswith(program_description['subtitle']) else ''
+    subtitle_txt = (" / " if safe_tvshowtitle and safe_subtitle else '') + safe_subtitle
+    tvshowtitle = " (" + safe_tvshowtitle + subtitle_txt + ")" if safe_tvshowtitle or subtitle_txt else ''
 
     item.update({
         'slug': 'globo',
-        'name': '[B]Globo ' + re.sub(r'\d+','',code) + '[/B][I] - ' + title + tvshowtitle + '[/I]',
+        'name': ('[B]' if not control.isFTV else '') + 'Globo ' + re.sub(r'\d+','',code) + ('[/B]' if not control.isFTV else '') + '[I] - ' + title + (tvshowtitle if not control.isFTV else '') + '[/I]',
         'title': subtitle,  # 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
         'sorttitle': 'Globo ' + re.sub(r'\d+','',code),
         'clearlogo': GLOBO_LOGO,
@@ -368,14 +370,14 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             "id": slot['id'],
             "id_programa": slot['id_programa'],
             "id_webmedia": slot['id_webmedia'],
-            "fanart": 'https://s02.video.glbimg.com/x720/%s.jpg' % get_globo_live_id(),
+            # "fanart": 'https://s02.video.glbimg.com/x720/%s.jpg' % get_globo_live_id(),
             "thumb": slot['imagem'],
             "logo": slot['logo'],
             "clearlogo": slot['logo'],
             "poster": slot['poster'] if 'poster' in slot else None,
             "subtitle": slot['nome'],
             "title": title,
-            "plot": slot['resumo'] if 'resumo' in slot else None, #program_local_date_string + ' - ' + (slot['resumo'] if 'resumo' in slot else showtitle.replace(' - ', '\n') if showtitle and len(showtitle) > 0 else slot['nome_programa']),
+            "plot": slot['resumo'] if 'resumo' in slot else showtitle, #program_local_date_string + ' - ' + (slot['resumo'] if 'resumo' in slot else showtitle.replace(' - ', '\n') if showtitle and len(showtitle) > 0 else slot['nome_programa']),
             "plotoutline": datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M'),
             "mediatype": 'episode' if showtitle and len(showtitle) > 0 else 'video',
             "genre": slot['tipo_programa'],
@@ -390,6 +392,14 @@ def __get_full_day_schedule(today, affiliate='RJ'):
         item.update({
             'tvshowtitle': showtitle
         })
+
+        if slot["tipo"] == "confronto":
+            item.update({
+                'logo': slot['confronto']['participantes'][0]['imagem'],
+                'logo2': slot['confronto']['participantes'][1]['imagem'],
+                'initials1': slot['confronto']['participantes'][0]['nome'][:3].upper(),
+                'initials2': slot['confronto']['participantes'][1]['nome'][:3].upper()
+            })
 
         if slot['tipo'] == 'filme':
             item.update({
@@ -426,10 +436,10 @@ def get_multicam(program_id):
         'slug': 'multicam_' + channel['description'].replace(' ','_').lower(),
         'name': channel['description'],
         'title': channel['description'],
-        'tvshowtitle': response['title'],
+        'tvshowtitle': response['title'] if not control.isFTV else '',
         'sorttitle': "%02d" % (i,),
         'clearlogo': LOGO_BBB,
-        'studio': 'Rede Globo',
+        'studio': response['title'] if control.isFTV else 'Rede Globo',
         'playable': 'true',
         'id': channel['id'],
         'channel_id': 196,

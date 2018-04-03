@@ -464,8 +464,10 @@ def get_premiere_live_channels():
         }, offline)]
 
     if len(live_games) > 1:
-        title = '%s jogos programados' % len(live_games)
-        extra_games_str = ' + ' + str(len(live_games) - 1) + ' jogos'
+        plural = 's' if len(live_games) > 1 else ''
+        title = '%s jogo%s programado%s' % (len(live_games), plural, plural)
+        extra_plural = 's' if len(live_games) - 1 > 1 else ''
+        extra_games_str = ' + ' + str(len(live_games) - 1) + ' jogo' + extra_plural
     else:
         title = ''
         extra_games_str = ''
@@ -517,7 +519,7 @@ def get_premiere_live_24h_channels():
         studio = channel_data['channel']['title']
         title = studio + ('[I] - ' + channel_data['name'] + '[/I]' if channel_data['name'] else '') + live_text
 
-        live.append({
+        live_channel = {
             'slug': 'premiere-fc',
             'name': title,
             'studio': studio,
@@ -536,9 +538,13 @@ def get_premiere_live_24h_channels():
             'isFolder': 'false',
             'live': channel_data['live'],
             'livefeed': 'true',
-            'brplayprovider': 'globosat',
-            'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S')
-        })
+            'brplayprovider': 'globosat'
+        }
+
+        if program_date is not None:
+            live_channel.update({'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S')})
+
+        live.append(live_channel)
 
     return live
 

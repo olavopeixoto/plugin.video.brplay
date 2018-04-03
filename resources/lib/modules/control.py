@@ -167,7 +167,7 @@ isJarvis = infoLabel("System.BuildVersion").startswith("16.")
 
 isKrypton = infoLabel("System.BuildVersion").startswith("17.")
 
-isFTV = skin == 'skin.ftvfred'
+isFTV = skin.lower().startswith('skin.ftv')
 
 cookieFile = os.path.join(tempPath, 'cookies.dat')
 
