@@ -36,7 +36,7 @@ PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')  # https://s0
 
 def get_basic_live_channels():
     # return get_basic_live_channels_from_simulcast_only() + get_sportv4_live()
-    return get_basic_live_channels_from_api() + get_sportv4_live()
+    return get_basic_live_channels_from_api()  # + get_sportv4_live()
     # return get_transmissions_live_channels_from_json() + get_sportv4_live()
 
 

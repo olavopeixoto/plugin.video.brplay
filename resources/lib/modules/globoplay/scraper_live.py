@@ -96,13 +96,15 @@ def get_live_channels():
 
     config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
 
-    multicams = config['multicamLabel']
+    # multicams = config['multicamLabel']
+    multicam = config['growth']['menu'] if 'growth' in config and 'menu' in config['growth'] and 'is_enabled' in config['growth']['menu'] and config['growth']['menu']['is_enabled'] else None
 
     live = []
-    for index, multicam in enumerate(multicams):
-        title = '%s %s' % (multicam['pre-name'], multicam['pos-name'])
+
+    if multicam:
+        title = multicam['label_item']
         live.append({
-            'slug': 'multicam' + str(index),
+            'slug': 'multicam',
             'name': '[B]' + title + '[/B]',
             'studio': 'Big Brother Brasil',
             'title': title,
@@ -114,7 +116,7 @@ def get_live_channels():
             'thumb': FANART_BBB,
             'playable': 'false',
             'plot': None,
-            'id': multicam['programId'],
+            'id': multicam['link_program_id'],
             'channel_id': config['channel_id'],
             'duration': None,
             'isFolder': 'true',
@@ -427,6 +429,11 @@ def get_multicam(program_id):
     headers = {'Accept-Encoding': 'gzip'}
     url = 'https://api.globoplay.com.br/v1/programs/%s/live?api_key=%s' % (program_id, GLOBOPLAY_APIKEY)
     response = client.request(url, headers=headers)
+
+    if not response or 'erro' in response:
+        if response:
+            control.log("Multicam Error: %s" % response['erro'])
+        return []
 
     return [{
         'plot': None,
