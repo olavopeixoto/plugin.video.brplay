@@ -139,57 +139,9 @@ def __append_result(fn, list, *args):
 def __get_affiliate_live_channels(affiliate):
     liveglobo = get_globo_live_id()
 
-    if affiliate == "Sao Paulo":
-        code, geo_position = "SP1", 'lat=-23.5505&long=-46.6333'
-    elif affiliate == "Brasilia":
-        code, geo_position = "DF", 'lat=-15.7942&long=-47.8825'
-    elif affiliate == "Belo Horizonte":
-        code, geo_position = "BH", 'lat=-19.9245&long=-43.9352'
-    elif affiliate == "Recife":
-        code, geo_position = "PE1", 'lat=-8.0476&long=-34.8770'
+    code, latitude, longitude = control.get_coordinates(affiliate)
 
-    # elif affiliate == "Salvador":
-    #     code, geo_position = "SAL", 'lat=-12.9722&long=-38.5014'
-    # elif affiliate == "Fortaleza":
-    #     code, geo_position = "CE1", 'lat=-3.7319&long=-38.5267'
-    # elif affiliate == "Aracaju":
-    #     code, geo_position = "SER", 'lat=-10.9472&long=-37.0731'
-    # elif affiliate == "Maceio":
-    #     code, geo_position = "MAC", 'lat=-9.6498&long=-35.7089'
-    # elif affiliate == "Cuiaba":
-    #     code, geo_position = "MT", 'lat=-15.6014&long=-56.0979'
-    # elif affiliate == "Porto Alegre":
-    #     code, geo_position = "RS1", 'lat=-30.0347&long=-51.2177'
-    # elif affiliate == "Florianopolis":
-    #     code, geo_position = "SC1", 'lat=-27.5949&long=-48.5482'
-    # elif affiliate == "Curitiba":
-    #     code, geo_position = "CUR", 'lat=-25.4244&long=-49.2654'
-    # elif affiliate == "Vitoria":
-    #     code, geo_position = "VIT", 'lat=-20.2976&long=-40.2958'
-    # elif affiliate == "Goiania":
-    #     code, geo_position = "GO01", 'lat=-16.6869&long=-49.2648'
-    # elif affiliate == "Campo Grande":
-    #     code, geo_position = "MS1", 'lat=-20.4697&long=-54.6201'
-    # elif affiliate == "Manaus":
-    #     code, geo_position = "MAN", 'lat=-3.1190&long=-60.0217'
-    # elif affiliate == "Belem":
-    #     code, geo_position = "BEL", 'lat=-1.4558&long=-48.4902'
-    # elif affiliate == "Macapa":
-    #     code, geo_position = "AMP", 'lat=-0.0356&long=-51.0705'
-    # elif affiliate == "Palmas":
-    #     code, geo_position = "PAL", 'lat=-10.2491&long=-48.3243'
-    # elif affiliate == "Rio Branco":
-    #     code, geo_position = "ACR", 'lat=-9.9754&long=-67.8249'
-    # elif affiliate == "Teresina":
-    #     code, geo_position = "TER", 'lat=-5.0920&long=-42.8038'
-    # elif affiliate == "Sao Luis":
-    #     code, geo_position = "MA1", 'lat=-2.5391&long=-44.2829'
-    # elif affiliate == "Joao Pessoa":
-    #     code, geo_position = "JP", 'lat=-7.1195&long=-34.8450'
-    # elif affiliate == "Natal":
-    #     code, geo_position = "NAT", 'lat=-5.7793&long=-35.2009'
-    else:
-        code, geo_position = "RJ", 'lat=-22.900&long=-43.172'
+    geo_position = 'lat=%s&long=%s' % (latitude, longitude)
 
     live_program = __get_live_program(code)
 

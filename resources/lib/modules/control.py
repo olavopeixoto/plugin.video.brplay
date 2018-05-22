@@ -440,3 +440,61 @@ def clear_credentials():
 def log(msg):
     if setting('enable_log') == 'true':
         xbmc.log('[plugin.video.brplay] - ' + msg, xbmc.LOGNOTICE)  # xbmc.LOGDEBUG
+
+
+def get_coordinates(affiliate):
+
+    code = "RJ"
+    latitude = "-22.900"
+    longitude = "-43.172"
+
+    if affiliate == "Sao Paulo":
+        code, latitude, longitude = "SP1", '-23.5505', '-46.6333'
+    elif affiliate == "Brasilia":
+        code, latitude, longitude = "DF", '-15.7942',' -47.8825'
+    elif affiliate == "Belo Horizonte":
+        code, latitude, longitude = "BH", '-19.9245','-43.9352'
+    elif affiliate == "Recife":
+        code, latitude, longitude = "PE1", '-8.0476','-34.8770'
+    elif affiliate == "Salvador":
+        code, latitude, longitude = "SAL", '-12.9722','-38.5014'
+    elif affiliate == "Fortaleza":
+        code, latitude, longitude = "CE1", '-3.7319','-38.5267'
+    elif affiliate == "Aracaju":
+        code, latitude, longitude = "SER", '-10.9472','-37.0731'
+    elif affiliate == "Maceio":
+        code, latitude, longitude = "MAC", '-9.6498','-35.7089'
+    elif affiliate == "Cuiaba":
+        code, latitude, longitude = "MT", '-15.6014','-56.0979'
+    elif affiliate == "Porto Alegre":
+        code, latitude, longitude = "RS1", '-30.0347','-51.2177'
+    elif affiliate == "Florianopolis":
+        code, latitude, longitude = "SC1", '-27.5949','-48.5482'
+    elif affiliate == "Curitiba":
+        code, latitude, longitude = "CUR", '-25.4244','-49.2654'
+    elif affiliate == "Vitoria":
+        code, latitude, longitude = "VIT", '-20.2976','-40.2958'
+    elif affiliate == "Goiania":
+        code, latitude, longitude = "GO01", '-16.6869','-49.2648'
+    elif affiliate == "Campo Grande":
+        code, latitude, longitude = "MS1", '-20.4697','-54.6201'
+    elif affiliate == "Manaus":
+        code, latitude, longitude = "MAN", '-3.1190','-60.0217'
+    elif affiliate == "Belem":
+        code, latitude, longitude = "BEL", '-1.4558','-48.4902'
+    elif affiliate == "Macapa":
+        code, latitude, longitude = "AMP", '-0.0356','-51.0705'
+    elif affiliate == "Palmas":
+        code, latitude, longitude = "PAL", '-10.2491','-48.3243'
+    elif affiliate == "Rio Branco":
+        code, latitude, longitude = "ACR", '-9.9754','-67.8249'
+    elif affiliate == "Teresina":
+        code, latitude, longitude = "TER", '-5.0920','-42.8038'
+    elif affiliate == "Sao Luis":
+        code, latitude, longitude = "MA1", '-2.5391','-44.2829'
+    elif affiliate == "Joao Pessoa":
+        code, latitude, longitude = "JP", '-7.1195','-34.8450'
+    elif affiliate == "Natal":
+        code, latitude, longitude = "NAT", '-5.7793','-35.2009'
+
+    return code, latitude, longitude

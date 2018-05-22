@@ -20,6 +20,14 @@ msgctxt "#31210"
 msgid "TV Provider"
 msgstr "Operador de TV"
 
+msgctxt "#31208"
+msgid "National"
+msgstr "Nacional"
+
+msgctxt "#31209"
+msgid "Geo Location"
+msgstr "Localização"
+
 msgctxt "#31100"
 msgid "Globo Play"
 msgstr "Globo Play"

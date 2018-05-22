@@ -410,8 +410,70 @@ def __get_channels_from_api(results):
 
 
 def __get_globosat_simulcast(simulcast_results):
+
+    geolocation = control.setting('globosat_geofence')
+
+    if geolocation == '0':
+        affiliate = None
+    elif geolocation == '1':
+        affiliate = 'Sao Paulo'
+    elif geolocation == '2':
+        affiliate = 'Brasilia'
+    elif geolocation == '3':
+        affiliate = 'Belo Horizonte'
+    elif geolocation == '4':
+        affiliate = 'Recife'
+    elif geolocation == '5':
+        affiliate = 'Salvador'
+    elif geolocation == '6':
+        affiliate = 'Fortaleza'
+    elif geolocation == '7':
+        affiliate = 'Aracaju'
+    elif geolocation == '8':
+        affiliate = 'Maceio'
+    elif geolocation == '9':
+        affiliate = 'Cuiaba'
+    elif geolocation == '10':
+        affiliate = 'Porto Alegre'
+    elif geolocation == '11':
+        affiliate = 'Florianopolis'
+    elif geolocation == '12':
+        affiliate = 'Curitiba'
+    elif geolocation == '13':
+        affiliate = 'Vitoria'
+    elif geolocation == '14':
+        affiliate = 'Goiania'
+    elif geolocation == '15':
+        affiliate = 'Campo Grande'
+    elif geolocation == '16':
+        affiliate = 'Manaus'
+    elif geolocation == '17':
+        affiliate = 'Belem'
+    elif geolocation == '18':
+        affiliate = 'Macapa'
+    elif geolocation == '19':
+        affiliate = 'Palmas'
+    elif geolocation == '20':
+        affiliate = 'Rio Branco'
+    elif geolocation == '21':
+        affiliate = 'Teresina'
+    elif geolocation == '22':
+        affiliate = 'Sao Luis'
+    elif geolocation == '23':
+        affiliate = 'Joao Pessoa'
+    elif geolocation == '24':
+        affiliate = 'Natal'
+    else:
+        affiliate = 'Rio de Janeiro'
+
+    if affiliate:
+        code, latitude, longitude = control.get_coordinates(affiliate)
+        url = GLOBOSAT_SIMULCAST_URL + '?latitude=%s&longitude=%s' % (latitude, longitude)
+    else:
+        url = GLOBOSAT_SIMULCAST_URL
+
     headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
-    channel_info = client.request(GLOBOSAT_SIMULCAST_URL, headers=headers)
+    channel_info = client.request(url, headers=headers)
     simulcast_results += channel_info['results']
 
 
