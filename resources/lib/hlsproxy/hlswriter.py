@@ -337,7 +337,7 @@ class HLSWriter:
             # IF 403 RETRY WITH PROXY
             if not self.use_proxy and self.proxy and response.status_code == 403:
                 proxies= {"http": self.proxy, "https": self.proxy}
-                use_proxy = True
+                self.use_proxy = True
                 if post:
                     response = self.session.post(url, headers=headers, data=post, proxies=proxies, verify=False, timeout=timeout, stream=stream)
                 else:
