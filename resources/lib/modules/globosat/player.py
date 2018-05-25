@@ -124,26 +124,27 @@ class Player(xbmc.Player):
         if parsed_url.path.endswith(".mpd"):
             mime_type = 'application/dash+xml'
             item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
-        if parsed_url.path.endswith(".ism/manifest"):
+        elif parsed_url.path.endswith(".ism/manifest"):
             mime_type = 'application/vnd.ms-sstr+xml'
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
             item.setProperty('inputstream.adaptive.manifest_type', 'ism')
+
+        else:
+            item.setProperty('inputstream.adaptive.manifest_type', 'hls')
 
         if encrypted:
             control.log("DRM: %s" % info['drm_scheme'])
             licence_url = info['protection_url']
             item.setProperty('inputstream.adaptive.license_type', info['drm_scheme'])
-            if info['drm_scheme'] == 'com.widevine.alpha':
+            if info['drm_scheme'] == 'com.widevine.alpha' or info['drm_scheme'] == 'com.microsoft.playready':
                 item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
+
         if mime_type:
             item.setMimeType(mime_type)
-        elif not cookies:
-            item.setProperty('inputstream.adaptive.manifest_type', 'hls')
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            control.log("MIME TYPE: %s" % repr(mime_type))
 
-        control.log("MIME TYPE: %s" % repr(mime_type))
+        if not cookies and not control.disable_inputstream_adaptive:
+            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
         if 'subtitles' in info and info['subtitles'] and len(info['subtitles']) > 0:
             control.log("FOUND SUBTITLES: %s" % repr([sub['url'] for sub in info['subtitles']]))

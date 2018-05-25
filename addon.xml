@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.18" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.19" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.beautifulsoup" version="3.2.1"/>
@@ -23,13 +23,15 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.18
-			- Support for 4k content
+		<news>0.0.19
+			- Support for 4k HDR content
 			- Support for local programming
 			- Support for Futura Live Channel
 			- Suport for BBB (Globosat and GloboPlay)
 			- Suport for Universal Channel Live
-			-
+			- Support for Globosat Play Geolocation
+			- Updated Combate scraper logic
+			- Added more Combate content
         </news>
 	</extension>
 </addon>

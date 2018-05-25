@@ -439,7 +439,7 @@ def clear_credentials():
 
 def log(msg):
     if setting('enable_log') == 'true':
-        xbmc.log('[plugin.video.brplay] - ' + msg, xbmc.LOGNOTICE)  # xbmc.LOGDEBUG
+        xbmc.log('[plugin.video.brplay] - ' + str(msg), xbmc.LOGNOTICE)  # xbmc.LOGDEBUG
 
 
 def get_coordinates(affiliate):
@@ -498,3 +498,6 @@ def get_coordinates(affiliate):
         code, latitude, longitude = "NAT", '-5.7793','-35.2009'
 
     return code, latitude, longitude
+
+
+disable_inputstream_adaptive = setting("disable_inputstream_adaptive") == 'true'

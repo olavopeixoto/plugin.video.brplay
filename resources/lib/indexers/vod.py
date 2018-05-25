@@ -203,10 +203,14 @@ class Vod:
 
     def get_event_videos(self, category, url):
         if url is None or url == 'None':
-            events = cache.get(scraper_combate.get_latest_events, 1, category)
+            events = cache.get(scraper_combate.open_ufc_submenu, 1, category)
             self.episodes_directory(events, category, provider='globosat')
         else:
-            events = cache.get(scraper_combate.scrape_videos_from_page, 1, url)
+            if url in dir(scraper_combate):
+                events = cache.get(getattr(scraper_combate, url), 1, category)
+            else:
+                events = cache.get(scraper_combate.scrape_videos_from_page, 1, url)
+
             self.episodes_directory(events, category, provider='globosat')
 
     def get_events_by_categories(self, category):
@@ -233,33 +237,36 @@ class Vod:
             control.content(syshandle, 'files')
             control.directory(syshandle, cacheToDisc=False)
 
-        else:
-            # events = scraper_combate.get_latest_events(category)
-            # self.episodes_directory(events, category, provider='globosat')
+            return
 
+        if category == 'ufc':
+            events = scraper_combate.get_ufc_submenu()
+
+        else:
             events = cache.get(scraper_combate.get_all_events, 1, category)
 
-            for event in events:
-                label = event['title']
-                event_url = urllib.quote_plus(event['url']) if event['url'] else None
+        for event in events:
+            label = event['title']
+            event_url = urllib.quote_plus(event['url']) if event['url'] else None
+            slug = event['slug'] if 'slug' in event else category
 
-                meta = {
-                    'mediatype': 'video',
-                    'overlay': 6,
-                    'title': label
-                }
+            meta = {
+                'mediatype': 'video',
+                'overlay': 6,
+                'title': label
+            }
 
-                url = '%s?action=openevent&url=%s&provider=%s&category=%s' % (sysaddon, event_url, 'combate', category)
+            url = '%s?action=openevent&url=%s&provider=%s&category=%s' % (sysaddon, event_url, 'combate', slug)
 
-                item = control.item(label=label)
+            item = control.item(label=label)
 
-                item.setProperty('IsPlayable', "false")
-                item.setInfo(type='video', infoLabels=meta)
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels=meta)
 
-                control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
-            control.content(syshandle, 'files')
-            control.directory(syshandle, cacheToDisc=False)
+        control.content(syshandle, 'files')
+        control.directory(syshandle, cacheToDisc=False)
 
     def get_videos_by_category(self, category, page=1, poster=None):
         episodes, next_page, total_pages = globoplay.Indexer().get_videos_by_category(category, page)
@@ -473,6 +480,9 @@ class Vod:
         addWatchLater = control.lang(32075).encode('utf-8')
         removeWatchLater = control.lang(32076).encode('utf-8')
 
+        content = 'episodes'
+        sort = True
+
         if days:
             # 34005 = "By Date"
             label = control.lang(34005).encode('utf-8')
@@ -499,6 +509,38 @@ class Vod:
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
         for video in items:
+
+            if 'url' in video:
+
+                content = 'files'
+                sort = False
+
+                label = video['title']
+                event_url = urllib.quote_plus(video['url']) if video['url'] else None
+                slug = video['slug'] if 'slug' in video else program_id
+
+                meta = {
+                    'mediatype': 'video',
+                    'overlay': 6,
+                    'title': label
+                }
+
+                meta.update(video)
+
+                url = '%s?action=openevent&url=%s&provider=%s&category=%s' % (sysaddon, event_url, 'combate', slug)
+
+                item = control.item(label=label)
+
+                if 'thumb' in meta and 'fanart' in meta:
+                    art = {'thumb': meta['thumb'], 'fanart': meta['fanart']}
+                    item.setArt(art)
+
+                item.setProperty('IsPlayable', "false")
+                item.setInfo(type='video', infoLabels=meta)
+
+                control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+            else:
                 # label = video['label'] if 'label' in video else video['title']
                 label = video['title']
                 meta = video
@@ -544,6 +586,9 @@ class Vod:
                     meta.update({
                         'playcount': 0
                     })
+
+                if 'date' not in meta:
+                    sort = False
 
                 item.setArt(art)
                 item.setProperty('IsPlayable', "true")
@@ -591,13 +636,14 @@ class Vod:
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
-        if not next_page and next_action == 'openvideos':
+        if not next_page and next_action == 'openvideos' and sort:
             control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATE)
         else:
             control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_UNSORTED)
 
-        control.content(syshandle, 'episodes')
+        control.content(syshandle, content)
         control.directory(syshandle, cacheToDisc=False)
+
 
     def programs_directory(self, items, folders=[], category=None):
         if items is None or len(items) == 0:

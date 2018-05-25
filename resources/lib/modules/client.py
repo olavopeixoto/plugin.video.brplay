@@ -15,6 +15,7 @@ import urllib2
 import urlparse
 import traceback
 import uuid
+from collections import OrderedDict
 
 from resources.lib.modules import control, cache
 from resources.lib.modules import workers
@@ -194,7 +195,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         control.log("response (%s): %s" % (rid, result))
 
         if response.headers and response.headers.get('content-type') and ('application/json' in response.headers.get('content-type') or 'text/javascript' in response.headers.get('content-type')):
-            return json.loads(result)
+            return json.loads(result, object_pairs_hook=OrderedDict)
 
         if output == 'extended':
             response_headers = response.headers

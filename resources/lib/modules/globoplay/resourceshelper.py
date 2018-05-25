@@ -48,14 +48,24 @@ def _select_resource(video_id, resources, metadata, title_override=None):
                 break
 
     if prefer_playready and not resource:
+        try_player = 'androidtv_hdr' if enable_hdr else 'androidtv_sdr' if enable_4k else 'androidtv'
         for node in resources:
-            if 'players' in node and 'encrypted' in node and node['encrypted'] and any('android_native' in s for s in node['players']) and any('playready' in s for s in node['content_protection']):
+            if 'players' in node and 'encrypted' in node and node['encrypted'] and any(try_player in s for s in node['players']) and any('playready' in s for s in node['content_protection']):
                 encrypted = True
                 resource = node
-                player = 'android_native'
+                player = try_player
                 drm_scheme = 'com.microsoft.playready'
                 server_url = resource['content_protection']['playready']['server']
                 break
+        if not resource:
+            for node in resources:
+                if 'players' in node and 'encrypted' in node and node['encrypted'] and any('android_native' in s for s in node['players']) and any('playready' in s for s in node['content_protection']):
+                    encrypted = True
+                    resource = node
+                    player = 'android_native'
+                    drm_scheme = 'com.microsoft.playready'
+                    server_url = resource['content_protection']['playready']['server']
+                    break
 
     if not resource:
         for node in resources:

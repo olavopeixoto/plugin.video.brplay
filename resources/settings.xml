@@ -3,15 +3,16 @@
 	<!-- 32346 = Accounts -->
 	<category label="32346">
 
+		<setting type="lsep" label="Globosat Play"></setting>
+
 		<!-- 31210 = TV Provider -->
 		<setting id="globosat_provider" type="labelenum" label="31210" values="NET|TV Oi|Sky|Vivo|Globosat Guest|Claro|Multiplay|ORM Cabo" default="TV Oi" />
 
 		<!-- 31110 = User -->
 		<!-- 31120 = Password -->
-		<setting id="globosat_username" type="text" label="31110" default="" />
-		<setting id="globosat_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
+		<setting id="globosat_username" subsetting="true" type="text" label="31110" default="" />
+		<setting id="globosat_password" subsetting="true" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
 		<setting id="globosat_geofence" type="enum" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="0" />
-		<setting type="sep" />
 
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
@@ -44,11 +45,11 @@
 		<!-- 31136 = Joao Pessoa -->
 		<!-- 31137 = Natal -->
 		<setting type="lsep" label="31100"></setting>
+
 		<setting id="globoplay_username" type="text" label="31110" default="" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
 		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117" default="1" />
-		<setting type="sep" />
 	</category>
 
 	<category label="33001">
@@ -63,7 +64,8 @@
 		<!-- 33105 = Max 		-->
 		<!-- 33106 = Medium 	-->
 		<!-- 33107 = Low 		-->
-		<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104|33105|33106|33107" default="0" />
+		<!--<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104|33105|33106|33107" default="0" />-->
+		<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104" default="0" />
 
 		<!-- 33201 = Proxy Type -->
 		<!-- 33202 = Downloader -->
@@ -71,11 +73,14 @@
 		<setting id="proxy_type" type="enum" label="33201" lvalues="33202|33203" default="1" visible="eq(-1,1)"/>
 		<!--<setting id="average_download_speed" type="number" option="float" label="33200" range="0,999999999999" default="0" enable="false" visible="eq(-2,1)"/>-->
 
-		<setting type="sep" />
+		<setting type="lsep" label="34107"></setting>
 
 		<setting id="enable_4k" type="bool" label="Enable 4K when available" default="true" />
-		<setting id="enable_hdr" type="bool" label="Enable HDR when available" default="false" visible="eq(-1,true)" enable="eq(-1,true)"/>
+		<setting id="enable_hdr" type="bool" label="Enable HDR when available" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
 		<setting id="enable_4k_fanart" type="bool" label="Enable high resolution images when available" default="false" visible="eq(-2,true)" enable="eq(-2,true)"/>
+
+		<setting type="lsep" label="Advanced" visible="System.HasAddon(inputstream.adaptive)"></setting>
+
 		<setting id="prefer_smoothstreaming" type="bool" label="Prefer SmoothStreaming for DRM" default="false" visible="System.HasAddon(inputstream.adaptive)"/>
 		<setting id="prefer_playready" type="bool" label="Prefer PlayReady for DRM" default="false" visible="System.HasAddon(inputstream.adaptive)"/>
 		<setting id="prefer_dash" type="bool" label="Prefer Dash over HLS" default="false" visible="System.HasAddon(inputstream.adaptive)" />

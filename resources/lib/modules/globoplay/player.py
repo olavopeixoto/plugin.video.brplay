@@ -196,11 +196,9 @@ class Player(xbmc.Player):
 
         item.setContentLookup(False)
 
-        disable_inputstream_adaptive = control.setting("disable_inputstream_adaptive") == 'true'
-
         if parsed_url.path.endswith(".mpd"):
             mime_type = 'application/dash+xml'
-            if not disable_inputstream_adaptive:
+            if not control.disable_inputstream_adaptive:
                 control.log("Using inputstream.adaptive MPD")
                 item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
                 item.setProperty('inputstreamaddon', 'inputstream.adaptive')
@@ -209,7 +207,7 @@ class Player(xbmc.Player):
             item.setMimeType(mime_type)
         elif not cookies:
             item.setMimeType('application/vnd.apple.mpegurl')
-            if not disable_inputstream_adaptive:
+            if not control.disable_inputstream_adaptive:
                 control.log("Using inputstream.adaptive HLS")
                 item.setProperty('inputstream.adaptive.manifest_type', 'hls')
                 item.setProperty('inputstreamaddon', 'inputstream.adaptive')

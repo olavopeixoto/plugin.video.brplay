@@ -6,6 +6,7 @@ try: from sqlite3 import dbapi2 as database
 except: from pysqlite2 import dbapi2 as database
 
 from resources.lib.modules import control
+from collections import OrderedDict
 
 
 def get(function, timeout, *args, **table):

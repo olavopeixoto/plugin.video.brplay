@@ -2,9 +2,10 @@
 
 from resources.lib.modules import control
 from resources.lib.modules import client
-from BeautifulSoup import BeautifulSoup as bs
 from resources.lib.modules import workers
 import re
+import json
+from collections import OrderedDict
 
 COMBATE_VIDEOS = 'https://globosatplay.globo.com/combate/videos/%s/%s.json'
 COMBATE_EVENTS = 'https://globosatplay.globo.com/combate/%s/eventos/%s.json'
@@ -16,18 +17,19 @@ artPath = control.artPath()
 
 THUMB_URL = 'https://s04.video.glbimg.com/x720/%s.jpg'
 
+
 def get_combate_categories():
     return [{
             'title': 'UFC',
             'slug': 'ufc',
         },
         {
-            'title': 'Pride',
-            'slug': 'pride'
+            'title': 'Striking',
+            'slug': 'striking'
         },
         {
-            'title': 'Meca',
-            'slug': 'meca'
+            'title': 'Grappling',
+            'slug': 'grappling'
         },
         {
             'title': 'Outros',
@@ -64,11 +66,203 @@ def get_latest_events(slug):
     return videos
 
 
+def get_featured():
+    url = 'http://api-tracks.globosat.tv/v1/combate/'
+
+    headers = {
+        'Accept-Encoding': 'gzip',
+        'Authorization': 'Token dfe2d9096105524042f9b98a86fb07543a125abb'
+    }
+
+    events = client.request(url, headers=headers)
+
+    videos = []
+
+    for event in events:
+        videos.append({
+            'title': event['titulo_video'],
+            'id': event['recurso']['id'],
+            'thumb': event['imagem_url_x720'],
+            'fanart': event['imagem_url_x720'],
+            'plot': event['descricao'],
+            'duration': float(event['duracao_original']) / 1000.0
+        })
+
+    return videos
+
+
+def get_previous_events():
+    url = 'http://api.fights.globosat.tv/api/previous_events'
+
+    headers = {
+        'Accept-Encoding': 'gzip'
+    }
+
+    events = client.request(url, headers=headers)
+
+    videos = []
+
+    for event in events:
+        videos.append({
+            'title': event['nome'],
+            'date': event['data'],
+            'slug': event['slug'],
+            'plot': 'Evento realizado em ' + event['data'],
+            'thumb': event['cards']['principal']['lutas'][0]['video']['url_thumbnail'] if len(event['cards']['principal']['lutas']) > 0 else THUMB_URL % event['video_id'],
+            'fanart': THUMB_URL % event['video_id'],
+            'url': 'get_previous_events_videos',
+            'order': '*'
+        })
+
+    return videos
+
+
+def get_previous_events_videos(slug):
+    url = 'http://api.fights.globosat.tv/api/previous_events'
+
+    headers = {
+        'Accept-Encoding': 'gzip'
+    }
+
+    events = client.request(url, headers=headers)
+
+    videos = []
+
+    event = next(e for e in events if e['slug'] == slug)
+
+    if event:
+        cards = event['cards'].keys()
+        for card in cards:
+            if card in event['cards'] and event['cards'][card] and 'lutas' in event['cards'][card] and event['cards'][card]['lutas']:
+                for luta in event['cards'][card]['lutas']:
+                    video = luta['video']
+                    videos.append({
+                        'title': video['titulo'],
+                        'id': video['video_id'],
+                        'thumb': video['url_thumbnail'],
+                        'fanart': video['url_thumbnail'],
+                        'plot': video['descricao'],
+                        'duration': sum(int(x) * 60 ** i for i, x in
+                                enumerate(reversed(video['duracao'].split(':')))) if video['duracao'] else 0
+                    })
+
+        return videos
+
+    return None
+
+
+def get_next_events_videos(slug):
+    url = 'http://api.fights.globosat.tv/api/next_events'
+
+    headers = {
+        'Accept-Encoding': 'gzip'
+    }
+
+    events = client.request(url, headers=headers)
+
+    videos = []
+
+    event = next(e for e in events if e['slug'] == slug)
+
+    if event:
+        cards = event['cards'].keys()
+        for card in cards:
+            if card in event['cards'] and event['cards'][card] and 'lutas' in event['cards'][card] and event['cards'][card]['lutas']:
+                for luta in event['cards'][card]['lutas']:
+                    lutadores = luta['lutadores']
+                    principal = lutadores['principal']
+                    desafiante = lutadores['desafiante']
+                    video = luta['video']
+                    thumb = video['url_thumbnail'] if video and 'url_thumbnail' in video and video['url_thumbnail'] else principal['url_foto_cintura']
+                    videos.append({
+                        'title': event['nome'] + ' - ' + principal['nome'] + ' x ' + desafiante['nome'],
+                        'id': video['video_id'] if video and 'video_id' in video else None,
+                        'plot': 'Luta entre ' + principal['nome'] + ' x ' + desafiante['nome'] + u', válida pelo ' + event['nome'] + ', em ' + event['data'],
+                        'thumb': thumb,
+                        'fanart': thumb
+                    })
+
+        return videos
+
+    return None
+
+
+def get_next_events():
+    url = 'http://api.fights.globosat.tv/api/next_events'
+
+    headers = {
+        'Accept-Encoding': 'gzip'
+    }
+
+    events = client.request(url, headers=headers)
+
+    videos = []
+
+    for event in events:
+        videos.append({
+            'title': event['nome'] + ' - ' + event['data'] + ' ' + event['hora'],
+            'date': event['data'],
+            'slug': event['slug'],
+            'plot': 'Data do evento: ' + event['data'],
+            'thumb': event['cards']['principal']['lutas'][0]['video']['url_thumbnail'] if len(event['cards']['principal']['lutas']) > 0 and event['cards']['principal']['lutas'][0]['video'] else THUMB_URL % event['video_id'],
+            'fanart': THUMB_URL % event['video_id'],
+            'url': 'get_next_events_videos',
+            'order': '*'
+        })
+
+    return videos
+
+
 def __append_result(fn, list, size_meter, *args):
         list_return = fn(*args)
         size_meter[0] = len(list_return) if list_return and size_meter[0] > 0 else 0
         if list_return and len(list_return) > 0:
             list += list_return
+
+
+def get_ufc_submenu():
+
+    return [{
+        'title': u'Destaques',
+        'slug': 'featured_ufc',
+        'url': None,
+        'order': '*'
+    },{
+        'title': u'Eventos Anteriores',
+        'slug': 'previous_ufc',
+        'url': None,
+        'order': '*'
+    },{
+        'title': u'Próximos Eventos',
+        'slug': 'next_ufc',
+        'url': None,
+        'order': '*'
+    },{
+        'title': u'Últimos',
+        'slug': 'ultimos_ufc',
+        'url': None,
+        'order': '*'
+    },{
+        'title': u'Todos',
+        'slug': 'todos_ufc',
+        'url': None,
+        'order': '*'
+    }]
+
+
+def open_ufc_submenu(slug):
+    if slug == 'todos_ufc':
+        return get_all_events('ufc')
+    elif slug == 'featured_ufc':
+        return get_featured()
+    elif slug == 'previous_ufc':
+        return get_previous_events()
+    elif slug == 'next_ufc':
+        return get_next_events()
+    elif slug == 'ultimos_ufc':
+        return get_latest_events('ufc')
+
+    return []
 
 
 def get_all_events(slug):
@@ -77,7 +271,6 @@ def get_all_events(slug):
 
     events = []
 
-    start = 1
     end = 1
     size_meter = [1]
 
@@ -88,11 +281,7 @@ def get_all_events(slug):
         [i.start() for i in threads]
         [i.join() for i in threads]
 
-    return [{
-        'title': u'Últimos',
-        'url': None,
-        'order': '*'
-    }] + sorted(events, key=lambda k: k['order'], reverse=True)
+    return sorted(events, key=lambda k: k['order'], reverse=True)
 
 
 def get_events_by_page(slug, page=1):
@@ -167,36 +356,40 @@ def scrape_videos_from_page(url):
 
     headers = {'Accept-Encoding': 'gzip'}
     html = client.request(url, headers=headers)
-    soup = bs(html)
 
-    cards = soup.find('div', attrs={'class': 'cards'})
-
-    inner_html = cards.renderContents()
-
-    card_list = inner_html.split('<div class="pauta"></div>')
+    config_string_matches = re.findall('window.initialState\s*=\s*({.*})', html)
 
     videos = []
 
-    tvshowtitle = soup.find('meta', attrs={'property': 'og:title'})['content']
+    if not config_string_matches or len(config_string_matches) == 0:
+        return videos
 
-    for card in card_list:
-        card_bs = bs(card)
+    config_string = config_string_matches[0]
 
-        link = card_bs.find('a')
-        paragraph = card_bs.find('p', attrs={'class': 'right'})
+    try:
+        config_json = json.loads(config_string, object_pairs_hook=OrderedDict)
+    except Exception as ex:
+        control.log("combate scrape_videos_from_page ERROR: %s" % ex)
+        return videos
 
-        video_id = link.find('span', attrs={'class': 'card combate '})['data-video-id']
-        first_fighter = paragraph.find('span', attrs={'class': re.compile(r'\bfirst\b')}).renderContents()
-        second_fighter = paragraph.find('span', attrs={'class': re.compile(r'\blast\b')}).renderContents()
-        description = paragraph.find('span', attrs={'class': 'description'}).renderContents()
+    for video in config_json['eventVideos']['videos']:
+
+        # "playlistTitle": "UFC: Bisping x Gastelum",
+        # "id": 6313591,
+        # "title": "Michael Bisping x Kelvin Gastelum",
+        # "description": "Luta entre Michael Bisping x Kelvin Gastelum, válida pelo UFC Bisping x Gastelum - Peso-médio, em 25/11/2017.",
+        # "duration": "8 min",
+        # "thumbUrl": "https://s04.video.glbimg.com/x216/6313591.jpg",
+        # "url": "/combate/v/6313591/",
+        # "date": "25 de Nov de 2017"
 
         videos.append({
-            'id': video_id,
-            'title': first_fighter + ' x ' + second_fighter,
-            'tvshowtitle': tvshowtitle,
-            'plot': description,
-            'fanart': THUMB_URL % video_id,
-            'thumb': THUMB_URL % video_id,
+            'id': video['id'],
+            'title': video['title'],
+            'tvshowtitle': video['playlistTitle'],
+            'plot': video['description'],
+            'fanart': video['thumbUrl'],
+            'thumb': video['thumbUrl'],
         })
 
     return videos
