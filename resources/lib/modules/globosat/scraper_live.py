@@ -365,7 +365,7 @@ def get_basic_live_channels_from_api():
                     'clearart': result['white_logo'] or result['color_logo'],
                     'banner': result['white_horizontal_logo'],
                     'color': result['color'],
-                    'fanart': transmission['items'][0]['image'],
+                    'fanart': item['fanart'] if 'fanart' in item and item['fanart'] is not None else transmission['items'][0]['image'],
                     'id': transmission['items'][0]['id_globo_videos'],
                     'channel_id': transmission['id_channel'],
                     'brplayprovider': 'globosat',
@@ -415,53 +415,53 @@ def __get_globosat_simulcast(simulcast_results):
 
     if geolocation == '0':
         affiliate = None
-    elif geolocation == '1':
-        affiliate = 'Sao Paulo'
     elif geolocation == '2':
-        affiliate = 'Brasilia'
+        affiliate = 'Sao Paulo'
     elif geolocation == '3':
-        affiliate = 'Belo Horizonte'
+        affiliate = 'Brasilia'
     elif geolocation == '4':
-        affiliate = 'Recife'
+        affiliate = 'Belo Horizonte'
     elif geolocation == '5':
-        affiliate = 'Salvador'
+        affiliate = 'Recife'
     elif geolocation == '6':
-        affiliate = 'Fortaleza'
+        affiliate = 'Salvador'
     elif geolocation == '7':
-        affiliate = 'Aracaju'
+        affiliate = 'Fortaleza'
     elif geolocation == '8':
-        affiliate = 'Maceio'
+        affiliate = 'Aracaju'
     elif geolocation == '9':
-        affiliate = 'Cuiaba'
+        affiliate = 'Maceio'
     elif geolocation == '10':
-        affiliate = 'Porto Alegre'
+        affiliate = 'Cuiaba'
     elif geolocation == '11':
-        affiliate = 'Florianopolis'
+        affiliate = 'Porto Alegre'
     elif geolocation == '12':
-        affiliate = 'Curitiba'
+        affiliate = 'Florianopolis'
     elif geolocation == '13':
-        affiliate = 'Vitoria'
+        affiliate = 'Curitiba'
     elif geolocation == '14':
-        affiliate = 'Goiania'
+        affiliate = 'Vitoria'
     elif geolocation == '15':
-        affiliate = 'Campo Grande'
+        affiliate = 'Goiania'
     elif geolocation == '16':
-        affiliate = 'Manaus'
+        affiliate = 'Campo Grande'
     elif geolocation == '17':
-        affiliate = 'Belem'
+        affiliate = 'Manaus'
     elif geolocation == '18':
-        affiliate = 'Macapa'
+        affiliate = 'Belem'
     elif geolocation == '19':
-        affiliate = 'Palmas'
+        affiliate = 'Macapa'
     elif geolocation == '20':
-        affiliate = 'Rio Branco'
+        affiliate = 'Palmas'
     elif geolocation == '21':
-        affiliate = 'Teresina'
+        affiliate = 'Rio Branco'
     elif geolocation == '22':
-        affiliate = 'Sao Luis'
+        affiliate = 'Teresina'
     elif geolocation == '23':
-        affiliate = 'Joao Pessoa'
+        affiliate = 'Sao Luis'
     elif geolocation == '24':
+        affiliate = 'Joao Pessoa'
+    elif geolocation == '25':
         affiliate = 'Natal'
     else:
         affiliate = 'Rio de Janeiro'
