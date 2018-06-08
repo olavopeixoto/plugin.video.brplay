@@ -15,7 +15,7 @@ GLOBOSAT_API_URL = 'http://api.vod.globosat.tv/globosatplay'
 GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
 GLOBOSAT_API_CHANNELS = GLOBOSAT_API_URL + '/channels.json?page=%d'
 COMBATE_SIMULCAST_URL = 'http://api.simulcast.globosat.tv/combate'
-GLOBOSAT_SIMULCAST_URL = 'http://api.simulcast.globosat.tv/globosatplay'
+GLOBOSAT_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/globosatplay'
 PREMIERE_LIVE_JSON = GLOBOSAT_URL + '/premierefc/ao-vivo/add-on/jogos-ao-vivo/520142353f8adb4c90000008.json'
 PREMIERE_UPCOMING_JSON = GLOBOSAT_URL + '/premierefc/ao-vivo/add-on/proximos-jogos/520142353f8adb4c90000006.json'
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
@@ -341,7 +341,7 @@ def get_basic_live_channels_from_api():
             pass
 
         for transmission in result['transmissions']:
-            simulcast_result = next((result for result in simulcast_results if result['id_midia_live_play'] == transmission['items'][0]['id_globo_videos']), None)
+            simulcast_result = next((result for result in simulcast_results if str(result['media_globovideos_id']) == str(transmission['items'][0]['id_globo_videos'])), None)
             simulcast_data = __get_simulcast_data(simulcast_result) if not simulcast_result is None else {}
 
             item = {
@@ -378,7 +378,7 @@ def get_basic_live_channels_from_api():
             channel_id_list.append(int(item['channel_id']))
 
     for simulcast_result in simulcast_results:
-        if simulcast_result is None or int(simulcast_result['channel']['id_globo_videos']) in channel_id_list:
+        if simulcast_result is None or int(simulcast_result['channel']['globovideos_id']) in channel_id_list:
             continue
 
         simulcast_data = __get_simulcast_data(simulcast_result)
@@ -474,7 +474,7 @@ def __get_globosat_simulcast(simulcast_results):
 
     headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
     channel_info = client.request(url, headers=headers)
-    simulcast_results += channel_info['results']
+    simulcast_results += channel_info
 
 
 def get_combate_live_channels():
@@ -487,7 +487,7 @@ def get_combate_live_channels():
     live = []
 
     for result in results:
-        channel = __get_simulcast_data(result)
+        channel = __get_simulcast_data_v2(result)
         channel.update({
             'logo': COMBATE_LOGO,
             'clearlogo': COMBATE_LOGO
@@ -655,17 +655,17 @@ def __get_game_data(game, meta, offline):
     })
     return meta
 
-
-def __get_simulcast_data(result):
-
+def __get_simulcast_data_v2(result):
     utc_timezone = control.get_current_brasilia_utc_offset()
 
     live_text = ' (' + control.lang(32004) + ')' if result['live'] else ''
-    program_date = util.strptime_workaround(result['day'], '%d/%m/%Y %H:%M') + datetime.timedelta(hours=-utc_timezone) + util.get_utc_delta() if not result['day'] is None else datetime.datetime.now()
+    program_date = util.strptime_workaround(result['day'], '%d/%m/%Y %H:%M') + datetime.timedelta(
+        hours=-utc_timezone) + util.get_utc_delta() if not result['day'] is None else datetime.datetime.now()
     # program_local_date_string = datetime.datetime.strftime(program_date, '%d/%m/%Y %H:%M')
     # duration_str = (' - ' + str(result['duration'] or 0) + ' minutos') if (result['duration'] or 0) > 0 else ''
 
-    name = "[B]" + result['channel']['title'] + "[/B]" + ('[I] - ' + (result['title'] or '') + '[/I]' if result['title'] else '') + live_text
+    name = "[B]" + result['channel']['title'] + "[/B]" + (
+        '[I] - ' + (result['title'] or '') + '[/I]' if result['title'] else '') + live_text
 
     return {
         'slug': result['channel']['title'].lower(),
@@ -680,12 +680,57 @@ def __get_simulcast_data(result):
         'thumb': result['channel']['url_snapshot'] + '?v=' + str(int(time.time())),
         'live': result['live'],
         'playable': 'true',
-        'plot': result['subtitle'] or '' if not control.isFTV else ' ', #(result['title'] or '') + ' - ' + (result['subtitle'] or ''), #program_local_date_string + duration_str + '\n' + (result['title'] or '') + '\n' + (result['subtitle'] or ''),
-        'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + (datetime.datetime.strftime(program_date + datetime.timedelta(minutes=(result['duration'] or 0)), '%H:%M') if (result['duration'] or 0) > 0 else 'N/A'),
+        'plot': result['subtitle'] or '' if not control.isFTV else ' ',
+    # (result['title'] or '') + ' - ' + (result['subtitle'] or ''), #program_local_date_string + duration_str + '\n' + (result['title'] or '') + '\n' + (result['subtitle'] or ''),
+        'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + (
+            datetime.datetime.strftime(program_date + datetime.timedelta(minutes=(result['duration'] or 0)),
+                                       '%H:%M') if (result['duration'] or 0) > 0 else 'N/A'),
         # 'programTitle': result['subtitle'],
         'id': result['id_midia_live_play'],
         'channel_id': result['channel']['id_globo_videos'],
         'duration': int(result['duration'] or 0) * 60,
+        # 'tagline': result['subtitle'],
+        # 'date': datetime.datetime.strftime(program_date, '%d.%m.%Y'),
+        # 'aired': datetime.datetime.strftime(program_date, '%Y-%m-%d'),
+        'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
+        # 'StartTime': datetime.datetime.strftime(program_date, '%H:%M:%S'),
+        # 'EndTime': datetime.datetime.strftime(program_date + datetime.timedelta(minutes=(result['duration'] or 0)), '%H:%M:%S'),
+        'brplayprovider': 'globosat'
+    }
+
+
+def __get_simulcast_data(result):
+
+    control.log("GET_SIMULCAST_DATA: %s" % result)
+
+    utc_timezone = control.get_current_brasilia_utc_offset()
+
+    live_text = ' (' + control.lang(32004) + ')' if result['live'] else ''
+    program_date = util.strptime_workaround(result['starts_at'][:-6]) + datetime.timedelta(hours=-utc_timezone) + util.get_utc_delta() if not result['starts_at'] is None else datetime.datetime.now()
+    # program_local_date_string = datetime.datetime.strftime(program_date, '%d/%m/%Y %H:%M')
+    # duration_str = (' - ' + str(result['duration'] or 0) + ' minutos') if (result['duration'] or 0) > 0 else ''
+
+    name = "[B]" + result['channel']['title'] + "[/B]" + ('[I] - ' + (result['name'] or '') + '[/I]' if result['name'] else '') + live_text
+
+    return {
+        'slug': result['channel']['title'].lower(),
+        'studio': result['channel']['title'],
+        'name': name,
+        'title': result['name'],
+        'tvshowtitle': result['name'] if result['name'] else None,
+        'sorttitle': result['channel']['title'],
+        'logo': result['channel']['default_logo'],
+        'color': result['channel']['color'],
+        'fanart': result['image_url'],
+        'thumb': result['snapshot_url'] + '?v=' + str(int(time.time())),
+        'live': result['live'],
+        'playable': 'true',
+        'plot': result['description'] or '' if not control.isFTV else ' ', #(result['title'] or '') + ' - ' + (result['subtitle'] or ''), #program_local_date_string + duration_str + '\n' + (result['title'] or '') + '\n' + (result['subtitle'] or ''),
+        'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + (datetime.datetime.strftime(program_date + datetime.timedelta(minutes=(int(result['duration'] or 0) / 1000 / 60)), '%H:%M') if (result['duration'] or 0) > 0 else 'N/A'),
+        # 'programTitle': result['subtitle'],
+        'id': result['media_globovideos_id'],
+        'channel_id': result['channel']['globovideos_id'],
+        'duration': int(result['duration'] or 0) / 1000,
         # 'tagline': result['subtitle'],
         # 'date': datetime.datetime.strftime(program_date, '%d.%m.%Y'),
         # 'aired': datetime.datetime.strftime(program_date, '%Y-%m-%d'),
