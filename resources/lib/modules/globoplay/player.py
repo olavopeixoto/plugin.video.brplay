@@ -5,7 +5,7 @@ import re
 import sys
 import urllib
 import xbmc
-import auth
+import auth_helper
 from urlparse import urlparse
 from resources.lib.modules import hlshelper
 from resources.lib.modules import client
@@ -230,11 +230,7 @@ class Player(xbmc.Player):
 
     def __getLiveVideoInfo(self, id, geolocation):
 
-        username = control.setting('globoplay_username')
-        password = control.setting('globoplay_password')
-
-        # authenticateurl
-        credentials = auth.auth().authenticate(username, password)
+        credentials = auth_helper.get_credentials()
 
         if credentials is None:
             return None
@@ -316,11 +312,8 @@ class Player(xbmc.Player):
         }
 
         if not anonymous:
-            username = control.setting('globoplay_username')
-            password = control.setting('globoplay_password')
-
             # authenticate
-            credentials = auth.auth().authenticate(username, password)
+            credentials = auth_helper.get_credentials()
         else:
             credentials = None
 

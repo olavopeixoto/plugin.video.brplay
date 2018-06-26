@@ -1,41 +1,89 @@
 # -*- coding: UTF-8 -*-
 
-from resources.lib.modules.globosat.auth import claro as globosat_claro
-from resources.lib.modules.globosat.auth import globosat_guest as globosat_globosat_guest
-from resources.lib.modules.globosat.auth import net as globosat_net
-from resources.lib.modules.globosat.auth import sky as globosat_sky
-from resources.lib.modules.globosat.auth import tv_oi as globosat_tv_oi
-from resources.lib.modules.globosat.auth import vivo as globosat_vivo
+from resources.lib.modules import control
+from resources.lib.modules import client
+import json
 
-G_OAUTH_URL = 'http://sexyhotplay.com.br/vod/auth/authorize/'
-G_GLOBOSAT_CREDENTIALS = 'sexyhot_credentials'
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
-class net(globosat_net):
-    OAUTH_URL = G_OAUTH_URL
-    GLOBOSAT_CREDENTIALS = G_GLOBOSAT_CREDENTIALS
-    PROVIDER_ID = 131
 
-class tv_oi(globosat_tv_oi):
-    OAUTH_URL = G_OAUTH_URL
-    GLOBOSAT_CREDENTIALS = G_GLOBOSAT_CREDENTIALS
-    PROVIDER_ID = 132
+class auth:
 
-class sky(globosat_sky):
-    OAUTH_URL = G_OAUTH_URL
-    GLOBOSAT_CREDENTIALS = G_GLOBOSAT_CREDENTIALS
-    PROVIDER_ID = 88
+    GLOBO_AUTH_URL = 'https://login.globo.com/api/authentication'
+    GLOBOSAT_AUTH_URL = 'https://sexyhotplay.com.br/vod/auth/authorize/'
+    GLOBOSAT_CREDENTIALS = 'sexyhot_credentials'
 
-class vivo(globosat_vivo):
-    OAUTH_URL = G_OAUTH_URL
-    GLOBOSAT_CREDENTIALS = G_GLOBOSAT_CREDENTIALS
-    PROVIDER_ID = 155
+    GLOBOSATPLAY_TOKEN_ID = 'sexyhotplay_sessionid'
+    GLOBOPLAY_TOKEN_ID = 'GLBID'
 
-class claro(globosat_claro):
-    OAUTH_URL = G_OAUTH_URL
-    GLOBOSAT_CREDENTIALS = G_GLOBOSAT_CREDENTIALS
-    PROVIDER_ID = 173
+    def __init__(self):
+        try:
+            credentials = control.setting(self.GLOBOSAT_CREDENTIALS)
+            self.credentials = pickle.loads(credentials)
+        except:
+            self.credentials = None
 
-class globosat_guest(globosat_globosat_guest):
-    OAUTH_URL = G_OAUTH_URL
-    GLOBOSAT_CREDENTIALS = G_GLOBOSAT_CREDENTIALS
-    PROVIDER_ID = 43
+    def _save_credentials(self):
+        control.setSetting(self.GLOBOSAT_CREDENTIALS, pickle.dumps(self.credentials))
+
+    def clear_credentials(self):
+        self.credentials = None
+        control.setSetting(self.GLOBOSAT_CREDENTIALS, None)
+
+    def is_authenticated(self):
+        return self.credentials is not None
+
+    def authenticate(self, username, password):
+
+        if not self.is_authenticated() and (username and password):
+            control.log('username/password set. trying to authenticate')
+            self.credentials = self._authenticate(username, password)
+            if self.is_authenticated():
+                control.log('successfully authenticated')
+                self._save_credentials()
+            else:
+                control.log('wrong username or password')
+                message = '[%s] %s' % (self.__class__.__name__, control.lang(32003))
+                control.infoDialog(message, icon='ERROR')
+                return None
+        elif self.is_authenticated():
+            control.log('already authenticated')
+        else:
+            control.log_warning('no username set to authenticate')
+            message = 'Missing user credentials'
+            control.infoDialog(message, icon='ERROR')
+            control.openSettings()
+            return None
+
+        control.log(repr(self.credentials))
+
+        return self.credentials
+
+    def error(self, msg):
+        control.infoDialog('[%s] %s' % (self.__class__.__name__, msg), 'ERROR')
+
+    def _authenticate(self, username, password):
+        payload = {
+            'captcha': '',
+            'payload': {
+                'email': username,
+                'password': password,
+                'serviceId': 6284
+            }
+        }
+
+        cookies = client.request(self.GLOBO_AUTH_URL, post=json.dumps(payload), headers={
+            'content-type': 'application/json; charset=UTF-8',
+            'accept': 'application/json, text/javascript',
+            'Accept-Encoding': 'gzip'}, output='cookiejar')
+
+        cookies = client.request(self.GLOBOSAT_AUTH_URL, headers={'Accept-Encoding': 'gzip', 'Cookie': "%s=%s;" % (self.GLOBOPLAY_TOKEN_ID, cookies[self.GLOBOPLAY_TOKEN_ID])}, output='cookiejar')
+
+        credentials = cookies[self.GLOBOSATPLAY_TOKEN_ID]
+
+        control.log("SEXYHOTPLAY CREDENTIALS: %s" % credentials)
+
+        return credentials

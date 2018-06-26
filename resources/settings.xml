@@ -4,14 +4,6 @@
 	<category label="32346">
 
 		<setting type="lsep" label="Globosat Play"></setting>
-
-		<!-- 31210 = TV Provider -->
-		<setting id="globosat_provider" type="labelenum" label="31210" values="NET|TV Oi|Sky|Vivo|Globosat Guest|Claro|Multiplay|ORM Cabo" default="TV Oi" />
-
-		<!-- 31110 = User -->
-		<!-- 31120 = Password -->
-		<setting id="globosat_username" subsetting="true" type="text" label="31110" default="" />
-		<setting id="globosat_password" subsetting="true" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
 		<setting id="globosat_geofence" type="enum" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="0" />
 
 		<!-- 31100 = Globo Play -->

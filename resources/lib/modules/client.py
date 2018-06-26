@@ -32,7 +32,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             opener = urllib2.build_opener(*handlers)
             opener = urllib2.install_opener(opener)
 
-        if output == 'cookie' or output == 'extended' or not close == True:
+        if output == 'cookie' or output == 'extended' or output == 'cookiejar' or not close == True:
             cookies = cookielib.LWPCookieJar()
             handlers += [urllib2.HTTPHandler(), urllib2.HTTPSHandler(), urllib2.HTTPCookieProcessor(cookies)]
             opener = urllib2.build_opener(*handlers)
@@ -122,6 +122,9 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             elif response.code == 403:
                 control.log("Response error code (%s): %s" % (rid, response.code))
                 raise Exception("Permission Denied")
+            elif error is True:
+                control.log("Response error code (%s): %s" % (rid, response.code))
+                raise Exception("ERROR (%s): %s" % (url, response.code))
             elif error is False:
                 control.log("Response error code (%s): %s" % (rid, response.code))
                 return
@@ -131,7 +134,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         if response.code == 403:
             raise Exception("Permission Denied")
         elif response.code >= 400:
-            raise Exception("Request Error: %s" % response.code)
+            raise Exception("Request Error (%s): %s" % (url, response.code))
 
         if output == 'cookie':
             try: result = '; '.join(['%s=%s' % (i.name, i.value) for i in cookies])
@@ -140,6 +143,12 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             except: pass
             if close is True: response.close()
             return result
+
+        if output == 'cookiejar':
+            cookies_dict = {}
+            for i in cookies:
+                cookies_dict[i.name] = i.value
+            return cookies_dict
 
         elif output == 'geturl':
             result = response.geturl()

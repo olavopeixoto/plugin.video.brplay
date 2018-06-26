@@ -244,10 +244,7 @@ def is_inputstream_available():
 
 
 def is_globosat_available():
-    username = setting('globosat_username')
-    password = setting('globosat_password')
-
-    return username and password and username.strip() != '' and password.strip() != ''
+    return is_globoplay_available()
 
 
 def is_globoplay_available():
@@ -445,8 +442,8 @@ def log(msg):
 def get_coordinates(affiliate):
 
     code = "RJ"
-    latitude = "-22.900"
-    longitude = "-43.172"
+    latitude = "-22.970722"
+    longitude = "-43.182365"
 
     if affiliate == "Sao Paulo":
         code, latitude, longitude = "SP1", '-23.5505', '-46.6333'

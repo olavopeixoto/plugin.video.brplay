@@ -2,7 +2,7 @@
 
 from resources.lib.modules import control
 from resources.lib.modules import client
-import auth_helper
+from resources.lib.modules.globosat import auth_helper
 import urllib
 import requests
 

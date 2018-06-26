@@ -701,8 +701,6 @@ def __get_simulcast_data_v2(result):
 
 def __get_simulcast_data(result):
 
-    control.log("GET_SIMULCAST_DATA: %s" % result)
-
     utc_timezone = control.get_current_brasilia_utc_offset()
 
     live_text = ' (' + control.lang(32004) + ')' if result['live'] else ''

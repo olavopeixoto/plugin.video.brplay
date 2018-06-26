@@ -121,6 +121,7 @@ def get_videos(url):
             'cast': actors,
             'poster': poster,
             'fanart': os.path.join(artPath, 'fanart_sexyhot.png'),
+            'url': 'http://sexyhotplay.com.br' + link['href']
             # 'logo': os.path.join(artPath, 'logo_sexyhot.png'),
             # 'thumb': os.path.join(artPath, 'logo_sexyhot.png')
         })

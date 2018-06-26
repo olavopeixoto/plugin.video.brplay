@@ -5,7 +5,7 @@ import re
 import sys
 import urllib
 import threading
-import auth
+import auth_helper
 from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules.util import get_signed_hashes
@@ -37,12 +37,17 @@ class Player(xbmc.Player):
         if id is None:
             return
 
-        info = self.__get_video_info(id)
+        meta = json.loads(meta)
+
+        if 'url' not in meta or meta['url'] is None:
+            return
+
+        token = self.__get_token(meta['url'])
+
+        info = self.__get_video_info(id, token)
 
         if info is None:
             return
-
-        title = info['title']
 
         signed_hashes = get_signed_hashes(info['hash'])
 
@@ -58,17 +63,6 @@ class Player(xbmc.Player):
         self.url = '?'.join([info['url'], query_string])
 
         control.log("live media url: %s" % self.url)
-
-        try:
-            meta = json.loads(meta)
-        except:
-            meta = {
-                "playcount": 0,
-                "overlay": 6,
-                "title": title,
-                "thumb": None,
-                "mediatype": "video"
-            }
 
         meta.update({
             "genre": info["category"],
@@ -96,7 +90,8 @@ class Player(xbmc.Player):
 
         if mime_type:
             item.setMimeType(mime_type)
-        elif not cookies:
+
+        if not cookies:
             item.setProperty('inputstream.adaptive.manifest_type', 'hls')
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
             # if cookies:
@@ -134,12 +129,7 @@ class Player(xbmc.Player):
             self.stopPlayingEvent.set()
 
     def __get_globo_id(self, id):
-        provider = control.setting('globosat_provider').lower().replace(' ', '_')
-        username = control.setting('globosat_username')
-        password = control.setting('globosat_password')
-
-        authenticator = getattr(auth, provider)()
-        token, sessionKey = authenticator.get_token(username, password, select_profile=False)
+        sessionKey = auth_helper.get_token()
 
         if not sessionKey:
             return None
@@ -158,7 +148,7 @@ class Player(xbmc.Player):
         if 'autorizado' in json_response and json_response['autorizado'] == False:
             if self.retry == 0:
                 self.retry = self.retry + 1
-                authenticator.clearCredentials()
+                auth_helper.clearCredentials()
                 return self.__get_globo_id(id)
             else:
                 control.infoDialog(message=u'%s: %s' % (control.lang(34104).encode('utf-8'), json_response['motivo']), sound=True, icon='ERROR')
@@ -168,7 +158,14 @@ class Player(xbmc.Player):
 
         return json_response['videos']['globovideos']['original']
 
-    def __get_video_info(self, id):
+    def __get_token(self, url):
+        cookie = auth_helper.get_session_cookie()
+        cookie.update({'disclaimer-sexyhotplay':'1'})
+        response = client.request(url, cookie=cookie, headers={"Accept-Encoding": "gzip"})
+        token_match = re.findall(r'var\s*ATOKEN\s*=\s*\"([^\"]+)\";', response)
+        return token_match[0]
+
+    def __get_video_info(self, id, token):
 
         playlistUrl = 'http://api.globovideos.com/videos/%s/playlist'
         playlistJson = client.request(playlistUrl % id, headers={"Accept-Encoding": "gzip"})
@@ -190,14 +187,6 @@ class Player(xbmc.Player):
 
         resource_id = resource['_id']
 
-        provider = control.setting('globosat_provider').lower().replace(' ', '_')
-        username = control.setting('globosat_username')
-        password = control.setting('globosat_password')
-
-        # authenticate
-        authenticator = getattr(auth, provider)()
-        credentials = authenticator.authenticate(playlistJson["provider_id"], username, password, False)
-
         hashUrl = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=1.1.24&player=android' % (id, resource_id)
 
         control.log("HASH URL: %s" % hashUrl)
@@ -208,7 +197,7 @@ class Player(xbmc.Player):
             'https': proxy,
         }
 
-        hashJson = client.request(hashUrl, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
+        hashJson = client.request(hashUrl, cookie={'WMPTOKEN_%s' % playlistJson["provider_id"]: token}, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
 
         control.log("HASH JSON: %s" % repr(hashJson))
 

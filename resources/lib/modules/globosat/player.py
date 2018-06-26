@@ -6,13 +6,12 @@ import sys
 import urllib
 from urlparse import urlparse
 
-import auth
-import auth_helper
 from resources.lib.modules import util
 from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules import hlshelper
 from resources.lib.modules.globoplay import resourceshelper
+from resources.lib.modules.globosat import auth_helper
 
 import xbmc
 import threading
@@ -124,6 +123,7 @@ class Player(xbmc.Player):
         if parsed_url.path.endswith(".mpd"):
             mime_type = 'application/dash+xml'
             item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
+            item.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
 
         elif parsed_url.path.endswith(".ism/manifest"):
             mime_type = 'application/vnd.ms-sstr+xml'
@@ -209,13 +209,7 @@ class Player(xbmc.Player):
             'https': proxy,
         }
 
-        provider = control.setting('globosat_provider').lower().replace(' ', '_')
-        username = control.setting('globosat_username')
-        password = control.setting('globosat_password')
-
-        # authenticate
-        authenticator = getattr(auth, provider)()
-        credentials = authenticator.authenticate(provider_id, username, password)
+        credentials = auth_helper.get_globosat_cookie(provider_id)
 
         hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
         hash_json = client.request(hash_url, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)

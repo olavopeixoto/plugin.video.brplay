@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import auth
+import auth_helper
 import urllib
 import resources.lib.modules.util as util
 from resources.lib.modules import client
@@ -119,11 +119,8 @@ def get_highlights():
 def get_favorites(page=1, per_page=10):
     videos = []
 
-    username = control.setting('globoplay_username')
-    password = control.setting('globoplay_password')
-
     # authenticate
-    credentials = auth.auth().authenticate(username, password)
+    credentials = auth_helper.get_credentials()
     headers = {'Accept-Encoding': 'gzip'}
     data = client.request(GLOBOPLAY_FAVORITES % (page, per_page), cookie=credentials, headers=headers)
 
@@ -159,11 +156,8 @@ def get_watch_history():
 
     limit = 15
 
-    username = control.setting('globoplay_username')
-    password = control.setting('globoplay_password')
-
     # authenticate
-    credentials = auth.auth().authenticate(username, password)
+    credentials = auth_helper.get_credentials()
 
     headers = {'Accept-Encoding': 'gzip'}
     data = client.request(GLOBOPLAY_WATCHHISTORY_BYPROGRAM % limit, cookie=credentials, headers=headers)
@@ -204,11 +198,8 @@ def get_continue_watching():
 
     limit = 15
 
-    username = control.setting('globoplay_username')
-    password = control.setting('globoplay_password')
-
     # authenticate
-    credentials = auth.auth().authenticate(username, password)
+    credentials = auth_helper.get_credentials()
 
     headers = {'Accept-Encoding': 'gzip'}
     data = client.request(GLOBOPLAY_CONTINUEWATCHING_BYPROGRAM % limit, cookie=credentials, headers=headers)
