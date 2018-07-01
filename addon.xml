@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.20" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.21" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.beautifulsoup" version="3.2.1"/>
@@ -23,7 +23,7 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.20
+		<news>0.0.21
 			- Support for 4k HDR content
 			- Support for local programming
 			- Support for Futura Live Channel
@@ -33,6 +33,7 @@
 			- Updated Combate scraper logic
 			- Added more Combate content
 			- Globosat Play and Sexyhot Play now use Globo Play credentials (must be associated to the provider in the website)
+			- Support for REDE AMAZONICA Globo affiliate
         </news>
 	</extension>
 </addon>

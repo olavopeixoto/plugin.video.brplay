@@ -45,6 +45,9 @@ def get_live_channels():
         affiliate = 'Belo Horizonte'
     elif affiliate_temp == '5':
         affiliate = 'Recife'
+    elif affiliate_temp == '6':
+        affiliate = 'Manaus'
+
     # elif affiliate_temp == '6':
     #     affiliate = 'Salvador'
     # elif affiliate_temp == '7':
@@ -90,7 +93,7 @@ def get_live_channels():
 
     if affiliate == "All":
         # affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Salvador','Fortaleza','Aracaju','Maceio','Cuiaba','Porto Alegre','Florianopolis','Curitiba','Vitoria','Goiania','Campo Grande','Manaus','Belem','Macapa','Palmas','Rio Branco','Teresina','Sao Luis','Joao Pessoa','Natal']
-        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife']
+        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus']
     else:
         affiliates = [affiliate]
 

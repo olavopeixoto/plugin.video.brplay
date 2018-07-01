@@ -9,6 +9,7 @@
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
 		<!-- 31109 = Password -->
+
 		<!-- 31111 = Affiliate -->
 		<!-- 31116 = All -->
 		<!-- 31112 = Rio de Janeiro -->
@@ -41,7 +42,7 @@
 		<setting id="globoplay_username" type="text" label="31110" default="" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
-		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117" default="1" />
+		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31129" default="1" />
 	</category>
 
 	<category label="33001">

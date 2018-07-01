@@ -235,41 +235,6 @@ class Player(xbmc.Player):
         if credentials is None:
             return None
 
-        affiliate_temp = control.setting('globo_affiliate')
-
-        # In settings.xml - globo_affiliate
-        # 0 = All
-        # 1 = Rio de Janeiro
-        # 2 = Sao Paulo
-        # 3 = Brasilia
-        # 4 = Belo Horizonte
-        # 5 = Recife
-        if affiliate_temp == "0":
-            affiliate = "All"
-        elif affiliate_temp == "2":
-            affiliate = "Sao Paulo"
-        elif affiliate_temp == "3":
-            affiliate = "Brasilia"
-        elif affiliate_temp == "4":
-            affiliate = "Belo Horizonte"
-        elif affiliate_temp == "5":
-            affiliate = "Recife"
-        else:
-            affiliate = "Rio de Janeiro"
-
-        if affiliate == "All" and geolocation != None:
-            pass
-        elif affiliate == "Sao Paulo":
-            geolocation = 'lat=-23.5505&long=-46.6333'
-        elif affiliate == 'Brasilia':
-            geolocation = 'lat=-15.7942&long=-47.8825'
-        elif affiliate == 'Belo Horizonte':
-            geolocation = 'lat=-19.9245&long=-43.9352'
-        elif affiliate == "Recife":
-            geolocation = 'lat=-8.0476&long=-34.8770'
-        else:  # Rio de Janeiro
-            geolocation = 'lat=-22.900&long=-43.172'
-
         post_data = "%s&player=%s&version=%s" % (geolocation, PLAYER_SLUG, PLAYER_VERSION)
 
         # 4452349
