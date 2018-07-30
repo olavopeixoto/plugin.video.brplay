@@ -244,7 +244,7 @@ def is_inputstream_available():
 
 
 def is_globosat_available():
-    return is_globoplay_available()
+    return setting('globosat_available') == 'true' and (is_globoplay_available() if setting('use_globoplay_credentials_for_globosat') == 'true' else setting('globosat_username') != '' and setting('globosat_password') != '')
 
 
 def is_globoplay_available():

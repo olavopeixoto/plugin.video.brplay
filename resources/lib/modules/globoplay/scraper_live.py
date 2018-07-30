@@ -310,29 +310,29 @@ def __get_full_day_schedule(today, affiliate='RJ'):
         # program_local_date_string = datetime.datetime.strftime(program_datetime, '%d/%m/%Y %H:%M')
 
         title = slot['nome_programa'] if 'nome_programa' in slot else None
-        if slot["tipo"] == "confronto":
+        if "tipo_programa" in slot and slot["tipo_programa"] == "confronto":
             showtitle = slot['confronto']['titulo_confronto'] + ' - ' + slot['confronto']['participantes'][0]['nome'] + ' X ' + slot['confronto']['participantes'][1]['nome']
         else:
-            showtitle = slot['nome'] if 'nome' in slot and control.isFTV else None
+            showtitle = slot['nome_programa'] if 'nome_programa' in slot and control.isFTV else None
 
         next_start = slots[index+1]['data_exibicao_e_horario'] if index+1 < len(slots) else None
         next_start = (util.strptime_workaround(next_start) + datetime.timedelta(hours=(-utc_timezone)) + util.get_utc_delta()) if next_start else datetime.datetime.now()
 
         item = {
-            "tagline": slot['chamada'] if 'chamada' in slot else slot['nome'],
-            "closed_caption": slot['closed_caption'],
-            "facebook": slot['facebook'],
-            "twitter": slot['twitter'],
-            "hd": slot['hd'],
-            "id": slot['id'],
+            "tagline": slot['chamada'] if 'chamada' in slot else slot['nome_programa'],
+            "closed_caption": slot['closed_caption'] if 'closed_caption' in slot else None,
+            "facebook": slot['facebook'] if 'facebook' in slot else None,
+            "twitter": slot['twitter'] if 'twitter' in slot else None,
+            "hd": slot['hd'] if 'hd' in slot else True,
+            "id": slot['id_programa'],
             "id_programa": slot['id_programa'],
             "id_webmedia": slot['id_webmedia'],
             # "fanart": 'https://s02.video.glbimg.com/x720/%s.jpg' % get_globo_live_id(),
             "thumb": slot['imagem'],
-            "logo": slot['logo'],
-            "clearlogo": slot['logo'],
+            "logo": slot['logo'] if 'logo' in slot else None,
+            "clearlogo": slot['logo'] if 'logo' in slot else None,
             "poster": slot['poster'] if 'poster' in slot else None,
-            "subtitle": slot['nome'],
+            "subtitle": slot['resumo'] if slot['nome_programa'] == 'Futebol' else None,
             "title": title,
             "plot": slot['resumo'] if 'resumo' in slot else showtitle, #program_local_date_string + ' - ' + (slot['resumo'] if 'resumo' in slot else showtitle.replace(' - ', '\n') if showtitle and len(showtitle) > 0 else slot['nome_programa']),
             "plotoutline": datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M'),
@@ -350,7 +350,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             'tvshowtitle': showtitle
         })
 
-        if slot["tipo"] == "confronto":
+        if slot["tipo_programa"] == "confronto":
             item.update({
                 'logo': slot['confronto']['participantes'][0]['imagem'],
                 'logo2': slot['confronto']['participantes'][1]['imagem'],
@@ -358,7 +358,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
                 'initials2': slot['confronto']['participantes'][1]['nome'][:3].upper()
             })
 
-        if slot['tipo'] == 'filme':
+        if slot['tipo_programa'] == 'filme':
             item.update({
                 "originaltitle": slot['titulo_original'] if 'titulo_original' in slot else None,
                 'genre': slot['genero'] if 'genero' in slot else None,

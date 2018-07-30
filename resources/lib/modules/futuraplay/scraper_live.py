@@ -7,6 +7,12 @@ from resources.lib.modules import cache
 from resources.lib.modules import util
 import time
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    # python 2.6 or earlier, use backport
+    OrderedDict = None
+
 CLEAR_LOGO_WHITE = 'http://static.futuraplay.org/img/futura_tracobranco.png'
 CLEAR_LOGO_COLOR = 'http://static.futuraplay.org/img/futura_tracoverde.png'
 FUTURA_LOGO = 'http://static.futuraplay.org/img/futura_rodape.png'

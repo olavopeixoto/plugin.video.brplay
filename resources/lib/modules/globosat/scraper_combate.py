@@ -5,7 +5,12 @@ from resources.lib.modules import client
 from resources.lib.modules import workers
 import re
 import json
-from collections import OrderedDict
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    # python 2.6 or earlier, use backport
+    OrderedDict = None
 
 COMBATE_VIDEOS = 'https://globosatplay.globo.com/combate/videos/%s/%s.json'
 COMBATE_EVENTS = 'https://globosatplay.globo.com/combate/%s/eventos/%s.json'
@@ -367,7 +372,7 @@ def scrape_videos_from_page(url):
     config_string = config_string_matches[0]
 
     try:
-        config_json = json.loads(config_string, object_pairs_hook=OrderedDict)
+        config_json = json.loads(config_string, object_pairs_hook=OrderedDict) if OrderedDict else json.loads(config_string)
     except Exception as ex:
         control.log("combate scrape_videos_from_page ERROR: %s" % ex)
         return videos

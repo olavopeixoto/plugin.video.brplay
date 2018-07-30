@@ -383,3 +383,11 @@ msgstr ""
 msgctxt "#34107"
 msgid "4K - HDR"
 msgstr ""
+
+msgctxt "#34108"
+msgid "Enable Globosat Play"
+msgstr ""
+
+msgctxt "#34109"
+msgid "Use Globoplay Credentials for Globosat Play"
+msgstr ""

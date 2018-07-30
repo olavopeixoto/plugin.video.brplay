@@ -230,6 +230,12 @@ class Player(xbmc.Player):
 
     def __getLiveVideoInfo(self, id, geolocation):
 
+        proxy = control.proxy_url
+        proxy = None if proxy is None or proxy == '' else {
+            'http': proxy,
+            'https': proxy,
+        }
+
         credentials = auth_helper.get_credentials()
 
         if credentials is None:
@@ -243,7 +249,7 @@ class Player(xbmc.Player):
             "Accept-Encoding": "gzip",
             "Content-Type": "application/x-www-form-urlencoded",
             "User-Agent": "Globo Play/0 (iPhone)"
-        }, post=post_data)
+        }, post=post_data, proxy=proxy)
 
         hash = get_signed_hashes(hashJson['hash'])[0]
 

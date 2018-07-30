@@ -41,7 +41,8 @@ class navigator:
         self.end_directory()
 
     def openSettings(self):
-        control.openSettings('globosat_provider')
+        control.openSettings('globoplay_username')
+        control.refresh()
 
     def searchMenu(self):
         control.idle()

@@ -225,6 +225,9 @@ class Player(xbmc.Player):
     def save_video_progress(self, token, video_id, watched_seconds):
 
         try:
+            if self.isLive:
+                return
+
             post_data = {
                 'watched_seconds': int(round((watched_seconds))),
                 'id': video_id

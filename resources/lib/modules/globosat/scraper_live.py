@@ -6,6 +6,7 @@ from resources.lib.modules import client
 from resources.lib.modules import util
 from resources.lib.modules import workers
 from resources.lib.modules import cache
+from resources.lib.modules import kodi_util
 import re
 import json
 import csv
@@ -16,8 +17,7 @@ GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
 GLOBOSAT_API_CHANNELS = GLOBOSAT_API_URL + '/channels.json?page=%d'
 COMBATE_SIMULCAST_URL = 'http://api.simulcast.globosat.tv/combate'
 GLOBOSAT_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/globosatplay'
-PREMIERE_LIVE_JSON = GLOBOSAT_URL + '/premierefc/ao-vivo/add-on/jogos-ao-vivo/520142353f8adb4c90000008.json'
-PREMIERE_UPCOMING_JSON = GLOBOSAT_URL + '/premierefc/ao-vivo/add-on/proximos-jogos/520142353f8adb4c90000006.json'
+PREMIERE_MATCHES_JSON = 'http://globotv.globo.com/premiere-fc/ao-vivo/v2/matches'
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
 PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
 
@@ -501,15 +501,18 @@ def get_premiere_live_games():
 
     live = []
 
-    offline = False
     headers = {'Accept-Encoding': 'gzip'}
-    live_games = client.request(PREMIERE_LIVE_JSON, headers=headers)['jogos']
-    if len(live_games) == 0:
-        offline = True
-        live_games = client.request(PREMIERE_UPCOMING_JSON, headers=headers)['jogos']
+    live_games = client.request(PREMIERE_MATCHES_JSON, headers=headers)['data']
 
     if not live_games:
         return []
+
+    live_games = list(filter(lambda x: x['status'] != 'ended', live_games))
+
+    offline = all(x['status'] != 'live' for x in live_games)
+
+    if not offline:
+        live_games = list(filter(lambda x: x['status'] == 'live', live_games))
 
     tvshowtitle = u'Live' if not offline else u'Próximos Jogos'
 
@@ -551,11 +554,11 @@ def get_premiere_live_games():
         'channel_id': 1995,
         'duration': None,
         'isFolder': 'true',
-        'logo': live_games[0]['time_mandante']['escudo'],
-        'logo2': live_games[0]['time_visitante']['escudo'],
-        'initials1': live_games[0]['time_mandante']['sigla'],
-        'initials2': live_games[0]['time_visitante']['sigla'],
-        'gamedetails': live_games[0]['campeonato'] + extra_games_str,
+        'logo': live_games[0]['home']['logo_60x60_url'],
+        'logo2': live_games[0]['away']['logo_60x60_url'],
+        'initials1': live_games[0]['home']['abbreviation'],
+        'initials2': live_games[0]['away']['abbreviation'],
+        'gamedetails': live_games[0]['championship'] + extra_games_str,
         'brplayprovider': 'premierefc'
     })
 
@@ -614,13 +617,16 @@ def get_premiere_live_24h_channels():
 def get_premiere_games(meta={}, online_only=False):
 
     live = []
-    offline = False
 
     headers = {'Accept-Encoding': 'gzip'}
-    live_games = client.request(PREMIERE_LIVE_JSON, headers=headers)['jogos']
-    if len(live_games) == 0 and not online_only:
-        offline=True
-        live_games = client.request(PREMIERE_UPCOMING_JSON, headers=headers)['jogos']
+    live_games = client.request(PREMIERE_MATCHES_JSON, headers=headers)['data']
+
+    live_games = list(filter(lambda x: x['status'] != 'ended', live_games))
+
+    offline = all(x['status'] != 'live' for x in live_games)
+
+    if online_only:
+        live_games = list(filter(lambda x: x['status'] == 'live', live_games))
 
     for game in live_games:
         livemeta = meta.copy()
@@ -630,30 +636,34 @@ def get_premiere_games(meta={}, online_only=False):
 
 
 def __get_game_data(game, meta, offline):
-    # offlineText = u' (' + game['data'] + u')' if offline else u''
-    # tvshowtitle = game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')'
-    plot =  game['campeonato'] + u': ' + game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'] + u' (' + game['estadio'] + u')' + u'. ' + game['data']
-    label = game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome']
+
+    utc_timezone = control.get_current_brasilia_utc_offset()
+    parsed_date = util.strptime_workaround(game['datetime'], format='%Y-%d-%m %H:%M') + datetime.timedelta(hours=(-utc_timezone))
+    date_string = kodi_util.format_datetimeshort(parsed_date)
+
+    plot =  game['championship'] + u': ' + game['home']['name'] + u' x ' + game['away']['name'] + u' (' + game['stadium'] + u')' + u'. ' + date_string
+    label = game['home']['name'] + u' x ' + game['away']['name']
     meta.update({
-        'name': ((game['data'] + u' - ') if offline else u'') + label if not control.isFTV else label,
-        'label2': game['time_mandante']['nome'] + u' x ' + game['time_visitante']['nome'],
-        'playable': 'true' if game['id_midia'] is not None else 'false',
-        'plot': game['estadio'] if control.isFTV else plot,
-        'plotoutline': game['data'],
-        'id': game['id_midia'],
-        'logo': game['time_mandante']['escudo'],
-        'logo2': game['time_visitante']['escudo'],
-        'initials1': game['time_mandante']['sigla'],
-        'initials2': game['time_visitante']['sigla'],
+        'name': ((date_string + u' - ') if offline else u'') + label if not control.isFTV else label,
+        'label2': game['home']['name'] + u' x ' + game['away']['name'],
+        'playable': 'true' if game['media_id'] is not None else 'false',
+        'plot': game['stadium'] if control.isFTV else plot,
+        'plotoutline': date_string,
+        'id': game['media_id'],
+        'logo': game['home']['logo_60x60_url'],
+        'logo2': game['away']['logo_60x60_url'],
+        'initials1': game['home']['abbreviation'],
+        'initials2': game['away']['abbreviation'],
         'isFolder': 'false',
         'mediatype': 'episode',
-        'tvshowtitle': game['time_mandante']['sigla'] + u' x ' + game['time_visitante']['sigla'],
-        'title': game['campeonato'],
+        'tvshowtitle': game['home']['abbreviation'] + u' x ' + game['away']['abbreviation'],
+        'title': game['championship'],
         'brplayprovider': 'globosat',
         'gamedetails': None,
-        'livefeed': str(offline).lower()
+        'livefeed': game['status'] == 'live',
     })
     return meta
+
 
 def __get_simulcast_data_v2(result):
     utc_timezone = control.get_current_brasilia_utc_offset()
@@ -661,8 +671,6 @@ def __get_simulcast_data_v2(result):
     live_text = ' (' + control.lang(32004) + ')' if result['live'] else ''
     program_date = util.strptime_workaround(result['day'], '%d/%m/%Y %H:%M') + datetime.timedelta(
         hours=-utc_timezone) + util.get_utc_delta() if not result['day'] is None else datetime.datetime.now()
-    # program_local_date_string = datetime.datetime.strftime(program_date, '%d/%m/%Y %H:%M')
-    # duration_str = (' - ' + str(result['duration'] or 0) + ' minutos') if (result['duration'] or 0) > 0 else ''
 
     name = "[B]" + result['channel']['title'] + "[/B]" + (
         '[I] - ' + (result['title'] or '') + '[/I]' if result['title'] else '') + live_text

@@ -75,6 +75,7 @@ class Main:
                 from resources.lib.indexers import navigator
                 navigator.navigator().openSettings()
 
+
             elif action == 'clear':
                 from resources.lib.indexers import navigator
                 navigator.navigator().clear_cache()

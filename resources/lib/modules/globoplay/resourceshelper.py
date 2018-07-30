@@ -2,7 +2,7 @@ from resources.lib.modules import control
 from resources.lib.modules import client
 
 PLAYER_VERSION = '1.1.24'
-DEVICE_ID = "NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ"
+DEVICE_ID = "NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ=="
 DEVICE_ID_KEY = "{{deviceId}}"
 
 

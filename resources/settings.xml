@@ -4,7 +4,11 @@
 	<category label="32346">
 
 		<setting type="lsep" label="Globosat Play"></setting>
-		<setting id="globosat_geofence" type="enum" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="0" />
+		<setting id="globosat_available" type="bool" label="34108" default="true" />
+		<setting id="use_globoplay_credentials_for_globosat" type="bool" label="34109" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
+		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-1,false)" enable="eq(-1,false)"/>
+		<setting id="globosat_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,false)"/>
+		<setting id="globosat_geofence" type="enum" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="0" visible="eq(-4,true)" enable="eq(-4,true)"/>
 
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
@@ -46,7 +50,7 @@
 	</category>
 
 	<category label="33001">
-		<setting id="use_proxy" type="bool" label="31004" default="true" />
+		<setting id="use_proxy" type="bool" label="31004" default="false" />
 		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)" />
 		<setting type="sep" />
 
