@@ -63,7 +63,7 @@ class Indexer:
         vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-") and not channel["slug"].startswith("big-brother-brasil") and not channel["slug"].startswith("multishow-")]
 
         for item in vod:
-            item["brplayprovider"] = "globosat" if item['slug'] != 'sexyhot' else 'sexyhot'
+            item["brplayprovider"] = "globosat" if item['slug'] != 'sexyhot' and item['slug'] != 'sexy-hot' else 'sexyhot'
 
         return vod
 

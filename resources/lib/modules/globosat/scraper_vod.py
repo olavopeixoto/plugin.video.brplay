@@ -57,7 +57,7 @@ def get_authorized_channels():
                     "logo": channel['logo_fundo_claro'],
                     "name": channel['nome'],
                     "slug": channel['slug'],
-                    "adult": channel['slug'] == 'sexyhot',
+                    "adult": channel['slug'] == 'sexyhot' or channel['slug'] == 'sexy-hot',
                     "vod": "vod" in channel['acls'],
                     "live": "live" in channel['acls']
                 })

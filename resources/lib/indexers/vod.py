@@ -43,7 +43,7 @@ class Vod:
         if not control.show_adult_content:
             channels = [channel for channel in channels if not channel["adult"]]
 
-        if not control.is_inputstream_available():
+        if not control.is_inputstream_available() or control.disable_inputstream_adaptive:
             channels = [channel for channel in channels if channel['slug'] != 'megapix' and channel['slug'] != 'telecine']
 
         return channels
@@ -124,8 +124,8 @@ class Vod:
         from resources.lib.modules.globosat import scraper_vod
         videos = cache.get(scraper_vod.get_track_list, 1, id)
 
-        if kind == 'programs':
-            self.programs_directory(videos)
+        if kind == 'programs' or kind == 'movies':
+            self.programs_directory(videos, kind=kind)
         else:
             self.episodes_directory(videos, provider='globosat')
 
@@ -272,13 +272,13 @@ class Vod:
         episodes, next_page, total_pages = globoplay.Indexer().get_videos_by_category(category, page)
         self.episodes_directory(episodes, category, next_page, total_pages, 'openextra', poster=poster)
 
-    def get_videos_by_program(self, program_id, page=1, poster=None, provider=None, bingewatch=False):
+    def get_videos_by_program(self, program_id, page=1, poster=None, provider=None, bingewatch=False, fanart=None):
         episodes, nextpage, total_pages, days = cache.get(globoplay.Indexer().get_videos_by_program, 1, program_id, page, bingewatch)
-        self.episodes_directory(episodes, program_id, nextpage, total_pages, days=days, poster=poster, provider=provider)
+        self.episodes_directory(episodes, program_id, nextpage, total_pages, days=days, poster=poster, provider=provider, fanart=fanart)
 
-    def get_videos_by_program_date(self, program_id, date, poster=None, provider=None, bingewatch=False):
+    def get_videos_by_program_date(self, program_id, date, poster=None, provider=None, bingewatch=False, fanart=None):
         episodes = cache.get(globoplay.Indexer().get_videos_by_program_date, 1, program_id, date, bingewatch)
-        self.episodes_directory(episodes, program_id, poster=poster, provider=provider)
+        self.episodes_directory(episodes, program_id, poster=poster, provider=provider, fanart=fanart)
 
     def get_fighters(self, letter):
         fighters = cache.get(globosat.Indexer().get_fighters, 1, letter)
@@ -467,7 +467,7 @@ class Vod:
         results = fn(*args)
         list += results
 
-    def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None, is_favorite=False, is_watchlater=False):
+    def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None, is_favorite=False, is_watchlater=False, fanart=None):
         if items is None or len(items) == 0: control.idle() ; sys.exit()
 
         sysaddon = sys.argv[0]
@@ -480,7 +480,7 @@ class Vod:
         addWatchLater = control.lang(32075).encode('utf-8')
         removeWatchLater = control.lang(32076).encode('utf-8')
 
-        content = 'episodes'
+        content = 'videos'
         sort = True
 
         if days:
@@ -495,7 +495,11 @@ class Vod:
 
             item = control.item(label=label)
 
-            art = {'icon': CALENDAR_ICON, 'thumb': CALENDAR_ICON}
+            local_fanart = fanart if fanart is not None else meta['fanart'] if 'fanart' in meta else GLOBO_FANART
+
+            item.setProperty('Fanart_Image', local_fanart)
+
+            art = {'icon': CALENDAR_ICON, 'thumb': CALENDAR_ICON, 'fanart': local_fanart}
 
             if poster:
                 art.update({'poster': poster})
@@ -559,15 +563,15 @@ class Vod:
 
                 item = control.item(label=label)
 
-                fanart = meta['fanart'] if 'fanart' in meta else GLOBO_FANART
+                local_fanart = fanart if fanart is not None else meta['fanart'] if 'fanart' in meta else GLOBO_FANART
 
                 clearlogo = meta['clearlogo'] if 'clearlogo' in meta else None
 
                 poster = meta['poster'] if 'poster' in meta else poster
 
-                art = {'thumb': meta['thumb'], 'poster': poster, 'fanart': fanart, 'clearlogo': clearlogo}
+                art = {'thumb': meta['thumb'], 'poster': poster, 'fanart': local_fanart, 'clearlogo': clearlogo}
 
-                item.setProperty('Fanart_Image', fanart)
+                item.setProperty('Fanart_Image', local_fanart)
 
                 offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
 
@@ -626,7 +630,11 @@ class Vod:
 
             item = control.item(label=label)
 
-            art = {'icon': NEXT_ICON, 'thumb': NEXT_ICON, 'poster': poster}
+            local_fanart = fanart if fanart is not None else meta['fanart'] if 'fanart' in meta else GLOBO_FANART
+
+            item.setProperty('Fanart_Image', local_fanart)
+
+            art = {'icon': NEXT_ICON, 'thumb': NEXT_ICON, 'poster': poster, 'fanart': local_fanart}
 
             # item.setProperty('Fanart_Image', GLOBO_FANART)
 
@@ -644,8 +652,7 @@ class Vod:
         control.content(syshandle, content)
         control.directory(syshandle, cacheToDisc=False)
 
-
-    def programs_directory(self, items, folders=[], category=None):
+    def programs_directory(self, items, folders=[], category=None, kind=None):
         if items is None or len(items) == 0:
             control.idle()
             sys.exit()
@@ -662,12 +669,14 @@ class Vod:
 
                 label = program['name'] if 'name' in program else program['title'] if 'title' in program else ''
 
-                is_music_video = 'kind' in program and program['kind'] == 'shows'
-                is_movie = 'kind' in program and program['kind'] == 'movies'
+                media_kind = kind if kind is not None else program['kind'] if 'kind' in program else None
+
+                is_music_video = media_kind == 'shows'
+                is_movie = media_kind == 'movies'
 
                 is_playable = is_music_video or is_movie
 
-                is_bingewatch = 'kind' in program and program['kind'] == 'bingewatch'
+                is_bingewatch = media_kind == 'bingewatch'
 
                 meta = program
                 meta.update({
@@ -701,7 +710,7 @@ class Vod:
                     sysmeta = urllib.quote_plus(json.dumps(meta))
                     url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], program['id'], sysmeta)
                 else:
-                    url = '%s?action=openvideos&provider=%s&program_id=%s&poster=%s&bingewatch=%s' % (sysaddon, program['brplayprovider'], program['id'], thumb, is_bingewatch)
+                    url = '%s?action=openvideos&provider=%s&program_id=%s&poster=%s&bingewatch=%s&fanart=%s' % (sysaddon, program['brplayprovider'], program['id'], thumb, is_bingewatch, fanart)
 
                 cm = []
                 cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))

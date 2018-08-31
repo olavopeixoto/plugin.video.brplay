@@ -55,6 +55,8 @@ class Main:
 
             poster = params.get('poster')
 
+            fanart = params.get('fanart')
+
             bingewatch = (params.get('bingewatch') or 'false').lower() == "true"
 
             children_id = params.get('children_id')
@@ -74,7 +76,6 @@ class Main:
             elif action == 'settings':
                 from resources.lib.indexers import navigator
                 navigator.navigator().openSettings()
-
 
             elif action == 'clear':
                 from resources.lib.indexers import navigator
@@ -156,7 +157,7 @@ class Main:
 
             elif action == 'openvideos' and date:
                 from resources.lib.indexers import vod
-                vod.Vod().get_videos_by_program_date(program_id, date, poster, provider, bingewatch)
+                vod.Vod().get_videos_by_program_date(program_id, date, poster, provider, bingewatch, fanart)
 
 
             ###GLOBOSAT PLAY
@@ -182,7 +183,7 @@ class Main:
             elif action == 'openvideos' and provider == 'globosat':
                 from resources.lib.indexers import vod
                 page = page or 1
-                vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globosat', bingewatch)
+                vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globosat', bingewatch, fanart)
 
             elif action == 'playvod' and provider == 'globosat':
                 from resources.lib.modules.globosat import player
@@ -263,7 +264,7 @@ class Main:
             elif action == 'openvideos' and provider == 'globoplay':
                 from resources.lib.indexers import vod
                 page = page or 1
-                vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay', bingewatch)
+                vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay', bingewatch, fanart)
 
             elif action == 'playvod' and provider == 'globoplay':
                 from resources.lib.modules.globoplay import player

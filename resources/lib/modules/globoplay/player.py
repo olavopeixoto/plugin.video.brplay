@@ -52,6 +52,8 @@ class Player(xbmc.Player):
 
     def play_stream(self, id, meta, children_id=None):
 
+        control.log("GloboPlay - play_stream: id=%s | children_id=%s | meta=%s" % (id, children_id, meta))
+
         if id is None: return
 
         try:
@@ -66,10 +68,17 @@ class Player(xbmc.Player):
 
         self.isLive = False
 
-        if 'livefeed' in meta and meta['livefeed'] == 'true':
+        if ('livefeed' in meta and meta['livefeed'] == 'true') or 'live' in meta and meta['live']:
             control.log("PLAY LIVE!")
             self.isLive = True
-            info = self.__getLiveVideoInfo(id, meta['affiliate'] if 'affiliate' in meta else None)
+
+            affiliate = meta['affiliate'] if 'affiliate' in meta else None
+
+            if affiliate is None:
+                code, latitude, longitude = control.get_coordinates(affiliate)
+                affiliate = 'lat=%s&long=%s' % (latitude, longitude)
+
+            info = self.__getLiveVideoInfo(id, affiliate)
             if info is None:
                 return
 
@@ -103,8 +112,9 @@ class Player(xbmc.Player):
                 info['user'] = user
                 item, self.url, stopEvent = self.__get_list_item(meta, info)
 
+            self.isLive = 'live' in meta and meta['live']
+
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
-        self.isLive = 'live' in meta and meta['live']
 
         syshandle = int(sys.argv[1])
         control.resolve(syshandle, True, item)
