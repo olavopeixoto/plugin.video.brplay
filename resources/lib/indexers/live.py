@@ -53,10 +53,9 @@ class Live:
         #     'url': 'http://evcv.mm.uol.com.br:1935/band/bandnews/playlist.m3u8'
         # })
 
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
-        live = sorted(live, key=lambda k: k['sorttitle'])
-        live = sorted(live, key=lambda k: '1' if 'isFolder' in k and k['isFolder'] == 'true' else '0')
-        live = sorted(live, key=lambda k: k['dateadded'] if 'dateadded' in k else None, reverse=True)
+        # live = sorted(live, key=lambda k: k['sorttitle'])
+        # live = sorted(live, key=lambda k: '1' if 'isFolder' in k and k['isFolder'] == 'true' else '0')
+        # live = sorted(live, key=lambda k: k['dateadded'] if 'dateadded' in k else None, reverse=True)
 
         # shuffle(live)
 
@@ -109,6 +108,9 @@ class Live:
             meta.update({'title': channel['title']}) if 'title' in channel else None
             meta.update({'tagline': channel['tagline']}) if 'tagline' in channel else None
             meta.update({'year': channel['year']}) if 'year' in channel else None
+
+            meta.update({'sorttitle': meta['title']})
+            meta.update({'title': meta['name']})
 
             sysmeta = urllib.quote_plus(json.dumps(meta))
             id_globo_videos = channel['id']
@@ -183,12 +185,12 @@ class Live:
 
             list_items.append((url, item, isFolder))
 
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
         control.addItems(syshandle, list_items)
-        control.category(handle=syshandle, category="Live")
+        control.category(handle=syshandle, category=control.lang(32001).encode('utf-8'))
 
         content = 'LiveTV' if control.isJarvis else 'tvshows'
 

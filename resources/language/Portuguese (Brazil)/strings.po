@@ -140,6 +140,14 @@ msgctxt "#31137"
 msgid "Natal"
 msgstr "Natal"
 
+msgctxt "#31138"
+msgid "Boa Vista"
+msgstr "Boa Vista"
+
+msgctxt "#31139"
+msgid "Porto Velho"
+msgstr "Porto Velho"
+
 msgctxt "#31003"
 msgid "Proxy"
 msgstr "Proxy"

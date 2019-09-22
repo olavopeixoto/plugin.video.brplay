@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from resources.lib.modules import control
+# from resources.lib.modules import control
 from resources.lib.modules import client
 from resources.lib.modules.globosat import auth_helper
 import urllib
@@ -12,6 +12,11 @@ GLOBOSAT_FEATURED = 'https://api.vod.globosat.tv/globosatplay/featured.json'
 GLOBOSAT_TRACKS = 'https://api.vod.globosat.tv/globosatplay/tracks.json'
 GLOBOSAT_TRACKS_ITEM = 'https://api.vod.globosat.tv/globosatplay/tracks/%s.json'
 
+GLOBOSAT_CHANNELS = 'https://api-vod.globosat.tv/globosatplay/channels.json'
+GLOBOSAT_CARDS = 'https://api-vod.globosat.tv/globosatplay/cards.json?&channel_id_globo_videos=%s'
+GLOBOSAT_PROGRAMS = 'https://api-vod.globosat.tv/globosatplay/programs.json?&id_globo_videos=%s'
+GLOBOSAT_EPISODES = 'https://api-vod.globosat.tv/globosatplay/episodes.json?&program_id=%s&season_id=%s'
+
 GLOBOSAT_BASE_FAVORITES = 'https://api.vod.globosat.tv/globosatplay/watch_favorite.json?token=%s'
 GLOBOSAT_FAVORITES = GLOBOSAT_BASE_FAVORITES + '&page=%s&per_page=%s'
 GLOBOSAT_DEL_FAVORITES = GLOBOSAT_BASE_FAVORITES + '&id=%s'
@@ -21,8 +26,6 @@ GLOBOSAT_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&page=%s&per_page=%s'
 GLOBOSAT_DEL_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&id=%s'
 
 GLOBOSAT_WATCH_HISTORY = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s&page=%s&per_page=%s'
-
-artPath = control.artPath()
 
 
 def get_authorized_channels():
@@ -38,17 +41,14 @@ def get_authorized_channels():
 
     pkgs_response = client.request(channels_url, headers={"Accept-Encoding": "gzip"})
 
-    control.log("-- PACKAGES: %s" % repr(pkgs_response))
+    # control.log("-- PACKAGES: %s" % repr(pkgs_response))
 
     pkgs = pkgs_response['pacotes']
 
     channel_ids = []
     for pkg in pkgs:
         for channel in pkg['canais']:
-            if channel['slug'] == 'telecine-zone':
-                continue
-
-            elif channel['id_globo_videos'] not in channel_ids:
+            if channel['id_globo_videos'] not in channel_ids:
                 channel_ids.append(channel['id_globo_videos'])
                 channels.append({
                     "id": channel['id_globo_videos'],
@@ -97,6 +97,119 @@ def get_channel_programs(channel_id):
         })
 
     return programs
+
+
+def get_channel_cards(channel_id_globo_videos):
+    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
+
+    page = 1
+    url = GLOBOSAT_CARDS % (channel_id_globo_videos, page)
+    result = client.request(url, headers=headers)
+
+    next = result['next'] if 'next' in result else None
+    programs_result = result['results'] or []
+
+    while next:
+        page = page + 1
+        url = GLOBOSAT_CARDS % (channel_id_globo_videos, page)
+        result = client.request(url, headers=headers)
+        next = result['next'] if 'next' in result else None
+        programs_result = programs_result + result['results']
+
+    programs = []
+
+    for program in programs_result:
+        programs.append({
+            'id': program['id'],
+            'id_globo_videos': program['id_globo_videos'],
+            'title': program['title'],
+            'name': program['title'],
+            'fanart': program['background_image_tv_cropped'],
+            'poster': program['image'],
+            'plot': program['description'],
+            'kind': program['kind'] if 'kind' in program else None
+        })
+
+    return programs
+
+
+def get_card_seasons(id_globo_videos):
+    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
+
+    page = 1
+    url = GLOBOSAT_PROGRAMS % (id_globo_videos, page)
+    result = client.request(url, headers=headers)
+
+    next = result['next'] if 'next' in result else None
+    programs_result = result['results'] or []
+
+    while next:
+        page = page + 1
+        url = GLOBOSAT_PROGRAMS % (id_globo_videos, page)
+        result = client.request(url, headers=headers)
+        next = result['next'] if 'next' in result else None
+        programs_result = programs_result + result['results']
+
+    program = programs_result[0]
+
+    card = {
+        'id': program['id_globo_videos'],
+        'title': program['title'],
+        'name': program['title'],
+        'fanart': program['background_image_tv_cropped'],
+        'poster': program['poster_image'],
+        'plot': program['description'],
+        'kind': program['kind'] if 'kind' in program else None
+    }
+
+    seasons = []
+
+    for season in programs_result:
+        seasons.append({
+            'id': season['id'],
+            'title': season['title'],
+            'episodes_number': season['episodes_number'],
+            'number': season['number'],
+            'year': season['year'],
+        })
+
+    card['seasons'] = seasons
+
+    return card
+
+
+def get_card_episodes(program_id, season_id):
+    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
+
+    page = 1
+    url = GLOBOSAT_EPISODES % (program_id, season_id, page)
+    result = client.request(url, headers=headers)
+
+    next = result['next'] if 'next' in result else None
+    programs_result = result['results'] or []
+
+    while next:
+        page = page + 1
+        url = GLOBOSAT_EPISODES % (program_id, season_id, page)
+        result = client.request(url, headers=headers)
+        next = result['next'] if 'next' in result else None
+        programs_result = programs_result + result['results']
+
+    episodes = []
+
+    for episode in programs_result:
+        episodes.append({
+            'id': episode['id'],
+            'id_globo_videos': episode['id_globo_videos'],
+            'title': episode['title'],
+            'name': episode['title'],
+            'fanart': episode['background_image_tv_cropped'],
+            'poster': episode['image'],
+            'plot': episode['description'],
+            'kind': episode['kind'] if 'kind' in episode else None
+        })
+
+    return episodes
 
 
 def search(term, page=1):

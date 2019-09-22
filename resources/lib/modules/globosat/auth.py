@@ -75,10 +75,12 @@ class auth:
             'accept': 'application/json, text/javascript',
             'Accept-Encoding': 'gzip'}, output='cookiejar')
 
-        cookies = client.request(self.GLOBOSAT_AUTH_URL, headers={'Accept-Encoding': 'gzip', 'Cookie': "%s=%s;" % (self.GLOBOPLAY_TOKEN_ID, cookies[self.GLOBOPLAY_TOKEN_ID])}, output='cookiejar')
+        globo_id = cookies[self.GLOBOPLAY_TOKEN_ID]
+
+        cookies = client.request(self.GLOBOSAT_AUTH_URL, headers={'Accept-Encoding': 'gzip', 'Cookie': "%s=%s;" % (self.GLOBOPLAY_TOKEN_ID, globo_id)}, output='cookiejar')
 
         credentials = cookies[self.GLOBOSATPLAY_TOKEN_ID]
 
         control.log("GLOBOSAT CREDENTIALS: %s" % credentials)
 
-        return credentials
+        return (credentials, globo_id)

@@ -2,6 +2,7 @@
 
 from resources.lib.modules import cache
 
+
 class Indexer:
 
     def get_live_channels(self):

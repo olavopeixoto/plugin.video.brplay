@@ -35,6 +35,8 @@ class Player(xbmc.Player):
 
     def playlive(self, id, meta):
 
+        control.log("Globosat Play - play_stream: id=%s | meta=%s" % (id, meta))
+
         if id is None: return
 
         info = resourceshelper.get_video_info(id)
@@ -53,7 +55,7 @@ class Player(xbmc.Player):
         encrypted = 'encrypted' in info and info['encrypted']
 
         if encrypted and not control.is_inputstream_available():
-            control.infoDialog(message=control.lang(34103).encode('utf-8'), icon='Wr')
+            control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
             return
 
         title = info['channel']
@@ -123,7 +125,8 @@ class Player(xbmc.Player):
         if parsed_url.path.endswith(".mpd"):
             mime_type = 'application/dash+xml'
             item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-            item.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
+            if self.isLive:
+                item.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
 
         elif parsed_url.path.endswith(".ism/manifest"):
             mime_type = 'application/vnd.ms-sstr+xml'
@@ -143,8 +146,12 @@ class Player(xbmc.Player):
             item.setMimeType(mime_type)
             control.log("MIME TYPE: %s" % repr(mime_type))
 
-        if not cookies and not control.disable_inputstream_adaptive:
+        if not cookies and control.is_inputstream_available():
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            # reqCookies = client.request(url=self.url,output='cookiejar',headRequest=True)
+            # cookie_string = "; ".join([str(x) + "=" + str(y) for x, y in reqCookies.items()])
+            # item.setProperty('inputstream.adaptive.stream_headers', 'cookie=%s' % cookie_string)
+            # control.log("COOKIE STRING: %s" % cookie_string)
 
         if 'subtitles' in info and info['subtitles'] and len(info['subtitles']) > 0:
             control.log("FOUND SUBTITLES: %s" % repr([sub['url'] for sub in info['subtitles']]))
@@ -215,8 +222,10 @@ class Player(xbmc.Player):
         hash_json = client.request(hash_url, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
 
         if not hash_json or hash_json is None or 'message' in hash_json and hash_json['message']:
-            control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
-            return None
+            message = hash_json['message'] if hash_json and 'message' in hash_json else control.lang(34102)
+            message = str(hash_json['http_status_code']) + u'|' + message.encode('utf-8') if hash_json and 'http_status_code' in hash_json else message
+            control.infoDialog(message=message.encode('utf-8'), sound=True, icon='ERROR')
+            raise Exception(message)
 
         hash = util.get_signed_hashes(hash_json['hash'])[0]
 

@@ -15,8 +15,9 @@ def get_credentials():
 
 
 def get_globosat_token():
-    return get_credentials()
+    return get_credentials()[0]
 
 
 def get_globosat_cookie(provider_id):
-    return {'WMPTOKEN_%s' % provider_id: get_credentials()}
+    credentials = get_credentials()
+    return {'WMPTOKEN_%s' % provider_id: credentials[0], 'GLOBO_ID': credentials[1]} if provider_id else {'GLBID': credentials[1]}

@@ -115,6 +115,13 @@ def _select_resource(video_id, resources, metadata, title_override=None):
 
     if not resource:
         for node in resources:
+            if 'players' in node and any('androidtv' in s for s in node['players']):
+                resource = node
+                player = 'androidtv'
+                break
+
+    if not resource:
+        for node in resources:
             if 'players' in node and any('android' in s for s in node['players']):
                 resource = node
                 player = 'android'

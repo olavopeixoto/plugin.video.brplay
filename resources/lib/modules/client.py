@@ -26,7 +26,7 @@ from resources.lib.modules import control, cache
 from resources.lib.modules import workers
 
 
-def request(url, close=True, redirect=True, error=False, proxy=None, post=None, headers=None, mobile=False, XHR=False, limit=None, referer=None, cookie=None, output='', timeout='30'):
+def request(url, close=True, redirect=True, error=False, proxy=None, post=None, headers=None, mobile=False, XHR=False, limit=None, referer=None, cookie=None, output='', timeout='30', headRequest=False):
 
     try:
         handlers = []
@@ -95,6 +95,9 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
 
         rid = uuid.uuid4().hex
         control.log("Url request (%s): %s" % (rid, url))
+
+        if headRequest:
+            request.get_method = lambda: 'HEAD'
 
         try:
             response = urllib2.urlopen(request, timeout=int(timeout))

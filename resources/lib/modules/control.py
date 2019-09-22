@@ -183,6 +183,10 @@ is_4k_enabled =  xbmcaddon.Addon().getSetting('enable_4k') == 'true'
 
 is_4k_images_enabled =  xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true'
 
+log_enabled = setting('enable_log') == 'true'
+
+disable_inputstream_adaptive = setting("disable_inputstream_adaptive") == 'true'
+
 
 def get_current_brasilia_utc_offset():
     try:
@@ -224,6 +228,11 @@ def get_inputstream_addon():
 
 
 def is_inputstream_available():
+    global disable_inputstream_adaptive
+
+    if disable_inputstream_adaptive:
+        return False
+
     global __inputstream_addon_available
 
     if __inputstream_addon_available is None:
@@ -301,6 +310,10 @@ def addonNext():
 
 def artPath():
     return os.path.join(addonPath, 'resources', 'media')
+
+
+def okDialog(heading, line1, line2=None, line3=None):
+    dialog.ok(heading=heading, line1=line1, line2=line2, line3=line3)
 
 
 def infoDialog(message, heading=addonInfo('name'), icon='', time=3000, sound=False):
@@ -435,7 +448,7 @@ def clear_credentials():
 
 
 def log(msg):
-    if setting('enable_log') == 'true':
+    if log_enabled:
         xbmc.log('[plugin.video.brplay] - ' + str(msg), xbmc.LOGNOTICE)  # xbmc.LOGDEBUG
 
 
@@ -493,8 +506,9 @@ def get_coordinates(affiliate):
         code, latitude, longitude = "JP", '-7.1195','-34.8450'
     elif affiliate == "Natal":
         code, latitude, longitude = "NAT", '-5.7793','-35.2009'
+    elif affiliate == "Boa Vista":
+        code, latitude, longitude = "ROR", '2.82','-60.672'
+    elif affiliate == "Porto Velho":
+        code, latitude, longitude = "RON", '-8.76194','-63.90389'
 
     return code, latitude, longitude
-
-
-disable_inputstream_adaptive = setting("disable_inputstream_adaptive") == 'true'

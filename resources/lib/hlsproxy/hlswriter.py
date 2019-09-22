@@ -30,7 +30,7 @@ class HLSWriter:
     A downloader for hls manifests
     """
     def __init__(self):
-        self.enable_log = False
+        self.enable_log = control.log_enabled
 
         self.cookieJar = cookielib.LWPCookieJar()
         self.session = None
@@ -155,10 +155,12 @@ class HLSWriter:
         self.__send_back(playlist_response, stream)
 
     def download_segment_playlist(self, uri, base_uri, stream, stop_event=None):
-        if stop_event and stop_event.isSet():
-            return
 
         self.log("STARTING SEGMENT PLAYLIST DOWNLOAD. URI: %s" % uri)
+
+        if stop_event and stop_event.isSet():
+            self.log("stop_event received")
+            return
 
         absolute_uri = self.manifest_playlist.base_uri + uri
 
@@ -268,18 +270,59 @@ class HLSWriter:
 
             segment = self.media_list.segments[segment_number_index]
         else:
-            segment_number = self.__get_segment_number(segment_uri)
+            original_date = self.original_media_list.program_date_time
+            current_date = self.media_list.program_date_time
 
-            segment_result_list = filter(lambda k: self.__get_segment_number(k.uri) == segment_number, self.media_list.segments)
+            self.log("ORIGINAL DATE/TIME: %s" % original_date)
+            self.log("CURRENT DATE/TIME: %s" % current_date)
 
-            while len(segment_result_list) == 0:
-                self.log("WAITING FOR SEGMENT (URI: %s | Number: %s)..." % (segment_uri, segment_number))
-                xbmc.sleep(50)
-                if self.g_stopEvent and self.g_stopEvent.isSet():
-                    return
-                segment_result_list = filter(lambda k: self.__get_segment_number(k.uri) == segment_number, self.media_list.segments)
+            while original_date > current_date:
+                self.log("OLD PLAYLIST, RELOADING...")
+                #self.__reload_segment_playlist(0, 0, 0, 0)
+                xbmc.sleep(int(self.media_list.target_duration) * 1000 / 2)
+                original_date = self.original_media_list.program_date_time
+                current_date = self.media_list.program_date_time
+                self.log("ORIGINAL DATE/TIME: %s" % original_date)
+                self.log("CURRENT DATE/TIME: %s" % current_date)
 
-            segment = segment_result_list[0]
+            self.log("ORIGINAL PLAYLIST: %s" % self.original_media_list.dumps())
+            self.log("CURRENT PLAYLIST: %s" % self.media_list.dumps())
+
+            time_delta = current_date - original_date
+            delta_seconds = util.get_total_seconds(time_delta)
+            target_duration = int(self.media_list.target_duration)
+            segments_delta = delta_seconds / target_duration
+
+            self.log("SEGMENT DELTA: %s" % segments_delta)
+
+            for segment_index, segment in enumerate(self.original_media_list.segments):
+                self.log("SEARCHING FOR SEGMENT %s: '%s'.endswith('%s') = %s" % (segment_index, segment.uri, segment_uri, segment.uri.endswith(segment_uri)))
+                if segment_uri.endswith(segment.uri):
+                    original_segment_index = segment_index
+                    found = True
+                    break
+
+            if not found:
+                raise Exception("SEGMENT NOT FOUND!!! Requested URI: %s | Parsed Number: %s" % (segment_uri, original_segment_index))
+
+            segment_index = original_segment_index - segments_delta
+
+            self.log("SEGMENT INDEX: %s" % segment_index)
+
+            segment = self.media_list.segments[segment_index]
+
+            # segment_number = self.__get_segment_number(segment_uri)
+            #
+            # segment_result_list = filter(lambda k: self.__get_segment_number(k.uri) == segment_number, self.media_list.segments)
+            #
+            # while len(segment_result_list) == 0:
+            #     self.log("WAITING FOR SEGMENT (URI: %s | Number: %s | Media List: %s)..." % (segment_uri, segment_number, self.media_list.dumps()))
+            #     xbmc.sleep(50)
+            #     if self.g_stopEvent and self.g_stopEvent.isSet():
+            #         return
+            #     segment_result_list = filter(lambda k: self.__get_segment_number(k.uri) == segment_number, self.media_list.segments)
+            #
+            # segment = segment_result_list[0]
 
         self.log("REQUESTED MEDIA URI: %s | DOWNLOADING MEDIA URI: %s" % (segment_uri, segment.absolute_uri))
 
@@ -327,6 +370,7 @@ class HLSWriter:
             proxies = {}
 
             if self.use_proxy and self.proxy:
+                self.log("DOWNLOADING WITH PROXY: %s" % self.proxy)
                 proxies={"http": self.proxy, "https": self.proxy}
 
             if post:
@@ -336,6 +380,7 @@ class HLSWriter:
 
             # IF 403 RETRY WITH PROXY
             if not self.use_proxy and self.proxy and response.status_code == 403:
+                self.log("RETRYING WITH PROXY DUE TO 403: %s" % self.proxy)
                 proxies= {"http": self.proxy, "https": self.proxy}
                 self.use_proxy = True
                 if post:

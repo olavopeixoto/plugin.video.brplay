@@ -28,12 +28,6 @@ def get_live_channels():
     affiliate_temp = control.setting('globo_affiliate')
 
     # In settings.xml - globo_affiliate
-    # 0 = All
-    # 1 = Rio de Janeiro
-    # 2 = Sao Paulo
-    # 3 = Brasilia
-    # 4 = Belo Horizonte
-    # 5 = Recife
 
     if affiliate_temp == '0':
         affiliate = 'All'
@@ -47,53 +41,21 @@ def get_live_channels():
         affiliate = 'Recife'
     elif affiliate_temp == '6':
         affiliate = 'Manaus'
-
-    # elif affiliate_temp == '6':
-    #     affiliate = 'Salvador'
-    # elif affiliate_temp == '7':
-    #     affiliate = 'Fortaleza'
-    # elif affiliate_temp == '8':
-    #     affiliate = 'Aracaju'
-    # elif affiliate_temp == '9':
-    #     affiliate = 'Maceio'
-    # elif affiliate_temp == '10':
-    #     affiliate = 'Cuiaba'
-    # elif affiliate_temp == '11':
-    #     affiliate = 'Porto Alegre'
-    # elif affiliate_temp == '12':
-    #     affiliate = 'Florianopolis'
-    # elif affiliate_temp == '13':
-    #     affiliate = 'Curitiba'
-    # elif affiliate_temp == '14':
-    #     affiliate = 'Vitoria'
-    # elif affiliate_temp == '15':
-    #     affiliate = 'Goiania'
-    # elif affiliate_temp == '16':
-    #     affiliate = 'Campo Grande'
-    # elif affiliate_temp == '17':
-    #     affiliate = 'Manaus'
-    # elif affiliate_temp == '18':
-    #     affiliate = 'Belem'
-    # elif affiliate_temp == '19':
-    #     affiliate = 'Macapa'
-    # elif affiliate_temp == '20':
-    #     affiliate = 'Palmas'
-    # elif affiliate_temp == '21':
-    #     affiliate = 'Rio Branco'
-    # elif affiliate_temp == '22':
-    #     affiliate = 'Teresina'
-    # elif affiliate_temp == '23':
-    #     affiliate = 'Sao Luis'
-    # elif affiliate_temp == '24':
-    #     affiliate = 'Joao Pessoa'
-    # elif affiliate_temp == '25':
-    #     affiliate = 'Natal'
+    elif affiliate_temp == '7':
+        affiliate = 'Rio Branco'
+    elif affiliate_temp == '8':
+        affiliate = 'Boa Vista'
+    elif affiliate_temp == '9':
+        affiliate = 'Porto Velho'
+    elif affiliate_temp == '10':
+        affiliate = 'Macapa'
+    elif affiliate_temp == '11':
+        affiliate = 'Goiania'
     else:
         affiliate = 'Rio de Janeiro'
 
-    if affiliate == "All":
-        # affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Salvador','Fortaleza','Aracaju','Maceio','Cuiaba','Porto Alegre','Florianopolis','Curitiba','Vitoria','Goiania','Campo Grande','Manaus','Belem','Macapa','Palmas','Rio Branco','Teresina','Sao Luis','Joao Pessoa','Natal']
-        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus']
+    if affiliate == "All":        
+        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus','Rio Branco','Boa Vista','Porto Velho','Macapa','Goiania']
     else:
         affiliates = [affiliate]
 
@@ -179,7 +141,7 @@ def __get_affiliate_live_channels(affiliate):
     item.update({
         'slug': 'globo',
         'name': ('[B]' if not control.isFTV else '') + 'Globo ' + re.sub(r'\d+','',code) + ('[/B]' if not control.isFTV else '') + '[I] - ' + title + (tvshowtitle if not control.isFTV else '') + '[/I]',
-        'title': subtitle,  # 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
+        'title': title, #subtitle,  # 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
         'sorttitle': 'Globo ' + re.sub(r'\d+','',code),
         'clearlogo': GLOBO_LOGO,
         # 'tagline': program_description['title'],

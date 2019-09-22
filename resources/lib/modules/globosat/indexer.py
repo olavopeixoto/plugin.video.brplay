@@ -23,14 +23,17 @@ class Indexer:
         [i.join() for i in threads]
 
         if not control.ignore_channel_authorization:
+            control.log("Channels Found: %s" % live)
             authorized_channels = [channel for channel in self.get_authorized_channels() if channel["live"]]
+            control.log("Authorized Channels: %s" % authorized_channels)
             live = [channel for channel in live if self.is_in(channel, authorized_channels)]
 
+        control.log("Live Channels: %s" % live)
         return live
 
     def is_in(self, live, authorized_channels):
         for channel in authorized_channels:
-            if channel['id'] == live['channel_id']:
+            if str(channel['id']) == str(live['channel_id']):
                 if channel['logo'] and str(channel['id']) in ['2001', '2002']:  # sportv2/sportv3 logo fix hack
                     live['logo'] = channel['logo']
                     live['clearlogo'] = channel['logo']

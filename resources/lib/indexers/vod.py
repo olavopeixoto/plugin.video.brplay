@@ -23,6 +23,9 @@ NEXT_ICON = os.path.join(control.artPath(), 'next.png')
 REPLAY_ICON = os.path.join(control.artPath(), 'returning-tvshows.png')
 REPLAY_ICON_POSTER = os.path.join(control.artPath(), 'returning-tvshows-poster.png')
 
+DRM_CHANNELS = ['megapix', 'telecine']
+BLACKLIST_CHANNELS = ['multishow-2', 'telecine', 'sexy-hot', 'globonews-2', 'megapix-2', 'telecine-zone']
+
 
 class Vod:
     def __init__(self):
@@ -38,13 +41,13 @@ class Vod:
 
         channels = cache.get(self.__get_vod_channels, 360, table="channels")
 
-        channels = [channel for channel in channels if channel['slug'] != 'multishow-2' and channel['slug'] != 'telecine']
+        channels = [channel for channel in channels if channel['slug'] not in BLACKLIST_CHANNELS]
 
         if not control.show_adult_content:
             channels = [channel for channel in channels if not channel["adult"]]
 
-        if not control.is_inputstream_available() or control.disable_inputstream_adaptive:
-            channels = [channel for channel in channels if channel['slug'] != 'megapix' and channel['slug'] != 'telecine']
+        if not control.is_inputstream_available():
+            channels = [channel for channel in channels if channel['slug'] not in DRM_CHANNELS]
 
         return channels
 
@@ -117,6 +120,8 @@ class Vod:
 
         control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
+        control.category(handle=syshandle, category=control.lang(32080).encode('utf-8'))
+
         control.content(syshandle, 'files')
         control.directory(syshandle, cacheToDisc=False)
 
@@ -137,6 +142,8 @@ class Vod:
     def get_favorites(self):
         from resources.lib.modules.globosat import scraper_vod
         favorites = scraper_vod.get_favorites()
+        syshandle = int(sys.argv[1])
+        control.category(handle=syshandle, category=control.lang(32090).encode('utf-8'))
         self.episodes_directory(favorites, provider='globosat', is_favorite=True)
 
     def add_favorites(self, video_id):
@@ -155,6 +162,8 @@ class Vod:
     def get_watch_later(self):
         from resources.lib.modules.globosat import scraper_vod
         favorites = scraper_vod.get_watch_later()
+        syshandle = int(sys.argv[1])
+        control.category(handle=syshandle, category=control.lang(32095).encode('utf-8'))
         self.episodes_directory(favorites, provider='globosat', is_watchlater=True)
 
     def add_watch_later(self, video_id):
@@ -173,7 +182,8 @@ class Vod:
     def get_watch_history(self):
         from resources.lib.modules.globosat import scraper_vod
         watch_history = scraper_vod.get_watch_history()
-
+        syshandle = int(sys.argv[1])
+        control.category(handle=syshandle, category=control.lang(32096).encode('utf-8'))
         self.episodes_directory(watch_history, provider='globosat')
 
     def get_programs_by_category(self, category):
@@ -667,64 +677,63 @@ class Vod:
 
         for index, program in enumerate(items):
 
-                label = program['name'] if 'name' in program else program['title'] if 'title' in program else ''
+            label = program['name'] if 'name' in program else program['title'] if 'title' in program else ''
 
-                media_kind = kind if kind is not None else program['kind'] if 'kind' in program else None
+            media_kind = kind if kind is not None else program['kind'] if 'kind' in program else None
 
-                is_music_video = media_kind == 'shows'
-                is_movie = media_kind == 'movies'
+            is_music_video = media_kind == 'shows'
+            is_movie = media_kind == 'movies'
 
-                is_playable = is_music_video or is_movie
+            is_playable = is_music_video or is_movie
 
-                is_bingewatch = media_kind == 'bingewatch'
+            is_bingewatch = media_kind == 'bingewatch'
 
-                meta = program
-                meta.update({
-                    'mediatype': 'musicvideo' if is_music_video else 'movie' if is_movie else 'tvshow',
-                    'overlay': 6,
-                    'title': label,
-                    'sorttitle': "%03d" % (index,)
-                })
+            meta = program
+            meta.update({
+                'mediatype': 'musicvideo' if is_music_video else 'movie' if is_movie else 'tvshow',
+                'overlay': 6,
+                'title': label,
+                'sorttitle': "%03d" % (index,)
+            })
 
-                item = control.item(label=label)
+            item = control.item(label=label)
 
-                poster = program['poster'] if 'poster' in program else None
+            poster = program['poster'] if 'poster' in program else None
 
-                thumb = program['thumb'] if 'thumb' in program else None
+            thumb = program['thumb'] if 'thumb' in program else None
 
-                fanart = program['fanart'] if 'fanart' in program else GLOBO_FANART
+            fanart = program['fanart'] if 'fanart' in program else GLOBO_FANART
 
-                clearlogo = program['clearlogo'] if 'clearlogo' in program else None
+            clearlogo = program['clearlogo'] if 'clearlogo' in program else None
 
-                art = {'fanart': fanart, 'clearlogo': clearlogo}
+            art = {'fanart': fanart, 'clearlogo': clearlogo}
 
-                if poster:
-                    art.update({'poster': poster})
+            if poster:
+                art.update({'poster': poster})
 
-                if thumb:
-                    art.update({'thumb': thumb})
+            if thumb:
+                art.update({'thumb': thumb})
 
-                item.setProperty('Fanart_Image', fanart)
+            item.setProperty('Fanart_Image', fanart)
 
-                if is_playable:
-                    sysmeta = urllib.quote_plus(json.dumps(meta))
-                    url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], program['id'], sysmeta)
-                else:
-                    url = '%s?action=openvideos&provider=%s&program_id=%s&poster=%s&bingewatch=%s&fanart=%s' % (sysaddon, program['brplayprovider'], program['id'], thumb, is_bingewatch, fanart)
+            if is_playable:
+                sysmeta = urllib.quote_plus(json.dumps(meta))
+                url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], program['id'], sysmeta)
+            else:
+                url = '%s?action=openvideos&provider=%s&program_id=%s&poster=%s&bingewatch=%s&fanart=%s' % (sysaddon, program['brplayprovider'], program['id'], thumb, is_bingewatch, fanart)
 
-                cm = []
-                cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
-                item.addContextMenuItems(cm)
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
+            item.addContextMenuItems(cm)
 
-                item.setArt(art)
-                item.setProperty('IsPlayable', 'true' if is_playable else 'false')
-                item.setInfo(type='video', infoLabels = meta)
+            item.setArt(art)
+            item.setProperty('IsPlayable', 'true' if is_playable else 'false')
+            item.setInfo(type='video', infoLabels = meta)
 
-                # if is_playable:
-                #     item.setMimeType("application/vnd.apple.mpegurl")
-                #     has_playable_item = True
+            # if is_playable:
+            #     item.setMimeType("application/vnd.apple.mpegurl")
+            #     has_playable_item = True
 
-                control.addItem(handle=syshandle, url=url, listitem=item, isFolder=not is_playable)
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=not is_playable)
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
         #
@@ -757,8 +766,7 @@ class Vod:
             item.setProperty('IsPlayable', "false")
             item.setInfo(type='video', infoLabels=meta)
 
-            cm = []
-            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
@@ -970,9 +978,10 @@ class Vod:
 
         control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
+        control.category(handle=syshandle, category=control.lang(32002).encode('utf-8'))
+
         control.content(syshandle, 'files')
         control.directory(syshandle, cacheToDisc=False)
-
 
     def category_combate_directory(self, items):
         if items is None or len(items) == 0: control.idle() ; sys.exit()

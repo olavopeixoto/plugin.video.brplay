@@ -54,7 +54,8 @@ class Player(xbmc.Player):
 
         control.log("GloboPlay - play_stream: id=%s | children_id=%s | meta=%s" % (id, children_id, meta))
 
-        if id is None: return
+        if id is None:
+            return
 
         try:
             meta = json.loads(meta)
@@ -66,9 +67,9 @@ class Player(xbmc.Player):
                 "aired": None
             }
 
-        self.isLive = False
+        self.isLive = 'live' in meta and meta['live']
 
-        if ('livefeed' in meta and meta['livefeed'] == 'true') or 'live' in meta and meta['live']:
+        if 'livefeed' in meta and meta['livefeed'] == 'true':
             control.log("PLAY LIVE!")
             self.isLive = True
 
@@ -90,9 +91,9 @@ class Player(xbmc.Player):
 
             if 'resource_id' not in info:
                 control.log("PLAY CHILDREN!")
-                items=[]
+                items = []
                 xbmc.PlayList(1).clear()
-                first=True
+                first = True
                 for i in info:
                     hash, user, self.credentials = self.sign_resource(i['resource_id'], i['id'], i['player'], i['version'])
                     i['hash'] = hash
@@ -111,8 +112,6 @@ class Player(xbmc.Player):
                 info['hash'] = hash
                 info['user'] = user
                 item, self.url, stopEvent = self.__get_list_item(meta, info)
-
-            self.isLive = 'live' in meta and meta['live']
 
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
 

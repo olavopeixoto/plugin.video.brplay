@@ -3,6 +3,7 @@ from resources.lib.modules import client
 from resources.lib.modules import util
 from resources.lib.modules import workers
 
+
 class schedule:
 
     def get_schedule(self):
@@ -17,7 +18,6 @@ class schedule:
         [i.join() for i in threads]
 
         return schedule
-
 
     def _get_globosat_schedule(self, schedule):
         globosat_schedule_url = "http://api.simulcast.globosat.tv/globosatplay/?page=%s"
@@ -69,7 +69,7 @@ class schedule:
 
         results = response['results']
 
-        while response['next'] != None:
+        while response['next'] is not None:
             page += 1
             response = client.request(globosat_schedule_url % page, headers=headers)
             results += response['results']

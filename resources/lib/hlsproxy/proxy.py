@@ -105,7 +105,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 g_downloader.keep_sending_video(self.wfile)
 
             else:
-                is_playlist = request_path.endswith('.m3u8') and not request_path.endswith('.srt.m3u8')
+                is_playlist = '.m3u8' in request_path and not '.srt.m3u8' in request_path
                 is_media = request_path.endswith('.ts')
                 self.send_response(200)
                 mime_type = PLAYLIST_MIME_TYPE if is_playlist else VIDEO_MIME_TYPE if is_media else 'application/octet-stream'
@@ -116,7 +116,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 if is_playlist:
                     log("GET REQUEST MEDIA PLAYLIST")
                     base_uri = 'http://%s:%s' % (HOST_NAME, PORT_NUMBER)
+                    log("g_downloader: %s" % repr(g_downloader))
                     g_downloader.download_segment_playlist(path_and_query, base_uri, self.wfile)
+                    log("finished g_downloader.download_segment_playlist")
                 elif is_media:
                     log("GET REQUEST MEDIA DATA")
                     g_downloader.download_segment_media(path_and_query, self.wfile)
@@ -125,6 +127,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                     g_downloader.download_binary(path_and_query, self.wfile)
 
         except Exception as inst:
+            log("PROXY REQUEST ERROR")
             # Print out a stack trace
             traceback.print_exc()
             if not init_done:
