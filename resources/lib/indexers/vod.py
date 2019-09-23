@@ -802,6 +802,7 @@ class Vod:
 
             if is_playable:
                 sysmeta = urllib.quote_plus(json.dumps(meta))
+                id_globo_videos = id_globo_videos or program['id']
                 url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], id_globo_videos, sysmeta)
             else:
                 if program['brplayprovider'] == 'globoplay':

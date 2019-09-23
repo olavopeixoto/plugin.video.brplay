@@ -221,6 +221,19 @@ class Player(xbmc.Player):
                 item.setProperty('inputstream.adaptive.manifest_type', 'hls')
                 item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
+        encrypted = 'encrypted' in info and info['encrypted']
+
+        if encrypted and not control.is_inputstream_available():
+            control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
+            return
+
+        if encrypted:
+            control.log("DRM: %s" % info['drm_scheme'])
+            licence_url = info['protection_url']
+            item.setProperty('inputstream.adaptive.license_type', info['drm_scheme'])
+            if info['drm_scheme'] == 'com.widevine.alpha' or info['drm_scheme'] == 'com.microsoft.playready':
+                item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
+
         # if self.offset > 0:
         #     duration = float(meta['duration']) if 'duration' in meta else 0
         #     if duration > 0:
