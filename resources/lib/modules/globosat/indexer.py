@@ -46,12 +46,29 @@ class Indexer:
     def get_channel_programs(self, channel_id):
         import scraper_vod as scraper
 
-        programs = scraper.get_channel_programs(channel_id)
+        # programs = scraper.get_channel_programs(channel_id)
+        programs = scraper.get_channel_cards(channel_id)
 
         for item in programs:
             item["brplayprovider"] = "globosat"
 
         return programs
+
+    def get_seasons_by_program(self, id_globo_videos):
+        import scraper_vod as scraper
+
+        card = scraper.get_card_seasons(id_globo_videos)
+
+        card["brplayprovider"] = "globosat"
+
+        return card
+
+    def get_episodes_by_program(self, id_program, id_season=None):
+        import scraper_vod as scraper
+
+        episodes = scraper.get_card_episodes(id_program, id_season)
+
+        return episodes
 
     def get_authorized_channels(self):
         import scraper_vod as scraper
@@ -63,7 +80,7 @@ class Indexer:
     def get_vod(self):
         vod = self.get_authorized_channels()
 
-        vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-") and not channel["slug"].startswith("big-brother-brasil") and not channel["slug"].startswith("multishow-")]
+        vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-")]
 
         for item in vod:
             item["brplayprovider"] = "globosat" if item['slug'] != 'sexyhot' and item['slug'] != 'sexy-hot' else 'sexyhot'

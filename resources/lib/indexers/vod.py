@@ -23,8 +23,8 @@ NEXT_ICON = os.path.join(control.artPath(), 'next.png')
 REPLAY_ICON = os.path.join(control.artPath(), 'returning-tvshows.png')
 REPLAY_ICON_POSTER = os.path.join(control.artPath(), 'returning-tvshows-poster.png')
 
-DRM_CHANNELS = ['megapix', 'telecine']
-BLACKLIST_CHANNELS = ['multishow-2', 'telecine', 'sexy-hot', 'globonews-2', 'megapix-2', 'telecine-zone']
+DRM_CHANNELS = ['megapix', 'megapix-2', 'telecine']
+BLACKLIST_CHANNELS = ['multishow-2', 'telecine', 'sexy-hot', 'globonews-2', 'megapix', 'telecine-zone', 'big-brother-brasil-1', 'big-brother-brasil-2']
 
 
 class Vod:
@@ -282,9 +282,21 @@ class Vod:
         episodes, next_page, total_pages = globoplay.Indexer().get_videos_by_category(category, page)
         self.episodes_directory(episodes, category, next_page, total_pages, 'openextra', poster=poster)
 
-    def get_videos_by_program(self, program_id, page=1, poster=None, provider=None, bingewatch=False, fanart=None):
+    def get_videos_by_program(self, program_id, id_globo_videos, page=1, poster=None, provider=None, bingewatch=False, fanart=None):
         episodes, nextpage, total_pages, days = cache.get(globoplay.Indexer().get_videos_by_program, 1, program_id, page, bingewatch)
         self.episodes_directory(episodes, program_id, nextpage, total_pages, days=days, poster=poster, provider=provider, fanart=fanart)
+
+    def get_seasons_by_program(self, id_globo_videos):
+        card = cache.get(globosat.Indexer().get_seasons_by_program, 1, id_globo_videos)
+
+        if 'seasons' in card and card['seasons'] and len(card['seasons']) > 0:
+            self.seasons_directory(card)
+        else:
+            self.get_episodes_by_program(card['id'])
+
+    def get_episodes_by_program(self, id_program, id_season=None):
+        episodes = cache.get(globosat.Indexer().get_episodes_by_program, 1, id_program, id_season)
+        self.episodes_directory(episodes)
 
     def get_videos_by_program_date(self, program_id, date, poster=None, provider=None, bingewatch=False, fanart=None):
         episodes = cache.get(globoplay.Indexer().get_videos_by_program_date, 1, program_id, date, bingewatch)
@@ -478,7 +490,9 @@ class Vod:
         list += results
 
     def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None, is_favorite=False, is_watchlater=False, fanart=None):
-        if items is None or len(items) == 0: control.idle() ; sys.exit()
+        if items is None or len(items) == 0:
+            control.idle()
+            sys.exit()
 
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
@@ -662,6 +676,74 @@ class Vod:
         control.content(syshandle, content)
         control.directory(syshandle, cacheToDisc=False)
 
+    def seasons_directory(self, card):
+        if card is None:
+            control.idle()
+            sys.exit()
+
+        sysaddon = sys.argv[0]
+        syshandle = int(sys.argv[1])
+
+        # 32072 = "Refresh"
+        refreshMenu = control.lang(32072).encode('utf-8')
+
+        content = 'videos'
+
+        seasons = card['seasons']
+
+        for season in seasons:
+
+            # label = video['label'] if 'label' in video else video['title']
+            label = season['title']
+
+            meta = card
+            meta.update({'overlay': 6})
+            meta.update({'mediatype': 'season'})  # string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+
+            # sysmeta = urllib.quote_plus(json.dumps(meta))
+
+            provider = card['brplayprovider'] if 'brplayprovider' in card else 'globosat'
+
+            action = 'openepisodes'
+
+            url = '%s?action=%s&provider=%s&program_id=%s&season_id=%s' % (sysaddon, action, provider, card['id'], season['id'])
+
+            item = control.item(label=label)
+
+            local_fanart = meta['fanart'] if 'fanart' in meta else GLOBO_FANART
+
+            poster = meta['poster'] if 'poster' in meta else None
+
+            logo = meta['logo'] if 'logo' in meta else None
+
+            art = {'thumb': local_fanart, 'poster': poster, 'fanart': local_fanart, 'clear_logo': logo}
+
+            item.setProperty('Fanart_Image', local_fanart)
+
+            item.setArt(art)
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels={
+                'year': season['year'],
+                'season': season['number'],
+                'overlay': 4,
+                'mediatype': 'season',
+                'plot': season['description'] or card['plot'],
+                'plotoutline': season['description'] or card['plot'],
+                'episode': season['episodes_number'],
+                'season': card['season']
+            })
+
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
+
+            item.addContextMenuItems(cm)
+
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_UNSORTED)
+
+        control.content(syshandle, content)
+        control.directory(syshandle, cacheToDisc=False)
+
     def programs_directory(self, items, folders=[], category=None, kind=None):
         if items is None or len(items) == 0:
             control.idle()
@@ -687,6 +769,8 @@ class Vod:
             is_playable = is_music_video or is_movie
 
             is_bingewatch = media_kind == 'bingewatch'
+
+            id_globo_videos = program['id_globo_videos'] if 'id_globo_videos' in program and program['id_globo_videos'] else None
 
             meta = program
             meta.update({
@@ -718,9 +802,12 @@ class Vod:
 
             if is_playable:
                 sysmeta = urllib.quote_plus(json.dumps(meta))
-                url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], program['id'], sysmeta)
+                url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], id_globo_videos, sysmeta)
             else:
-                url = '%s?action=openvideos&provider=%s&program_id=%s&poster=%s&bingewatch=%s&fanart=%s' % (sysaddon, program['brplayprovider'], program['id'], thumb, is_bingewatch, fanart)
+                if program['brplayprovider'] == 'globoplay':
+                    url = '%s?action=openvideos&provider=%s&program_id=%s&id_globo_videos=%s&poster=%s&bingewatch=%s&fanart=%s' % (sysaddon, program['brplayprovider'], program['id'], id_globo_videos, thumb, is_bingewatch, fanart)
+                else:
+                    url = '%s?action=openvideos&provider=%s&id_globo_videos=%s' % (sysaddon, program['brplayprovider'], id_globo_videos)
 
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
@@ -825,8 +912,7 @@ class Vod:
             item.setProperty('IsPlayable', "false")
             item.setInfo(type='video', infoLabels = meta)
 
-            cm = []
-            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
@@ -876,8 +962,7 @@ class Vod:
         item.setProperty('IsPlayable', "false")
         item.setInfo(type='video', infoLabels=meta)
 
-        cm = []
-        cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+        cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
         item.addContextMenuItems(cm)
 
         control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
@@ -970,7 +1055,7 @@ class Vod:
             item.setArt(art)
             item.addContextMenuItems(cm)
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels = meta)
+            item.setInfo(type='video', infoLabels=meta)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
             # except:

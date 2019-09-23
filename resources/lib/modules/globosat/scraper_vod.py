@@ -13,9 +13,10 @@ GLOBOSAT_TRACKS = 'https://api.vod.globosat.tv/globosatplay/tracks.json'
 GLOBOSAT_TRACKS_ITEM = 'https://api.vod.globosat.tv/globosatplay/tracks/%s.json'
 
 GLOBOSAT_CHANNELS = 'https://api-vod.globosat.tv/globosatplay/channels.json'
-GLOBOSAT_CARDS = 'https://api-vod.globosat.tv/globosatplay/cards.json?&channel_id_globo_videos=%s'
-GLOBOSAT_PROGRAMS = 'https://api-vod.globosat.tv/globosatplay/programs.json?&id_globo_videos=%s'
-GLOBOSAT_EPISODES = 'https://api-vod.globosat.tv/globosatplay/episodes.json?&program_id=%s&season_id=%s'
+GLOBOSAT_CARDS = 'https://api-vod.globosat.tv/globosatplay/cards.json?&channel_id_globo_videos=%s&page=%s'
+GLOBOSAT_PROGRAMS = 'https://api-vod.globosat.tv/globosatplay/programs.json?&id_globo_videos=%s&page=%s'
+GLOBOSAT_EPISODES_SEASON = 'https://api-vod.globosat.tv/globosatplay/episodes.json?program_id=%s&season_id=%s&page=%s'
+GLOBOSAT_EPISODES = 'https://api-vod.globosat.tv/globosatplay/episodes.json?&program_id=%s&page=%s'
 
 GLOBOSAT_BASE_FAVORITES = 'https://api.vod.globosat.tv/globosatplay/watch_favorite.json?token=%s'
 GLOBOSAT_FAVORITES = GLOBOSAT_BASE_FAVORITES + '&page=%s&per_page=%s'
@@ -141,36 +142,52 @@ def get_card_seasons(id_globo_videos):
     result = client.request(url, headers=headers)
 
     next = result['next'] if 'next' in result else None
-    programs_result = result['results'] or []
+    programs_response = result['results'] or []
 
     while next:
         page = page + 1
         url = GLOBOSAT_PROGRAMS % (id_globo_videos, page)
         result = client.request(url, headers=headers)
         next = result['next'] if 'next' in result else None
-        programs_result = programs_result + result['results']
+        programs_response = programs_response + result['results']
 
-    program = programs_result[0]
+    card_data = programs_response[0] if programs_response and len(programs_response) > 0 else None
+    seasons_response = card_data['seasons'] if card_data and 'seasons' in card_data else []
 
-    card = {
-        'id': program['id_globo_videos'],
-        'title': program['title'],
-        'name': program['title'],
-        'fanart': program['background_image_tv_cropped'],
-        'poster': program['poster_image'],
-        'plot': program['description'],
-        'kind': program['kind'] if 'kind' in program else None
-    }
+    if not card_data:
+        return {
+            'id': None,
+            'title': None,
+            'name': None,
+            'fanart': None,
+            'poster': None,
+            'plot': None,
+            'kind': None
+        }
 
     seasons = []
 
-    for season in programs_result:
+    card = {
+        'id': card_data['id'],
+        'id_globo_videos': card_data['id_globo_videos'],
+        'title': card_data['title'],
+        'name': card_data['title'],
+        'fanart': card_data['background_image_tv_cropped'],
+        'poster': card_data['poster_image'],
+        'logo': card_data['logo_image'],
+        'plot': card_data['description'],
+        'kind': card_data['kind'] if 'kind' in seasons else None,
+        'season': len(seasons_response),
+    }
+
+    for season in seasons_response:
         seasons.append({
             'id': season['id'],
             'title': season['title'],
+            'description': season['description'],
             'episodes_number': season['episodes_number'],
             'number': season['number'],
-            'year': season['year'],
+            'year': season['year']
         })
 
     card['seasons'] = seasons
@@ -178,11 +195,11 @@ def get_card_seasons(id_globo_videos):
     return card
 
 
-def get_card_episodes(program_id, season_id):
+def get_card_episodes(program_id, season_id=None):
     headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
 
     page = 1
-    url = GLOBOSAT_EPISODES % (program_id, season_id, page)
+    url = GLOBOSAT_EPISODES_SEASON % (program_id, season_id, page) if season_id else GLOBOSAT_EPISODES % (program_id, page)
     result = client.request(url, headers=headers)
 
     next = result['next'] if 'next' in result else None
@@ -190,7 +207,7 @@ def get_card_episodes(program_id, season_id):
 
     while next:
         page = page + 1
-        url = GLOBOSAT_EPISODES % (program_id, season_id, page)
+        url = GLOBOSAT_EPISODES_SEASON % (program_id, season_id, page) if season_id else GLOBOSAT_EPISODES % (program_id, page)
         result = client.request(url, headers=headers)
         next = result['next'] if 'next' in result else None
         programs_result = programs_result + result['results']
@@ -198,16 +215,47 @@ def get_card_episodes(program_id, season_id):
     episodes = []
 
     for episode in programs_result:
-        episodes.append({
-            'id': episode['id'],
+
+        if episode['number'] and 'season' in episode and episode['season'] and 'number' in episode['season']:
+            title = 'S%sE%s - %s' % (episode['season']['number'], episode['number'], episode['title'])
+        else:
+            title = episode['title']
+
+        if 'program' in episode and episode['program']:
+            tvshowtitle = episode['program']['title']
+        else:
+            tvshowtitle = title
+
+        data = {
+            'id': episode['id_globo_videos'],
             'id_globo_videos': episode['id_globo_videos'],
-            'title': episode['title'],
+            'title': title,
             'name': episode['title'],
             'fanart': episode['background_image_tv_cropped'],
+            'thumb': episode['thumb_image'],
             'poster': episode['image'],
             'plot': episode['description'],
-            'kind': episode['kind'] if 'kind' in episode else None
-        })
+            'plotoutline': episode['description'],
+            'kind': episode['kind'] if 'kind' in episode else None,
+            'duration': episode['duration_in_milliseconds'] / 1000.0,
+            'brplayprovider': 'globosat',
+            'tvshowtitle': tvshowtitle,
+            # 'episode': episode['number'],
+            # 'season': episode['season']['number'] if 'season' in episode and episode['season'] and 'number' in episode['season'] else None,
+            'country': episode['country'],
+            'genre': episode['categories'],
+            'tag': episode['tags'],
+            'mpaa': episode['content_rating'],
+            'mediatype': 'episode'
+        }
+
+        if 'director' in episode and episode['director'] and len(episode['director']) > 0:
+            data['director'] = [director['name'] for director in episode['director']]
+
+        if 'cast' in episode and episode['cast'] and len(episode['cast']) > 0:
+            data['cast'] = [director['name'] for director in episode['cast']]
+
+        episodes.append(data)
 
     return episodes
 

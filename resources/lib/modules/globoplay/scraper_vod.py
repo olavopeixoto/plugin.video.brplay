@@ -389,7 +389,8 @@ def get_globo_episodes(program_id, page=1, bingewatch=False):
             'thumb': THUMB_URL % item['id'],
             'fanart': GLOBO_FANART,
             'mediatype': 'episode',
-            'bingewatch': not last  # bingewatch
+            'bingewatch': not last,  # bingewatch
+            'mpaa': item['content_rating']
         }
 
         if not item["full_episode"]:

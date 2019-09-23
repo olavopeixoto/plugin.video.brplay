@@ -13,6 +13,8 @@ class Main:
     def run(self, argv):
 
         try:
+            from resources.lib.modules import control
+            control.log('ARGV: %s' % argv)
 
             params = dict(urlparse.parse_qsl(argv))
 
@@ -50,6 +52,8 @@ class Main:
             category = params.get('category')
 
             program_id = params.get('program_id')
+
+            season_id = params.get('season_id')
 
             date = params.get('date')
 
@@ -177,13 +181,19 @@ class Main:
                 from resources.lib.indexers import vod
                 if slug == 'combate':
                     vod.Vod().get_channel_categories(slug=slug)
-                elif id_cms:
-                    vod.Vod().get_channel_programs(channel_id=id_cms)
+                elif id_globo_videos:
+                    vod.Vod().get_channel_programs(channel_id=id_globo_videos)
 
             elif action == 'openvideos' and provider == 'globosat':
                 from resources.lib.indexers import vod
-                page = page or 1
-                vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globosat', bingewatch, fanart)
+                # page = page or 1
+                # vod.Vod().get_videos_by_program(program_id, id_globo_videos, int(page), poster, 'globosat', bingewatch, fanart)
+                vod.Vod().get_seasons_by_program(id_globo_videos)
+
+            elif action == 'openepisodes' and provider == 'globosat':
+                from resources.lib.indexers import vod
+
+                vod.Vod().get_episodes_by_program(program_id, season_id)
 
             elif action == 'playvod' and provider == 'globosat':
                 from resources.lib.modules.globosat import player
@@ -264,7 +274,7 @@ class Main:
             elif action == 'openvideos' and provider == 'globoplay':
                 from resources.lib.indexers import vod
                 page = page or 1
-                vod.Vod().get_videos_by_program(program_id, int(page), poster, 'globoplay', bingewatch, fanart)
+                vod.Vod().get_videos_by_program(program_id, id_globo_videos, int(page), poster, 'globoplay', bingewatch, fanart)
 
             elif action == 'playvod' and provider == 'globoplay':
                 from resources.lib.modules.globoplay import player
