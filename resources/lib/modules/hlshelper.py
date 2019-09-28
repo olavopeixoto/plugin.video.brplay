@@ -123,10 +123,10 @@ def pick_bandwidth(url):
             from resources.lib.hlsproxy.hlsdownloader import HLSDownloader
             player = HLSDownloader
         else:
-            # from resources.lib.hlsproxy.hlswriter import HLSWriter
-            # player = HLSWriter
-            from resources.lib.hlsproxy.simplewriter import SimpleHLSWriter
-            player = SimpleHLSWriter
+            from resources.lib.hlsproxy.hlswriter import HLSWriter
+            player = HLSWriter
+            # from resources.lib.hlsproxy.simplewriter import SimpleHLSWriter
+            # player = SimpleHLSWriter
 
         url, mime_type = __url_resolver__.resolve(url, proxy=proxy, maxbitrate=maxbandwidth, player=player)
 
