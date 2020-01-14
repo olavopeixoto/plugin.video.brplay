@@ -287,7 +287,7 @@ def get_globo_programs():
                             'brplayprovider': 'globoplay'
                         } for p in j['programs']]} for j in json['subcategories']]} for json in categories_json]
 
-    return (categories, programs)
+    return categories, programs
 
 
 def get_program_dates(program_id):

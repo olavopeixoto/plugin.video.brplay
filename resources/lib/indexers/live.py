@@ -12,6 +12,7 @@ from resources.lib.modules.globoplay import indexer as globoplay
 from resources.lib.modules.globoplay import scraper_live as globoplay_live
 from resources.lib.modules.globosat import indexer as globosat
 from resources.lib.modules.futuraplay import scraper_live as futuraplay
+from resources.lib.modules.sexyhotplay import scraper_live as sexyhotplay
 
 
 class Live:
@@ -31,6 +32,9 @@ class Live:
             threads.append(workers.Thread(self.append_result, globosat.Indexer().get_live, live))
 
         threads.append(workers.Thread(self.append_result, futuraplay.get_live_channels, live))
+
+        if control.show_adult_content:
+            threads.append(workers.Thread(self.append_result, sexyhotplay.get_live_channels, live))
 
         [i.start() for i in threads]
         [i.join() for i in threads]

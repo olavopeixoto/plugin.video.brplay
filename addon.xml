@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.28" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.29" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.beautifulsoup" version="3.2.1"/>
@@ -40,6 +40,8 @@
 			- Fix Globosat authentication
 			- Updated Globosat VOD API to work with seasons and episodes
 			- Fix for separated Globoplay x Globosat credentials
+			- Added support for SexyHot live channel
+			- Fixed SexyHot VOD videos
         </news>
 	</extension>
 </addon>

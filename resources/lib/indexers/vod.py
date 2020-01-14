@@ -79,8 +79,8 @@ class Vod:
             categories = cache.get(scraper_futura.get_menu, 1)
             self.category_futura_directory(categories)
         else:
-            categories = cache.get(globoplay.Indexer().get_channel_categories, 1)
-            extras = cache.get(globoplay.Indexer().get_extra_categories, 1)
+            categories = globoplay.Indexer().get_channel_categories()
+            extras = globoplay.Indexer().get_extra_categories()
             self.category_directory(categories, extras)
 
     def open_futura_menu(self, category):
@@ -187,9 +187,9 @@ class Vod:
         self.episodes_directory(watch_history, provider='globosat')
 
     def get_programs_by_category(self, category):
-        categories = cache.get(globoplay.Indexer().get_category_programs, 1, category)
+        programs = cache.get(globoplay.Indexer().get_category_programs, 1, category)
         subcategories = cache.get(globoplay.Indexer().get_category_subcategories, 1, category)
-        self.programs_directory(categories, subcategories, category)
+        self.programs_directory(programs, subcategories, category)
 
     def get_programs_by_subcategory(self, category, subcategory):
         subcategories = cache.get(globoplay.Indexer().get_category_programs, 1, category, subcategory)
@@ -745,10 +745,6 @@ class Vod:
         control.directory(syshandle, cacheToDisc=False)
 
     def programs_directory(self, items, folders=[], category=None, kind=None):
-        if items is None or len(items) == 0:
-            control.idle()
-            sys.exit()
-
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
 

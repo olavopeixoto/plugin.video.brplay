@@ -33,7 +33,7 @@ class Indexer:
     def get_extra_categories(self):
 
         import scraper_vod as scraper
-        categories = scraper.get_extra_sections()
+        categories = cache.get(scraper.get_extra_sections, 1)
 
         return categories
 

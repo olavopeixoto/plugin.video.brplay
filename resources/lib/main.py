@@ -294,12 +294,13 @@ class Main:
             elif action == 'openchannel' and provider == 'sexyhot':
                 from resources.lib.modules.sexyhotplay import indexer
 
-                indexer.indexer().get_categories()
+                # indexer.indexer().get_categories()
+                indexer.indexer().get_videos(1)
 
             elif action == 'getVideos' and provider == 'sexyhot':
                 from resources.lib.modules.sexyhotplay import indexer
 
-                indexer.indexer().get_videos(url)
+                indexer.indexer().get_videos(page)
 
             elif action == 'playvod' and provider == 'sexyhot':
                 from resources.lib.modules.sexyhotplay import player

@@ -15,6 +15,7 @@ try:
 except:
     import pickle
 
+
 class auth:
 
     ENDPOINT_URL = 'https://login.globo.com/api/authentication'
