@@ -83,4 +83,4 @@ class auth:
 
         control.log("GLOBOSAT CREDENTIALS: %s" % credentials)
 
-        return (credentials, globo_id)
+        return credentials, globo_id
