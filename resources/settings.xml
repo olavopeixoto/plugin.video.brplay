@@ -48,8 +48,8 @@
 		<setting id="globoplay_username" type="text" label="31110" default="" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
-		<!-- Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania -->
-		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127" default="0" />
+		<!-- Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania|Belem|Salvador|Florianopolis|Sao Luis -->
+		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135" default="0" />
 	</category>
 
 	<category label="33001">

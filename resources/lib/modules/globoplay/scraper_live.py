@@ -51,11 +51,19 @@ def get_live_channels():
         affiliate = 'Macapa'
     elif affiliate_temp == '11':
         affiliate = 'Goiania'
+    elif affiliate_temp == '12':
+        affiliate = 'Belem'
+    elif affiliate_temp == '13':
+        affiliate = 'Salvador'
+    elif affiliate_temp == '14':
+        affiliate = 'Florianopolis'
+    elif affiliate_temp == '15':
+        affiliate = 'Sao Luis'
     else:
         affiliate = 'Rio de Janeiro'
 
     if affiliate == "All":        
-        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus','Rio Branco','Boa Vista','Porto Velho','Macapa','Goiania']
+        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus','Rio Branco','Boa Vista','Porto Velho','Macapa','Goiania','Belem','Salvador','Florianopolis','Sao Luis']
     else:
         affiliates = [affiliate]
 
