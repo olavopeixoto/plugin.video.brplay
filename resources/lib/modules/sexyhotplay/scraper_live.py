@@ -7,8 +7,8 @@ from resources.lib.modules import client
 from resources.lib.modules import util
 import datetime
 
-SEXYHOT_LOGO = 'https://oisa.tmsimg.com/assets/s56088_h3_ba.png'
-SEXYHOT_FANART = os.path.join(control.artPath(), 'globo.jpg')
+SEXYHOT_LOGO = os.path.join(control.artPath(), 'logo_sexyhot.png')
+SEXYHOT_FANART = os.path.join(control.artPath(), 'fanart_sexyhot.png')
 SEXYHOT_LIVEID = 6988462
 
 
@@ -44,7 +44,7 @@ def get_live_channels():
         'livefeed': 'true',
         'logo': SEXYHOT_LOGO,
         'duration': int(simulcast['duration_seconds']),
-        'brplayprovider': 'sexyhot',
+        'brplayprovider': 'globosat',
         'adult': True,
         "dateadded": datetime.datetime.strftime(simulcast['start_date'], '%Y-%m-%d %H:%M:%S'),
         'anonymous': True

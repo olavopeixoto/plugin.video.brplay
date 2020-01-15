@@ -55,6 +55,14 @@
 		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)"/>
 		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)" enable="eq(-2,1)|eq(-1,true)"/>
 		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)" enable="eq(-3,1)|eq(-2,true)"/>
+
+		<setting type="lsep" label="SexyHot"></setting>
+
+		<!-- 33401 = Show Adult Content -->
+		<!-- 33402 = Use Pagination -->
+		<setting id="show_adult" type="bool" label="33401" default="true" />
+<!--		<setting id="sexy_hot_pagination" type="bool" label="33402" default="true" enable="eq(-1,true)"/>-->
+		<setting type="sep" />
 	</category>
 
 	<category label="33001">
@@ -106,14 +114,6 @@
 		<setting type="lsep" label="Globosat Play"></setting>
 
 		<setting id="ignore_channel_authorization" type="bool" label="33403" default="false"/>
-		<setting type="sep" />
-
-		<setting type="lsep" label="SexyHot"></setting>
-
-		<!-- 33401 = Show Adult Content -->
-		<!-- 33402 = Use Pagination -->
-		<setting id="show_adult" type="bool" label="33401" default="true" />
-		<setting id="sexy_hot_pagination" type="bool" label="33402" default="true" enable="eq(-1,true)"/>
 		<setting type="sep" />
 
 		<!-- 33501 = Clear Cache -->
