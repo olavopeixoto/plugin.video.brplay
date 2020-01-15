@@ -28,6 +28,10 @@ msgctxt "#31209"
 msgid "Geo Location"
 msgstr "Localização"
 
+msgctxt "#31211"
+msgid "Use Custom Affiliate"
+msgstr "Usar outra afiliada"
+
 msgctxt "#31100"
 msgid "Globo Play"
 msgstr "Globo Play"
@@ -399,3 +403,15 @@ msgstr "Habilitar Globosat Play"
 msgctxt "#34109"
 msgid "Use Globoplay Credentials for Globosat Play"
 msgstr "Usar as credenciais Globoplay para o Globosat Play"
+
+msgctxt "#34110"
+msgid "Latitude"
+msgstr "Latitude"
+
+msgctxt "#34111"
+msgid "Longitude"
+msgstr "Longitude"
+
+msgctxt "#34112"
+msgid "Custom"
+msgstr "Personalizada"

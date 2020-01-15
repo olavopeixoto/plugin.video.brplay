@@ -8,7 +8,7 @@
 		<setting id="use_globoplay_credentials_for_globosat" type="bool" label="34109" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
 		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-1,false)" enable="eq(-1,false)"/>
 		<setting id="globosat_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,false)"/>
-		<setting id="globosat_geofence" type="enum" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" enable="eq(-4,true)"/>
+		<setting id="globosat_geofence" type="select" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" enable="eq(-4,true)"/>
 
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
@@ -16,6 +16,8 @@
 
 		<!-- 31111 = Affiliate -->
 		<!-- 31116 = All -->
+		<!-- 33103 = Auto -->
+		<!-- 34112 = Custom -->
 		<!-- 31112 = Rio de Janeiro -->
 		<!-- 31113 = Sao Paulo -->
 		<!-- 31114 = Brasilia -->
@@ -48,8 +50,11 @@
 		<setting id="globoplay_username" type="text" label="31110" default="" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
-		<!-- Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania|Belem|Salvador|Florianopolis|Sao Luis -->
-		<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135" default="0" />
+		<!-- Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania|Belem|Salvador|Florianopolis|Sao Luis|Vitoria -->
+		<setting id="globo_affiliate" type="select" label="31111" lvalues="31116|34112|33103|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135|31126|31119|31123|31137|31125" default="1" />
+		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)"/>
+		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)" enable="eq(-2,1)|eq(-1,true)"/>
+		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)" enable="eq(-3,1)|eq(-2,true)"/>
 	</category>
 
 	<category label="33001">

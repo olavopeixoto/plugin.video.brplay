@@ -76,7 +76,7 @@ class Player(xbmc.Player):
             affiliate = meta['affiliate'] if 'affiliate' in meta else None
 
             if affiliate is None:
-                code, latitude, longitude = control.get_coordinates(affiliate)
+                code, latitude, longitude = control.get_coordinates(control.get_affiliates_by_id(-1))
                 affiliate = 'lat=%s&long=%s' % (latitude, longitude)
 
             info = self.__getLiveVideoInfo(id, affiliate)

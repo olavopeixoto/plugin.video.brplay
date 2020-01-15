@@ -5,9 +5,11 @@ from resources.lib.modules import client
 from resources.lib.modules import util
 from resources.lib.modules import workers
 from resources.lib.modules import cache
-import datetime,re
+import datetime
+import re
 from sqlite3 import dbapi2 as database
-import time, os
+import time
+import os
 from scraper_vod import GLOBOPLAY_CONFIGURATION
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
@@ -27,45 +29,7 @@ def get_live_channels():
 
     affiliate_temp = control.setting('globo_affiliate')
 
-    # In settings.xml - globo_affiliate
-
-    if affiliate_temp == '0':
-        affiliate = 'All'
-    elif affiliate_temp == '2':
-        affiliate = 'Sao Paulo'
-    elif affiliate_temp == '3':
-        affiliate = 'Brasilia'
-    elif affiliate_temp == '4':
-        affiliate = 'Belo Horizonte'
-    elif affiliate_temp == '5':
-        affiliate = 'Recife'
-    elif affiliate_temp == '6':
-        affiliate = 'Manaus'
-    elif affiliate_temp == '7':
-        affiliate = 'Rio Branco'
-    elif affiliate_temp == '8':
-        affiliate = 'Boa Vista'
-    elif affiliate_temp == '9':
-        affiliate = 'Porto Velho'
-    elif affiliate_temp == '10':
-        affiliate = 'Macapa'
-    elif affiliate_temp == '11':
-        affiliate = 'Goiania'
-    elif affiliate_temp == '12':
-        affiliate = 'Belem'
-    elif affiliate_temp == '13':
-        affiliate = 'Salvador'
-    elif affiliate_temp == '14':
-        affiliate = 'Florianopolis'
-    elif affiliate_temp == '15':
-        affiliate = 'Sao Luis'
-    else:
-        affiliate = 'Rio de Janeiro'
-
-    if affiliate == "All":        
-        affiliates = ['Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus','Rio Branco','Boa Vista','Porto Velho','Macapa','Goiania','Belem','Salvador','Florianopolis','Sao Luis']
-    else:
-        affiliates = [affiliate]
+    affiliates = control.get_affiliates_by_id(int(affiliate_temp))
 
     config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
 
@@ -100,7 +64,8 @@ def get_live_channels():
     [i.start() for i in threads]
     [i.join() for i in threads]
 
-    return live
+    seen = []
+    return filter(lambda x: seen.append(x['affiliate_code'] if 'affiliate_code' in x else '$FOO$') is None if 'affiliate_code' not in x or x['affiliate_code'] not in seen else False, live)
 
 
 def __append_result(fn, list, *args):
@@ -114,12 +79,19 @@ def __get_affiliate_live_channels(affiliate):
 
     code, latitude, longitude = control.get_coordinates(affiliate)
 
-    geo_position = 'lat=%s&long=%s' % (latitude, longitude)
+    if code is None and latitude is not None:
+        result = get_affiliate_by_coordinates(latitude, longitude)
+        code = result['code'] if result and 'code' in result else None
+
+    if code is None:
+        return None
 
     live_program = __get_live_program(code)
 
     if not live_program:
         return None
+
+    geo_position = 'lat=%s&long=%s' % (latitude, longitude)
 
     program_description = get_program_description(live_program['program_id_epg'], live_program['program_id'], code)
 
@@ -380,3 +352,23 @@ def get_multicam(program_id):
         'fanart': FANART_BBB,
         'thumb': channel['thumb'] + '?v=' + str(int(time.time()))
     } for i, channel in enumerate(response['channels'])]
+
+
+def get_affiliate_by_coordinates(latitude, longitude):
+
+    url = 'https://api.globoplay.com.br/v1/affiliates/{lat},{long}?api_key={apikey}'.format(lat=latitude, long=longitude, apikey=GLOBOPLAY_APIKEY)
+
+    result = client.request(url)
+
+    # {
+    #     "channelNumber": 29,
+    #     "code": "RJ",
+    #     "groupCode": "TVG",
+    #     "groupName": "REDE GLOBO",
+    #     "name": "GLOBO RIO",
+    #     "serviceIDHD": "48352",
+    #     "serviceIDOneSeg": "48376",
+    #     "state": "RJ"
+    # }
+
+    return result

@@ -454,11 +454,9 @@ def log(msg):
 
 def get_coordinates(affiliate):
 
-    code = "RJ"
-    latitude = "-22.970722"
-    longitude = "-43.182365"
-
-    if affiliate == "Sao Paulo":
+    if affiliate == "Rio de Janeiro":
+        code, latitude, longitude = "RJ", "-22.970722", "-43.182365"
+    elif affiliate == "Sao Paulo":
         code, latitude, longitude = "SP1", '-23.5505', '-46.6333'
     elif affiliate == "Brasilia":
         code, latitude, longitude = "DF", '-15.7942',' -47.8825'
@@ -510,5 +508,51 @@ def get_coordinates(affiliate):
         code, latitude, longitude = "ROR", '2.82','-60.672'
     elif affiliate == "Porto Velho":
         code, latitude, longitude = "RON", '-8.76194','-63.90389'
+    elif affiliate == "Auto":
+        city, latitude, longitude = get_ip_coordinates()
+        code = None
+    elif affiliate == "Custom":
+        latitude = setting('custom_affiliate_latitude')
+        longitude = setting('custom_affiliate_longitude')
+        if not latitude:
+            latitude = None
+        if not longitude:
+            longitude = None
+        code = None
+    else:
+        code, latitude, longitude = None, None, None
 
     return code, latitude, longitude
+
+
+def get_ip_coordinates():
+    from urllib2 import urlopen
+
+    url = 'http://ipinfo.io/json'
+    response = urlopen(url)
+    data = json.load(response)
+
+    loc = data['loc']
+    city = data['city']
+    loc = loc.split(',')
+
+    latitude = loc[0]
+    longitude = loc[1]
+
+    return city, latitude, longitude
+
+
+def get_affiliates_by_id(id):
+
+    all_affiliates = ['Custom','Auto','Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus','Rio Branco','Boa Vista','Porto Velho','Macapa','Goiania','Belem','Salvador','Florianopolis','Sao Luis','Vitoria','Fortaleza','Porto Alegre','Natal','Curitiba']
+
+    if id == 0:  # All
+        return all_affiliates
+
+    id = id -1
+
+    if len(all_affiliates) > id >= 0:
+        return [all_affiliates[id]]
+
+    # Default Rio de Janeiro
+    return [all_affiliates[0]]
