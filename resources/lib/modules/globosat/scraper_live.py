@@ -18,7 +18,7 @@ GLOBOSAT_API_CHANNELS = GLOBOSAT_API_URL + '/channels.json?page=%d'
 COMBATE_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/combateplay'
 GLOBOSAT_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/globosatplay'
 PREMIERE_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?order=asc&page='
-PREMIERE_NEXT_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?status=not_started&status=not_started&order=asc&page='
+PREMIERE_NEXT_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?status=not_started&order=asc&page='
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
 PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
 
