@@ -31,7 +31,7 @@ def get_live_channels():
         "subtitle": program_title,
         'tvshowtitle': program_title,
         "plot": program_title,
-        'sorttitle': 'Futura',
+        'sorttitle': 'sexyhot',
         'clearlogo': SEXYHOT_LOGO,
         'fanart': SEXYHOT_FANART,
         'thumb': 'https://live-thumbs.video.globo.com/sexy24ha/snapshot/' + '?v=' + str(int(time.time())),

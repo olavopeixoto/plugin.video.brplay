@@ -17,7 +17,8 @@ GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
 GLOBOSAT_API_CHANNELS = GLOBOSAT_API_URL + '/channels.json?page=%d'
 COMBATE_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/combateplay'
 GLOBOSAT_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/globosatplay'
-PREMIERE_MATCHES_JSON = 'http://globotv.globo.com/premiere-fc/ao-vivo/v2/matches'
+PREMIERE_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?order=asc&page='
+PREMIERE_NEXT_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?status=not_started&status=not_started&order=asc&page='
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
 PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
 
@@ -395,9 +396,17 @@ def get_combate_live_channels():
 def get_premiere_live_games():
 
     live = []
+    all_games = []
 
     headers = {'Accept-Encoding': 'gzip'}
-    all_games = client.request(PREMIERE_MATCHES_JSON, headers=headers)['data']
+    page = 1
+    has_more = True
+    while has_more:
+        result = client.request(PREMIERE_MATCHES_JSON + str(page), headers=headers)
+        all_games += result['results']
+        has_more = result['pagination']['has_next']
+        if has_more:
+            page = page + 1
 
     if not all_games:
         return []
@@ -509,23 +518,25 @@ def get_premiere_live_24h_channels():
     return live
 
 
-def get_premiere_games(meta={}, online_only=False):
+def get_premiere_games(meta={}):
 
     live = []
+    live_games = []
 
     headers = {'Accept-Encoding': 'gzip'}
-    live_games = client.request(PREMIERE_MATCHES_JSON, headers=headers)['data']
 
-    live_games = list(filter(lambda x: x['status'] != 'ended', live_games))
-
-    offline = all(x['status'] != 'live' for x in live_games)
-
-    if online_only:
-        live_games = list(filter(lambda x: x['status'] == 'live', live_games))
+    page = 1
+    has_more = True
+    while has_more:
+        result = client.request(PREMIERE_NEXT_MATCHES_JSON + str(page), headers=headers)
+        live_games += result['results']
+        has_more = result['pagination']['has_next']
+        if has_more:
+            page = page + 1
 
     for game in live_games:
         livemeta = meta.copy()
-        live.append(__get_game_data(game, livemeta, offline))
+        live.append(__get_game_data(game, livemeta, live_games))
 
     return live
 
@@ -533,19 +544,22 @@ def get_premiere_games(meta={}, online_only=False):
 def __get_game_data(game, meta, offline):
 
     utc_timezone = control.get_current_brasilia_utc_offset()
-    parsed_date = util.strptime_workaround(game['datetime'], format='%Y-%d-%m %H:%M') + datetime.timedelta(hours=(-utc_timezone))
+    parsed_date = util.strptime_workaround(game['datetime'], format='%Y-%m-%dT%H:%M:%S') + datetime.timedelta(hours=(-utc_timezone))
     date_string = kodi_util.format_datetimeshort(parsed_date)
 
-    plot =  game['championship'] + u': ' + game['home']['name'] + u' x ' + game['away']['name'] + u' (' + game['stadium'] + u')' + u'. ' + date_string
+    # plot = game['championship'] + u': ' + game['home']['name'] + u' x ' + game['away']['name'] + u' (' + game['stadium'] + u')' + u'. ' + date_string
     label = game['home']['name'] + u' x ' + game['away']['name']
+    media_desc = '\n' + game['medias'][0]['description'] if 'medias' in game and game['medias'] and len(game['medias']) > 0 else ''
+    plot = game['phase'] + u' d' + get_artigo(game['championship']) + u' ' + game['championship'] + u'. Disputado n' + get_artigo(game['stadium']) + u' ' + game['stadium'] + u'. ' + date_string + media_desc
+
     name = ((date_string + u' - ') if offline else u'') + label if not control.isFTV else label
     meta.update({
         'name': name,
         'label2': label,
-        'playable': 'true' if game['media_id'] is not None else 'false',
+        'playable': 'true' if 'medias' in game and game['medias'] and len(game['medias']) > 0 else 'false',
         'plot': game['stadium'] if control.isFTV else plot,
         'plotoutline': date_string,
-        'id': game['media_id'],
+        'id': game['medias'][0]['id'],
         'logo': game['home']['logo_60x60_url'],
         'logo2': game['away']['logo_60x60_url'],
         'initials1': game['home']['abbreviation'],
@@ -561,46 +575,20 @@ def __get_game_data(game, meta, offline):
     return meta
 
 
-# def __get_simulcast_data_v2(result):
-#     utc_timezone = control.get_current_brasilia_utc_offset()
-#
-#     live_text = ' (' + control.lang(32004) + ')' if result['live'] else ''
-#     program_date = util.strptime_workaround(result['day'], '%d/%m/%Y %H:%M') + datetime.timedelta(
-#         hours=-utc_timezone) + util.get_utc_delta() if not result['day'] is None else datetime.datetime.now()
-#
-#     name = "[B]" + result['channel']['title'] + "[/B]" + (
-#         '[I] - ' + (result['title'] or '') + '[/I]' if result['title'] else '') + live_text
-#
-#     return {
-#         'slug': result['channel']['title'].lower(),
-#         'studio': result['channel']['title'],
-#         'name': name,
-#         'title': result['subtitle'],
-#         'tvshowtitle': result['title'] if result['title'] else None,
-#         'sorttitle': result['channel']['title'],
-#         'logo': None,
-#         'color': result['channel']['color'],
-#         'fanart': result['thumb_cms'],
-#         'thumb': result['channel']['url_snapshot'] + '?v=' + str(int(time.time())),
-#         'live': result['live'],
-#         'playable': 'true',
-#         'plot': result['subtitle'] or '' if not control.isFTV else ' ',
-#     # (result['title'] or '') + ' - ' + (result['subtitle'] or ''), #program_local_date_string + duration_str + '\n' + (result['title'] or '') + '\n' + (result['subtitle'] or ''),
-#         'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + (
-#             datetime.datetime.strftime(program_date + datetime.timedelta(minutes=(result['duration'] or 0)),
-#                                        '%H:%M') if (result['duration'] or 0) > 0 else 'N/A'),
-#         # 'programTitle': result['subtitle'],
-#         'id': result['id_midia_live_play'],
-#         'channel_id': result['channel']['id_globo_videos'],
-#         'duration': int(result['duration'] or 0) * 60,
-#         # 'tagline': result['subtitle'],
-#         # 'date': datetime.datetime.strftime(program_date, '%d.%m.%Y'),
-#         # 'aired': datetime.datetime.strftime(program_date, '%Y-%m-%d'),
-#         'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
-#         # 'StartTime': datetime.datetime.strftime(program_date, '%H:%M:%S'),
-#         # 'EndTime': datetime.datetime.strftime(program_date + datetime.timedelta(minutes=(result['duration'] or 0)), '%H:%M:%S'),
-#         'brplayprovider': 'globosat'
-#     }
+def get_artigo(word):
+
+    test = word.split(' ')[0] if word else u''
+
+    if test.endswith('a'):
+        return u'a'
+
+    if test.endswith('as'):
+        return u'as'
+
+    if test.endswith('os'):
+        return u'os'
+
+    return u'o'
 
 
 def __get_simulcast_data(result):

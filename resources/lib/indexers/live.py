@@ -30,11 +30,10 @@ class Live:
 
         if control.is_globosat_available():
             threads.append(workers.Thread(self.append_result, globosat.Indexer().get_live, live))
+            if control.show_adult_content:
+                threads.append(workers.Thread(self.append_result, sexyhotplay.get_live_channels, live))
 
         threads.append(workers.Thread(self.append_result, futuraplay.get_live_channels, live))
-
-        if control.show_adult_content:
-            threads.append(workers.Thread(self.append_result, sexyhotplay.get_live_channels, live))
 
         [i.start() for i in threads]
         [i.join() for i in threads]
@@ -189,9 +188,9 @@ class Live:
 
             list_items.append((url, item, isFolder))
 
-        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
-        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
-        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
+        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
+        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
         control.addItems(syshandle, list_items)
         control.category(handle=syshandle, category=control.lang(32001).encode('utf-8'))

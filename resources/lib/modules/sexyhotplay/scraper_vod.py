@@ -23,24 +23,7 @@ def getChannels():
 
 def get_categories():
 
-    # url = "http://sexyhotplay.com.br/categorias/"
-    # html = client.request(url, headers={'Cookie': 'disclaimer-sexyhotplay=1;'})
-    #
-    # soup = bs(html)
-    # div = soup.find('div', attrs={'class': 'colunas-3-15'})
-    #
-    # links = div.findAll('a', attrs={'class': 'link'}, recursive=True)
-
     results = []
-    # for link in links:
-    #     label = link.find('strong').string
-    #     url = 'http://sexyhotplay.com.br' + link['href']
-    #     results.append({
-    #         'name': label,
-    #         # 'clearlogo': os.path.join(artPath, 'logo_sexyhot.png'),
-    #         'url': url
-    #     })
-
     return results
 
 
@@ -55,14 +38,18 @@ def get_videos(page=1):
     for video in result['videos']:
         videos.append({
             'id_sexyhot': video['idGloboVideo'],
-            'mediatype': 'movie',
+            'mediatype': 'movie' if video['type'] == 'film' else 'episode' if type == 'serie' else 'video',
             'overlay': 6,
-            'duration': int(video['unformatted_duration']),
+            'duration': int(video['unformatted_duration'])/1000,
             'title': video['title'],
             'plot': video['description'],
             'cast': [actor['name'] for actor in video['cast']],
-            'poster': video['thumb'],
-            'fanart': os.path.join(artPath, 'fanart_sexyhot.png')
+            'tag': [tag for tag in video['tags']],
+            'thumb': video['thumb'],
+            'poster': video['card_url'] if video['type'] == 'film' else video['thumb'],
+            'fanart': os.path.join(artPath, 'fanart_sexyhot.png'),
+            'episode': video['episode'],
+            'year': video['year']
         })
 
     next_page = result['pagination']['page'] + 1 if result['pagination']['page'] < result['pagination']['totalPages'] else None

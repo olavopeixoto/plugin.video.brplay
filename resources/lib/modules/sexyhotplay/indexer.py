@@ -62,6 +62,7 @@ class indexer:
             art = {
                 'poster': video['poster'],
                 'fanart': video['fanart'],
+                'thumb': video['thumb'],
             }
 
             item.setArt(art)
@@ -89,7 +90,7 @@ class indexer:
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
-        control.content(syshandle, 'movies')
+        control.content(syshandle, 'videos')
         control.directory(syshandle, cacheToDisc=False)
 
     def channel_directory(self, items):

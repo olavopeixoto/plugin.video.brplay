@@ -32,11 +32,13 @@ def get_live_channels():
     today = datetime.datetime.utcnow() + datetime.timedelta(hours=(utc_timezone))
     today_string = datetime.datetime.strftime(today, '%Y-%m-%d')
 
+    now = time.time()
+
     url = 'http://www.futuraplay.org/api/programacao/%s/' % today_string
 
     response = cache.get(client.request, 1, url)
 
-    programs = [slot for slot in response['exibicoes'] if util.strptime_workaround(slot['dia'], '%d/%m/%Y %H:%M') < today]
+    programs = [slot for slot in response['exibicoes'] if slot['timestamp'] <= now]
 
     if programs and len(programs) > 0:
         program = programs[-1]
@@ -67,16 +69,18 @@ def get_live_channels():
             'anonymous': True
         }]
 
-    program_datetime = util.strptime_workaround(program['dia'], '%d/%m/%Y %H:%M') - datetime.timedelta(hours=(utc_timezone)) + util.get_utc_delta()
+    # program_datetime = util.strptime_workaround(program['dia'], '%d/%m/%Y %H:%M') - datetime.timedelta(hours=(utc_timezone)) + util.get_utc_delta()
+    time_tuple = time.localtime(program['timestamp'])
+    program_datetime = datetime.datetime(*time_tuple[0:6])
 
-    start_time = util.strptime_workaround(program['hora'], '%H:%M') - datetime.timedelta(hours=(utc_timezone))
-    end_time = util.strptime_workaround(program['fim'], '%H:%M:%S') - datetime.timedelta(hours=(utc_timezone))
+    start_time = program_datetime
+    end_time = program_datetime + datetime.timedelta(minutes=program['duracao'])
 
     return [{
         'slug': 'futura',
-        'name': '[B]Futura[/B] ' + '[I] - ' + program['subtitulo'] + '[/I]',
-        'title': program['subtitulo'], #program['titulo'] if program['titulo'] != program['titulo_serie'] else None,
-        "subtitle": program['subtitulo'] if program['subtitulo'] != program['titulo'] else None,
+        'name': '[B]Futura[/B] ' + '[I] - ' + program['titulo_serie'] + '[/I] - ' + program['titulo_episodio'],
+        'title': program['titulo_serie'], #program['titulo'] if program['titulo'] != program['titulo_serie'] else None,
+        "subtitle": program['titulo_episodio'] if program['titulo_episodio'] != program['titulo_serie'] else None,
         "plot": program['sinopse'],
         'tvshowtitle': program['titulo_serie'],
         'sorttitle': 'Futura',
@@ -87,7 +91,7 @@ def get_live_channels():
         'playable': 'true',
         'id': get_live_id(),
         'channel_id': 1985,
-        'live': True if program['ao_vivo'] is True or program['ao_vivo'] == 'true' else False,
+        'live': False,
         "mediatype": 'episode',
         'livefeed': 'false', # use vod player
         'logo': CLEAR_LOGO_COLOR,
