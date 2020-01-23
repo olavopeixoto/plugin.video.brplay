@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.31" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.32" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.beautifulsoup" version="3.2.1"/>
@@ -46,6 +46,7 @@
 			- Added support for custom GloboPlay affiliate using latidute and longitude settings
 			- Fix for Futura Live Channel
 			- Fix PFC Live games
+			- Fix issue with UFC vod videos
         </news>
 	</extension>
 </addon>

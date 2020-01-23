@@ -141,14 +141,15 @@ def get_previous_events_videos(slug):
             if card in event['cards'] and event['cards'][card] and 'lutas' in event['cards'][card] and event['cards'][card]['lutas']:
                 for luta in event['cards'][card]['lutas']:
                     video = luta['video']
+                    if not video:
+                        continue
                     videos.append({
                         'title': video['titulo'],
                         'id': video['video_id'],
                         'thumb': video['url_thumbnail'],
                         'fanart': video['url_thumbnail'],
                         'plot': video['descricao'],
-                        'duration': sum(int(x) * 60 ** i for i, x in
-                                enumerate(reversed(video['duracao'].split(':')))) if video['duracao'] else 0
+                        'duration': sum(int(x) * 60 ** i for i, x in enumerate(reversed(video['duracao'].split(':')))) if video['duracao'] else 0
                     })
 
         return videos
