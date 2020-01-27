@@ -61,7 +61,7 @@ class Vod:
         if control.is_globoplay_available():
             channels += globoplay.Indexer().get_vod()
 
-        channels += futuraplay.get_channels()
+        # channels += futuraplay.get_channels()
 
         channels = sorted(channels, key=lambda k: k['name'])
 
@@ -811,7 +811,7 @@ class Vod:
 
             item.setArt(art)
             item.setProperty('IsPlayable', 'true' if is_playable else 'false')
-            item.setInfo(type='video', infoLabels = meta)
+            item.setInfo(type='video', infoLabels=meta)
 
             # if is_playable:
             #     item.setMimeType("application/vnd.apple.mpegurl")

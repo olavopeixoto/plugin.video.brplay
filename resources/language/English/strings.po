@@ -308,6 +308,14 @@ msgctxt "#33403"
 msgid "Ignore Channel Authorization"
 msgstr ""
 
+msgctxt "#33404"
+msgid "Show BBB channels"
+msgstr ""
+
+msgctxt "#33405"
+msgid "Show PFC Games"
+msgstr ""
+
 msgctxt "#33501"
 msgid "Clear Cache"
 msgstr ""

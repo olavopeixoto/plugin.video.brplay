@@ -9,7 +9,8 @@
 		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-1,false)" enable="eq(-1,false)"/>
 		<setting id="globosat_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,false)"/>
 		<setting id="globosat_geofence" type="select" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" enable="eq(-4,true)"/>
-
+		<setting id="show_bbb" type="bool" label="33404" default="true" visible="eq(-5,true)" />
+		<setting id="show_pfc_games" type="bool" label="33405" default="true" visible="eq(-6,true)" />
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
 		<!-- 31109 = Password -->

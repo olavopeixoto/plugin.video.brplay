@@ -294,11 +294,11 @@ msgstr "Redirect"
 
 msgctxt "#33301"
 msgid "Show Full Videos Only"
-msgstr "Mostrar apenas vídeos na íntegra"
+msgstr "Exibir apenas vídeos na íntegra"
 
 msgctxt "#33401"
 msgid "Show Adult Content"
-msgstr "Mostrar conteúdo adulto"
+msgstr "Exibir conteúdo adulto"
 
 msgctxt "#33402"
 msgid "Use Pagination"
@@ -307,6 +307,14 @@ msgstr "Usar Paginação"
 msgctxt "#33403"
 msgid "Ignore Channel Authorization"
 msgstr "Ignorar Autorização de Canais"
+
+msgctxt "#33404"
+msgid "Show BBB channels"
+msgstr "Exibir canais do BBB"
+
+msgctxt "#33405"
+msgid "Show PFC Games"
+msgstr "Exibir jogos PFC"
 
 msgctxt "#33501"
 msgid "Clear Cache"

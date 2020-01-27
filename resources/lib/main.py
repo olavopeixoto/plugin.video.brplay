@@ -278,10 +278,6 @@ class Main:
 
             elif action == 'playvod' and provider == 'globoplay':
                 from resources.lib.modules.globoplay import player
-                player.Player().play_stream(id_globo_videos, meta)
-
-            elif action == 'playvod' and provider == 'globoplay':
-                from resources.lib.modules.globoplay import player
                 player.Player().play_stream(id_globo_videos, meta, children_id)
 
             elif action == 'open4k' and provider == 'globoplay':

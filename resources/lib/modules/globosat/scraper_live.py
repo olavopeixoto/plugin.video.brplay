@@ -402,9 +402,9 @@ def get_premiere_live_games():
     page = 1
     has_more = True
     while has_more:
-        result = client.request(PREMIERE_MATCHES_JSON + str(page), headers=headers)
+        result = client.request(PREMIERE_MATCHES_JSON + str(page), headers=headers, error=True)
         all_games += result['results']
-        has_more = result['pagination']['has_next']
+        has_more = result['pagination']['has_next'] or not result or 'pagination' not in result or 'has_next' not in result['pagination']
         if has_more:
             page = page + 1
 
@@ -549,7 +549,7 @@ def __get_game_data(game, meta, offline):
 
     # plot = game['championship'] + u': ' + game['home']['name'] + u' x ' + game['away']['name'] + u' (' + game['stadium'] + u')' + u'. ' + date_string
     label = game['home']['name'] + u' x ' + game['away']['name']
-    media_desc = '\n' + game['medias'][0]['description'] if 'medias' in game and game['medias'] and len(game['medias']) > 0 else ''
+    media_desc = '\n' + game['medias'][0]['description'] if 'medias' in game and game['medias'] and len(game['medias']) > 0 and game['medias'][0]['description'] else ''
     plot = game['phase'] + u' d' + get_artigo(game['championship']) + u' ' + game['championship'] + u'. Disputado n' + get_artigo(game['stadium']) + u' ' + game['stadium'] + u'. ' + date_string + media_desc
 
     name = ((date_string + u' - ') if offline else u'') + label if not control.isFTV else label

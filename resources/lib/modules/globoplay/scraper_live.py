@@ -31,14 +31,14 @@ def get_live_channels():
 
     affiliates = control.get_affiliates_by_id(int(affiliate_temp))
 
+    live = []
+
     config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
 
     # multicams = config['multicamLabel']
     multicam = config['growth']['menu'] if 'growth' in config and 'menu' in config['growth'] and 'is_enabled' in config['growth']['menu'] and config['growth']['menu']['is_enabled'] else None
 
-    live = []
-
-    if multicam:
+    if multicam and control.setting('show_multicam') == 'true':
         title = multicam['label_item']
         live.append({
             'slug': 'multicam',
