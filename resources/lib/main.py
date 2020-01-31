@@ -103,6 +103,10 @@ class Main:
 
             elif action == 'search':
                 from resources.lib.indexers import navigator
+                print 'SEARCH -->'
+                print q
+                print 'PAGE -->'
+                print page
                 navigator.navigator().search(q, page)
 
             elif action == 'featured':

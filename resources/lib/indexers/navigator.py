@@ -45,18 +45,18 @@ class navigator:
         control.refresh()
 
     def searchMenu(self):
-        control.idle()
 
         t = control.lang(32010).encode('utf-8')
-        k = control.keyboard('', t); k.doModal()
-        q = k.getText() if k.isConfirmed() else None
+        k = control.keyboard('', t)
+        k.doModal()
+        q = k.getText()
 
-        if q is None or q == '': return
+        if not k.isConfirmed():
+            return
 
-        url = '%s?action=search&q=%s&page=1' % (sys.argv[0], urllib.quote_plus(q))
-        control.execute('Container.Update(%s)' % url)
+        self.search(q)
 
-    def search(self, query, page):
+    def search(self, query, page=1):
         vod.Vod().search(query, page)
 
     def clear_cache(self):

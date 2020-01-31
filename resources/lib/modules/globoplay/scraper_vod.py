@@ -34,6 +34,8 @@ GLOBOPLAY_PROGRAM_INFO = GLOBOPLAY_URL + '/v1/programs/%s/info?api_key=' + GLOBO
 
 GLOBOPLAY_CONFIGURATION = GLOBOPLAY_URL + '/v1/configurations?api_key=' + GLOBOPLAY_APIKEY
 
+GLOBOPLAY_PROGRAM_EPISODES = 'https://api.globoplay.com.br/v1/programs/{program_id}/episodes?api_key=' + GLOBOPLAY_APIKEY
+
 THUMB_URL = 'http://s01.video.glbimg.com/x720/%s.jpg'
 
 
@@ -445,7 +447,7 @@ def search(term, page=1):
 
     videos = []
     headers = {'Accept-Encoding': 'gzip'}
-    data = client.request(GLOBOPLAY_SEARCH % (page, term), headers=headers)
+    data = client.request(GLOBOPLAY_SEARCH % (page, urllib.quote_plus(term)), headers=headers)
 
     if not data:
         return [], None, 0
@@ -453,10 +455,28 @@ def search(term, page=1):
     total = data['total']
     next_page = page + 1 if data['has_next'] else None
 
-    for item in data['videos']:
+    for item in data['programs']:
         video = {
             'id': item['id'],
-            'label': 'Globo - ' + item['title'],
+            'label': 'Globo - Programa - ' + item['name'],
+            'title': item['name'],
+            'plot': 'Programa: ' + item['name'],
+            'thumb': item['thumb'],
+            'fanart': GLOBO_FANART,
+            'mediatype': 'tvshow',
+            'IsPlayable': False,
+            'brplayprovider': 'globoplay'
+        }
+
+        videos.append(video)
+
+    for item in data['videos']:
+        label = 'Globo - ' + item['title']
+        if item['full_episode'] and item['kind'] == 'episode':
+            label = label + ' - ' + item['description']
+        video = {
+            'id': item['id'],
+            'label': label,
             'title': item['title'],
             'plot': item['description'],
             'duration': sum(int(x) * 60 ** i for i, x in
@@ -569,3 +589,14 @@ def __get_program_info(id):
                 'fanart': assets['tvos_background_4k'] if control.is_4k_images_enabled and 'tvos_background_4k' in assets else assets['background_tv'],
                 'brplayprovider': 'globoplay'
             }
+
+
+def get_program_episodes(program_id):
+
+    headers = {'Accept-Encoding': 'gzip'}
+    response = client.request(GLOBOPLAY_PROGRAM_EPISODES.format(program_id=int(program_id)), headers=headers)
+
+    if not response or 'episodes' not in response:
+        return None
+
+    return response

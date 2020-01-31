@@ -268,7 +268,7 @@ def search(term, page=1):
 
     videos = []
     headers = {'Accept-Encoding': 'gzip'}
-    data = client.request(GLOBOSAT_SEARCH % (page, term), headers=headers)
+    data = client.request(GLOBOSAT_SEARCH % (page, urllib.quote_plus(term)), headers=headers)
     total = data['total']
     next_page = page + 1 if len(data['videos']) < total else None
 
@@ -403,11 +403,11 @@ def get_track_list(id):
         results += track_list['results']
 
     for item in results:
-
         media = item['media']
         if media:
             video = {
                 'id': item['id_globo_videos'],
+                'id_globo_videos': item['id_globo_videos'],
                 'label': media['channel']['title'] + ' - ' + media['title'],
                 'title': media['title'],
                 'tvshowtitle': media['program']['title'] if 'program' in media and media['program'] else None,
@@ -430,6 +430,7 @@ def get_track_list(id):
             program = item['program']
             video = {
                 'id': item['id_globo_videos'],
+                'id_globo_videos': item['id_globo_videos'],
                 'label': program['title'],
                 'title': program['title'],
                 'tvshowtitle': program['title'],
@@ -637,12 +638,16 @@ def get_watch_history(page=1):
     results = sorted(results, key=lambda x: x['watched_date'], reverse=True)
 
     for item in results:
+        channel_title = item['channel']['title'] or ''
+        program_title = item['program']['title'] if 'program' in item and item['program'] else ''
+        title = item['title'] or 'No Title'
+        label = channel_title + (' - ' + program_title) + ' - ' + title
         video = {
             'id': item['id_globo_videos'],
-            'label': item['channel']['title'] + (' - ' + item['program']['title'] if 'program' in item and item['program'] else '') + ' - ' + item['title'],
+            'label': label,
             'title': item['title'],
             'tvshowtitle': item['program']['title'] if 'program' in item and item['program'] else item['title'],
-            'studio': item['channel']['title'],
+            'studio': channel_title,
             'plot': item['description'],
             'tagline': None,
             'duration': float(item['duration_in_milliseconds']) / 1000.0,

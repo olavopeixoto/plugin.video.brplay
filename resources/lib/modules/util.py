@@ -235,3 +235,11 @@ def add_url_parameters(url, params):
     url_parts[4] = urllib.urlencode(query)
 
     return urlparse.urlunparse(url_parts)
+
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

@@ -15,6 +15,7 @@ from resources.lib.modules.globosat import scraper_combate
 from resources.lib.modules.futuraplay import scraper_vod as scraper_futura
 from resources.lib.modules import cache
 from resources.lib.modules import workers
+from resources.lib.modules import util
 
 GLOBO_FANART = scraper_vod.GLOBO_FANART
 
@@ -287,6 +288,10 @@ class Vod:
         self.episodes_directory(episodes, program_id, nextpage, total_pages, days=days, poster=poster, provider=provider, fanart=fanart)
 
     def get_seasons_by_program(self, id_globo_videos):
+        if not util.is_number(id_globo_videos):
+            control.infoDialog('[%s] %s' % (self.__class__.__name__, 'NO VIDEO ID'), 'ERROR')
+            return
+
         card = cache.get(globosat.Indexer().get_seasons_by_program, 1, id_globo_videos)
 
         if 'seasons' in card and card['seasons'] and len(card['seasons']) > 0:
@@ -408,11 +413,13 @@ class Vod:
                 'id': result['id'],
                 'title': result['title'],
                 'plot': result['plot'],
-                'duration': result['duration'],
                 'thumb': result['thumb'],
                 'fanart': result['fanart'],
-                'mediatype': 'episode'
+                'mediatype': result['mediatype']
             }
+            if 'duration' in result:
+                meta.update({'duration': result['duration']})
+
             meta.update({'mediatype': 'video'})
             meta.update({'overlay': 6})
             meta.update({'title': label})
@@ -425,8 +432,6 @@ class Vod:
 
             provider = result['brplayprovider'] if 'brplayprovider' in result else 'globoplay'
 
-            url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, provider, result['id'], sysmeta)
-
             item = control.item(label=label)
 
             fanart = meta['fanart'] if 'fanart' in meta else GLOBO_FANART
@@ -434,6 +439,23 @@ class Vod:
             clearlogo = meta['clearlogo'] if 'clearlogo' in meta else None
 
             art = {'thumb': result['thumb'], 'fanart': fanart, 'clearlogo': clearlogo}
+
+            isFolder = False
+
+            if 'IsPlayable' not in result or result['IsPlayable']:
+                url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, provider, result['id'], sysmeta)
+                item.setProperty('IsPlayable', "true")
+                isFolder = False
+            else:
+                item.setProperty('IsPlayable', "false")
+                isFolder = True
+
+                is_bingewatch = result['mediatype'] == 'tvshow'
+
+                if result['brplayprovider'] == 'globoplay':
+                    url = '%s?action=openvideos&provider=%s&program_id=%s&id_globo_videos=%s&poster=%s&bingewatch=%s&fanart=%s' % (sysaddon, result['brplayprovider'], result['id'], result['id'], result['thumb'], is_bingewatch, fanart)
+                else:
+                    url = '%s?action=openvideos&provider=%s&id_globo_videos=%s' % (sysaddon, result['brplayprovider'], result['id'])
 
             item.setProperty('Fanart_Image', fanart)
 
@@ -443,7 +465,6 @@ class Vod:
                 item.setProperty('totaltime', str(duration))
 
             item.setArt(art)
-            item.setProperty('IsPlayable', "true")
             item.setInfo(type='video', infoLabels=meta)
 
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
@@ -451,7 +472,7 @@ class Vod:
 
             # item.setMimeType("application/vnd.apple.mpegurl")
 
-            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=False)
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=isFolder)
 
         # if next_page:
         # label = 'Next Page (%s/%s)' % (nextpage, total_pages)
