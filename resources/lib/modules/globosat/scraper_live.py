@@ -556,10 +556,10 @@ def __get_game_data(game, meta, offline):
     meta.update({
         'name': name,
         'label2': label,
-        'playable': 'true' if 'medias' in game and game['medias'] and len(game['medias']) > 0 else 'false',
+        'playable': 'true' if 'medias' in game and game['medias'] and len(game['medias']) > 0 and 'id' in game['medias'][0] else 'false',
         'plot': game['stadium'] if control.isFTV else plot,
         'plotoutline': date_string,
-        'id': game['medias'][0]['id'],
+        'id': game['medias'][0]['id'] if game['medias'] and len(game['medias']) > 0 and 'id' in game['medias'][0] else None,
         'logo': game['home']['logo_60x60_url'],
         'logo2': game['away']['logo_60x60_url'],
         'initials1': game['home']['abbreviation'],
