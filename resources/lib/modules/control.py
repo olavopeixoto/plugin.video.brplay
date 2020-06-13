@@ -185,7 +185,7 @@ is_4k_images_enabled =  xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'tru
 
 log_enabled = setting('enable_log') == 'true'
 
-disable_inputstream_adaptive = setting("disable_inputstream_adaptive") == 'true'
+enable_inputstream_adaptive = setting("enable_inputstream_adaptive") == 'true'
 
 
 def get_current_brasilia_utc_offset():
@@ -228,9 +228,9 @@ def get_inputstream_addon():
 
 
 def is_inputstream_available():
-    global disable_inputstream_adaptive
+    global enable_inputstream_adaptive
 
-    if disable_inputstream_adaptive:
+    if not enable_inputstream_adaptive:
         return False
 
     global __inputstream_addon_available

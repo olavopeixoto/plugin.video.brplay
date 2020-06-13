@@ -95,7 +95,7 @@
 
 		<setting type="lsep" label="Advanced" visible="System.HasAddon(inputstream.adaptive)"></setting>
 
-		<setting id="disable_inputstream_adaptive" type="bool" label="Disable InputStream.Adaptive" default="true" visible="System.HasAddon(inputstream.adaptive)"/>
+		<setting id="enable_inputstream_adaptive" type="bool" label="Enable InputStream.Adaptive" default="false" visible="System.HasAddon(inputstream.adaptive)"/>
 		<setting id="prefer_smoothstreaming" type="bool" label="Prefer SmoothStreaming for DRM" default="false" visible="false" />
 		<setting id="prefer_playready" type="bool" label="Prefer PlayReady for DRM" default="false" visible="false"/>
 		<setting id="prefer_dash" type="bool" label="Prefer Dash over HLS" default="false" visible="System.HasAddon(inputstream.adaptive)+eq(-3,false)" />
