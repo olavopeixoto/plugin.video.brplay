@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.40" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.41" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -51,6 +51,7 @@
 			- Fix search engine
 			- Fix for sexyhot and globosat
 			- New Content Provider: Oi Play Support (Live Channels only)
+			- General compatibility fixes
         </news>
 	</extension>
 </addon>

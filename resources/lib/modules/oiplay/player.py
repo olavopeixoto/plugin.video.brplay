@@ -11,7 +11,7 @@ from private_data import get_password
 from private_data import get_device_id
 import resources.lib.modules.control as control
 from resources.lib.modules import hlshelper
-import requests
+from resources.lib.modules import client
 import xbmc
 
 
@@ -194,13 +194,15 @@ class Player(xbmc.Player):
             'Authorization': 'Bearer ' + token
         }
 
-        print 'OIPLAY GET ' + url
-        print headers
+        print('OIPLAY GET ' + url)
+        print(headers)
 
         try:
-            individualize = json.loads(requests.get(url, headers=headers).content)
+            individualize = client.request(url, headers=headers)
 
-            print individualize
+            print(individualize)
+
+            print(individualize['individualization']['url'])
 
             return individualize
         except:
@@ -209,11 +211,11 @@ class Player(xbmc.Player):
 
             headers['Authorization'] = 'Bearer ' + gettoken(account, password, force_new=True)
 
-            print 'OIPLAY GET ' + url
-            print headers
+            print('OIPLAY GET ' + url)
+            print(headers)
 
-            individualize = json.loads(requests.get(url, headers=headers).content)
+            individualize = client.request(url, headers=headers)
 
-            print individualize
+            print(individualize)
 
             return individualize

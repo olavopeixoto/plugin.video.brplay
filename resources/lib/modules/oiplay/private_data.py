@@ -1,19 +1,13 @@
 import uuid
 import resources.lib.modules.control as control
 
-try:
-    import dummy
-    IS_TEST = not control.isKodi
-except:
-    IS_TEST = False
-
 
 def get_user():
-    return control.setting('oiplay_account') if not IS_TEST else dummy.user
+    return control.setting('oiplay_account')
 
 
 def get_password():
-    return control.setting('oiplay_password') if not IS_TEST else dummy.password
+    return control.setting('oiplay_password')
 
 
 def get_device_id():

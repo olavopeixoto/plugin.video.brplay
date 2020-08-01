@@ -1,4 +1,4 @@
-import requests
+from resources.lib.modules import client
 from resources.lib.modules import workers
 from resources.lib.modules import util
 import datetime
@@ -6,7 +6,7 @@ import datetime
 
 def get_live_channels():
     url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/lists/651acd5c-236d-47d1-9e57-584a233ab76a?limit=200&orderby=titleAsc&page=1&useragent=androidtv'
-    response = requests.get(url).json()
+    response = client.request(url)
 
     channels = []
 
@@ -24,7 +24,8 @@ def __merge_channel_data(channel, result):
 
 def get_channel_epg_now(channel):
     url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/epg/{channel}/beforenowandnext?beforeCount=0&nextCount=0&includeCurrentProgram=true'.format(channel=channel)
-    response = requests.get(url).json()
+    response = client.request(url)
+
     now = response['schedules'][0]
     program = now['program']
 
@@ -42,7 +43,7 @@ def get_channel_epg_now(channel):
 
     cast = [c['name'] for c in program['castMembers']]
 
-    date = datetime.datetime.strptime(now['startTimeUtc'], '%Y-%m-%dT%H:%M:%SZ') + util.get_utc_delta()
+    date = util.strptime(now['startTimeUtc'], '%Y-%m-%dT%H:%M:%SZ') + util.get_utc_delta()
 
     return {
         'slug': response['callLetter'],
@@ -80,5 +81,5 @@ def get_epg(start, end, channel_map):
     start_time = datetime.datetime.strftime(start, '%Y-%m-%dT%H:%M:%SZ')
     end_time = datetime.datetime.strftime(end, '%Y-%m-%dT%H:%M:%SZ')
     url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/epg?starttime={starttime}&endtime={endtime}&liveSubscriberGroup={channelmap}'.format(starttime=start_time, endtime=end_time, channelmap=channel_map)
-    epg = requests.get(url)
+    epg = client.request(url)
     return epg

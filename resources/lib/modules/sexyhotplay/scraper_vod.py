@@ -48,7 +48,7 @@ def get_videos(page=1):
     videos = []
 
     for video in result['data']['genericOffer']['items']['resources']:
-        date = datetime.datetime.strptime(video['exhibitedAt'], '%Y-%m-%dT%H:%M:%SZ') + util.get_utc_delta()
+        date = util.strptime(video['exhibitedAt'], '%Y-%m-%dT%H:%M:%SZ') + util.get_utc_delta()
         videos.append({
             'id_sexyhot': video['id'],
             'mediatype': 'movie' if video['kind'] == 'film' else 'episode' if video['kind'] in ['serie', 'episode'] else 'video',

@@ -7,6 +7,7 @@ import urlparse
 from json import JSONEncoder
 import pickle
 import resources.lib.modules.control as control
+from resources.lib.modules import client
 
 
 ACCESS_TOKEN_URL = 'https://apim.oi.net.br/connect/oauth2/token_endpoint/access_token'
@@ -24,20 +25,12 @@ def get_default_profile(account, deviceid, token):
     return default_profile
 
 
-def get_channel_map(account, deviceid, token):
-
-    response = get_account_details(account, deviceid, token)
-
-    return response['liveOTTChannelMap']
-
-
 def get_account_details(account, deviceid, token):
     details = {
-        'oiplay_default_profile': control.setting('oiplay_default_profile'),
-        'liveOTTChannelMap': control.setting('oiplay_liveOTTChannelMap')
+        'oiplay_default_profile': control.setting('oiplay_default_profile')
     }
 
-    if details['oiplay_default_profile'] and details['liveOTTChannelMap']:
+    if details['oiplay_default_profile']:
         print ('ACCOUNT DETAILS FROM CACHE: ' + json.dumps(details))
         return details
 
@@ -48,8 +41,7 @@ def get_account_details(account, deviceid, token):
         'Authorization': 'Bearer ' + token
     }
     url = PROFILES_URL.format(account=account, deviceid=deviceid)
-    print('GET ' + url)
-    response = requests.get(url, headers=headers).json()
+    response = client.request(url, headers=headers)
 
     if 'upmProfiles' not in response:
         print(response)
@@ -65,7 +57,6 @@ def get_account_details(account, deviceid, token):
     response['oiplay_default_profile'] = default_profile
 
     control.setSetting('oiplay_default_profile', str(default_profile))
-    control.setSetting('oiplay_liveOTTChannelMap', response['liveOTTChannelMap'])
 
     print ('ACCOUNT DETAILS FROM URL: ' + json.dumps(response))
 
@@ -123,7 +114,7 @@ def __refresh_token(refresh_token):
         'User-Agent': 'OiPlay-Store/5.1.1 (iPhone; iOS 13.3.1; Scale/3.00)'
     }
 
-    response = json.loads(requests.post(ACCESS_TOKEN_URL, headers=headers, data=body).content)
+    response = client.request(ACCESS_TOKEN_URL, headers=headers, post=body)
 
     if not response or 'access_token' not in response:
         return False, None

@@ -81,15 +81,14 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
 
             handlers += [NoRedirection]
 
-            opener = urllib2.build_opener(NoRedirection)
-            opener = urllib2.install_opener(opener)
-
             try: del headers['Referer']
             except: pass
 
         if handlers:
             opener = urllib2.build_opener(*handlers)
-            opener = urllib2.install_opener(opener)
+            urllib2.install_opener(opener)
+        else:
+            urllib2.install_opener(None)
 
         request = urllib2.Request(url, data=post, headers=headers)
 
