@@ -6,7 +6,7 @@ artPath = control.artPath()
 NEXT_ICON = os.path.join(control.artPath(), 'next.png')
 
 
-class indexer:
+class Indexer:
     def __init__(self):
         pass
 
@@ -14,7 +14,7 @@ class indexer:
 
         import scraper_live as scraper
 
-        live = scraper.get_live_channels()
+        live = scraper.get_broadcast()
 
         return live
 

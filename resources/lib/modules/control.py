@@ -167,6 +167,8 @@ isJarvis = infoLabel("System.BuildVersion").startswith("16.")
 
 isKrypton = infoLabel("System.BuildVersion").startswith("17.")
 
+isKodi = True if infoLabel("System.BuildVersion") and len(infoLabel("System.BuildVersion")) > 0 else False
+
 isFTV = skin.lower().startswith('skin.ftv')
 
 cookieFile = os.path.join(tempPath, 'cookies.dat')
@@ -261,6 +263,13 @@ def is_globoplay_available():
     password = setting('globoplay_password')
 
     return username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_oiplay_available():
+    username = setting('oiplay_account')
+    password = setting('oiplay_password')
+
+    return setting('oiplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
 
 
 def getKodiVersion():
@@ -445,6 +454,10 @@ def clear_credentials():
     setSetting("sexyhot_credentials", None)
     setSetting("globosat_credentials", None)
     setSetting("globoplay_credentials", None)
+
+
+def clear_globosat_credentials():
+    setSetting("globosat_credentials", None)
 
 
 def log(msg):

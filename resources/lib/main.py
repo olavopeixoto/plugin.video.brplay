@@ -242,18 +242,11 @@ class Main:
 
             elif action == 'openchannel' and provider == 'globoplay':
                 from resources.lib.indexers import vod
-                if slug == 'futura':
-                    vod.Vod().get_channel_categories(slug=slug)
-                else:
-                    vod.Vod().get_channel_categories()
+                vod.Vod().get_channel_categories()
 
             elif action == 'openextra' and provider == 'globoplay':
                 from resources.lib.indexers import vod
                 vod.Vod().get_videos_by_category(category, int(page or 1), poster)
-
-            elif action == 'opencategory' and provider == 'futura':
-                from resources.lib.indexers import vod
-                vod.Vod().open_futura_menu(category)
 
             elif action == 'opencategory' and provider == 'globoplay' and subcategory is not None:
                 from resources.lib.indexers import vod
@@ -295,7 +288,7 @@ class Main:
                 from resources.lib.modules.sexyhotplay import indexer
 
                 # indexer.indexer().get_categories()
-                indexer.indexer().get_videos(1)
+                indexer.Indexer().get_videos(1)
 
             elif action == 'getVideos' and provider == 'sexyhot':
                 from resources.lib.modules.sexyhotplay import indexer
@@ -306,6 +299,13 @@ class Main:
                 from resources.lib.modules.sexyhotplay import player
 
                 player.Player().play_vod(id_sexyhot, meta)
+
+
+            ###Oi Play
+
+            elif action == 'playlive' and provider == 'oiplay':
+                from resources.lib.modules.oiplay import player
+                player.Player().playlive(id_globo_videos, meta)
 
         except Exception:
             buggalo.onExceptionRaised()

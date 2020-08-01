@@ -10,9 +10,7 @@ from resources.lib.modules.globoplay import scraper_vod
 from resources.lib.modules.globosat import indexer as globosat
 from resources.lib.modules import control
 from resources.lib.modules.globoplay import indexer as globoplay
-from resources.lib.modules.futuraplay import scraper_vod as futuraplay
 from resources.lib.modules.globosat import scraper_combate
-from resources.lib.modules.futuraplay import scraper_vod as scraper_futura
 from resources.lib.modules import cache
 from resources.lib.modules import workers
 from resources.lib.modules import util
@@ -62,8 +60,6 @@ class Vod:
         if control.is_globoplay_available():
             channels += globoplay.Indexer().get_vod()
 
-        # channels += futuraplay.get_channels()
-
         channels = sorted(channels, key=lambda k: k['name'])
 
         return channels
@@ -76,17 +72,10 @@ class Vod:
         if slug == 'combate':
             categories = cache.get(scraper_combate.get_combate_categories, 1)
             self.category_combate_directory(categories)
-        elif slug == 'futura':
-            categories = cache.get(scraper_futura.get_menu, 1)
-            self.category_futura_directory(categories)
         else:
             categories = globoplay.Indexer().get_channel_categories()
             extras = globoplay.Indexer().get_extra_categories()
             self.category_directory(categories, extras)
-
-    def open_futura_menu(self, category):
-        categories = cache.get(scraper_futura.get_menu, 1, category)
-        self.category_futura_directory(categories)
 
     def get_extras(self):
         from resources.lib.modules.globosat import scraper_vod
@@ -1112,51 +1101,6 @@ class Vod:
             # item.setProperty('Fanart_Image', fanart)
 
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels = meta)
-
-            cm = []
-            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
-            item.addContextMenuItems(cm)
-
-            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
-
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
-
-        control.content(syshandle, 'files')
-        control.directory(syshandle, cacheToDisc=False)
-
-    def category_futura_directory(self, items):
-        if items is None or len(items) == 0: control.idle() ; sys.exit()
-
-        sysaddon = sys.argv[0]
-        syshandle = int(sys.argv[1])
-
-        # 32072 = "Refresh"
-        refreshMenu = control.lang(32072).encode('utf-8')
-
-        for item in items:
-            title = item['title']
-            label = title
-            slug = item['slug'] if 'slug' in item else None
-            meta = {}
-            meta.update({'title': title})
-
-            is_playable = 'IsPlayable' in item and item['IsPlayable'] == 'true'
-            provider = item['brplayprovider'] if 'brplayprovider' in item else None
-
-            if is_playable:
-                url = '%s?action=playvod&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, provider, item['id'], urllib.quote_plus(json.dumps(meta)))
-            else:
-                url = '%s?action=opencategory&provider=%s&category=%s' % (sysaddon, 'futura', urllib.quote_plus(slug))
-
-            item = control.item(label=label)
-
-            # art = {'icon': GLOBO_LOGO, 'thumb': GLOBO_LOGO, 'fanart': fanart}
-            # item.setArt(art)
-
-            # item.setProperty('Fanart_Image', fanart)
-
-            item.setProperty('IsPlayable', "true" if is_playable else 'false')
             item.setInfo(type='video', infoLabels = meta)
 
             cm = []

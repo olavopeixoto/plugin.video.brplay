@@ -13,9 +13,10 @@ class Indexer:
         live = []
 
         threads = [
-            workers.Thread(self.__append_result, scraper.get_basic_live_channels, live),
-            workers.Thread(self.__append_result, scraper.get_combate_live_channels, live),
-            workers.Thread(self.__append_result, scraper.get_premiere_live_24h_channels, live)
+            workers.Thread(self.__append_result, scraper.getAllBroadcasts, live),
+            # workers.Thread(self.__append_result, scraper.get_basic_live_channels, live),
+            # workers.Thread(self.__append_result, scraper.get_combate_live_channels, live),
+            # workers.Thread(self.__append_result, scraper.get_premiere_live_24h_channels, live)
         ]
 
         if control.setting('show_pfc_games') == 'true':
@@ -37,12 +38,13 @@ class Indexer:
         return live
 
     def is_in(self, live, authorized_channels):
+        if 'isFree' in live and live['isFree']:
+            return True
+
         for channel in authorized_channels:
             if str(channel['id']) == str(live['channel_id']):
-                if channel['logo'] and str(channel['id']) in ['2001', '2002']:  # sportv2/sportv3 logo fix hack
-                    live['logo'] = channel['logo']
-                    live['clearlogo'] = channel['logo']
                 return True
+
         return False
 
     def __append_result(self, fn, list, *args):

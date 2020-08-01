@@ -423,3 +423,7 @@ msgstr ""
 msgctxt "#34112"
 msgid "Custom"
 msgstr ""
+
+msgctxt "#34113"
+msgid "Enable Oi Play"
+msgstr ""

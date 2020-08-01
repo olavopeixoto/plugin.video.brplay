@@ -2,6 +2,7 @@
 
 # from resources.lib.modules import control
 from resources.lib.modules import client
+from resources.lib.modules import control
 from resources.lib.modules.globosat import auth_helper
 import urllib
 import requests
@@ -29,7 +30,7 @@ GLOBOSAT_DEL_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&id=%s'
 GLOBOSAT_WATCH_HISTORY = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s&page=%s&per_page=%s'
 
 
-def get_authorized_channels():
+def get_authorized_channels(retry=1):
     token = auth_helper.get_globosat_token()
 
     if not token:
@@ -41,6 +42,14 @@ def get_authorized_channels():
     channels = []
 
     pkgs_response = client.request(channels_url, headers={"Accept-Encoding": "gzip"})
+
+    if not pkgs_response or 'pacotes' not in pkgs_response:
+        if retry > 0:
+            retry = retry - 1
+            control.clear_globosat_credentials()
+            return get_authorized_channels(retry)
+        else:
+            return channels
 
     # control.log("-- PACKAGES: %s" % repr(pkgs_response))
 

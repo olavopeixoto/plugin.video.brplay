@@ -11,8 +11,8 @@ from resources.lib.modules import workers
 from resources.lib.modules.globoplay import indexer as globoplay
 from resources.lib.modules.globoplay import scraper_live as globoplay_live
 from resources.lib.modules.globosat import indexer as globosat
-from resources.lib.modules.futuraplay import scraper_live as futuraplay
-from resources.lib.modules.sexyhotplay import scraper_live as sexyhotplay
+from resources.lib.modules.sexyhotplay import indexer as sexyhotplay
+from resources.lib.modules.oiplay import scraper_live as oiplay
 
 
 class Live:
@@ -31,9 +31,10 @@ class Live:
         if control.is_globosat_available():
             threads.append(workers.Thread(self.append_result, globosat.Indexer().get_live, live))
             if control.show_adult_content:
-                threads.append(workers.Thread(self.append_result, sexyhotplay.get_live_channels, live))
+                threads.append(workers.Thread(self.append_result, sexyhotplay.Indexer().get_live_channels, live))
 
-        threads.append(workers.Thread(self.append_result, futuraplay.get_live_channels, live))
+        if control.is_oiplay_available():
+            threads.append(workers.Thread(self.append_result, oiplay.get_live_channels, live))
 
         [i.start() for i in threads]
         [i.join() for i in threads]
@@ -189,7 +190,7 @@ class Live:
             list_items.append((url, item, isFolder))
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
         control.addItems(syshandle, list_items)

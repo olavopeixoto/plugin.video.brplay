@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, datetime, time
+import os, datetime, time, urllib
 from resources.lib.modules import control
 from resources.lib.modules import client
 from resources.lib.modules import util
@@ -9,7 +9,6 @@ from resources.lib.modules import cache
 from resources.lib.modules import kodi_util
 import re
 import json
-import csv
 
 GLOBOSAT_URL = 'http://globosatplay.globo.com'
 GLOBOSAT_API_URL = 'http://api.vod.globosat.tv/globosatplay'
@@ -22,17 +21,114 @@ PREMIERE_NEXT_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?s
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
 PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
 
+GET_GRAPHQL_ALL_BROADCASTS_VARIABLES = '{{"logoScale":"X42","date":"{date}"}}'
+GET_GRAPHQL_ALL_BROADCASTS = 'https://products-jarvis.globo.com/graphql?operationName=getAllBroadcasts&variables={variables}&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%223ed5d9a9bca84fd2cda18fc0e59a2fb626fb5bbe7205a507af3392e66809528b%22%7D%7D'
+
 GLOBOSAT_TRANSMISSIONS = GLOBOSAT_API_URL + '/transmissions.json?page=%s'
 GLOBOSAT_LIVE_JSON = GLOBOSAT_URL + '/xhr/transmissoes/ao-vivo.json'
-
-#UNIVERSAL CHANNEL
-#https://api.globovideos.com/videos/5497510/playlist
 
 artPath = control.artPath()
 
 COMBATE_LOGO = os.path.join(artPath, 'logo_combate.png')
 PREMIERE_LOGO = os.path.join(artPath, 'logo_premiere.png')
 PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')  # https://s02.video.glbimg.com/x720/2752761.jpg
+
+FANART_URL = 'http://s01.video.glbimg.com/x720/{media_id}.jpg'
+THUMB_URL = 'https://s04.video.glbimg.com/x720/{media_id}.jpg'
+
+SNAPSHOT_URL = 'https://live-thumbs.video.globo.com/{transmission}/snapshot'
+
+THUMBS = {
+    '2024': 'spo424ha',
+    '1996': 'spo124ha',
+    '2001': 'spo224ha',
+    '2002': 'spo324ha',
+    '1987': 'gnews24ha',
+    '1986': 'gnt24ha',
+    '1991': 'msw24ha',
+    '1982': 'viva24ha',
+    '1981': 'maisgsat24ha',
+    '1989': 'gloob24ha',
+    '2046': 'gloobinho24ha',
+    '1992': 'off24ha',
+    '1983': 'bis24ha',
+    '2079': 'mpix24ha',
+    '1984': 'bra24ha',
+    '1997': 'univ24ha',
+    '2000': 'syfy24ha',
+    '2023': 'stduniv24ha'
+}
+
+
+def getAllBroadcasts():
+
+    today_str = datetime.datetime.now().strftime('%Y-%m-%d')
+    variables = GET_GRAPHQL_ALL_BROADCASTS_VARIABLES.format(date=today_str)
+    url = GET_GRAPHQL_ALL_BROADCASTS.format(variables=urllib.quote_plus(variables))
+
+    headers = {
+        'x-tenant-id': 'globosat-play',
+        'x-platform-id': 'web',
+        'x-device-id': 'desktop',
+        'x-client-version': '0.10.0',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36',
+        'accept-encoding': 'gzip'
+    }
+
+    response = client.request(url, headers=headers)
+
+    channels = []
+
+    for broadcast in response['data']['broadcasts']:
+        program = broadcast['epgCurrentSlots'][0]
+
+        live_text = u' (' + control.lang(32004) + u')' if program['liveBroadcast'] else u''
+
+        program_detail = u': ' + program['metadata'] if program['metadata'] else u''
+
+        program_name = program['name'] + program_detail if program['metadata'] and not program['metadata'].startswith(program['name']) else program['metadata'] if program['metadata'] else program['name']
+
+        name = u"[B]" + broadcast['channel']['name'] + u"[/B]" + u'[I] - ' + program_name + u'[/I]' + live_text
+
+        fanart = FANART_URL.format(media_id=broadcast['mediaId'])
+        thumb = SNAPSHOT_URL.format(transmission=THUMBS[str(broadcast['channel']['id'])]) + '/?v=' + str(int(time.time())) if str(broadcast['channel']['id']) in THUMBS else THUMB_URL.format(media_id=broadcast['mediaId'])
+
+        program_date = datetime.datetime.fromtimestamp(program['startTime'])
+        endTime = datetime.datetime.fromtimestamp(program['endTime'])
+        duration = (endTime - program_date).total_seconds()
+
+        program_name = program['name'] + program_detail
+
+        item = {
+            'slug': broadcast['channel']['slug'],
+            'studio': broadcast['channel']['name'],
+            'name': name,
+            'title': program_name,
+            'tvshowtitle': program['name'] if program_name else None,
+            'sorttitle': broadcast['channel']['name'],
+            'logo': broadcast['channel']['logo'],
+            'color': broadcast['channel']['color'],
+            'fanart': fanart,
+            'thumb': thumb,
+            'live': program['liveBroadcast'],
+            'playable': 'true',
+            'plot': program['description'] or '' if not control.isFTV else ' ',
+            'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + datetime.datetime.strftime(program_date + datetime.timedelta(seconds=duration), '%H:%M'),
+            'id': broadcast['mediaId'],
+            'channel_id': broadcast['channel']['id'],
+            'duration': int(duration),
+            'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
+            'brplayprovider': 'globosat',
+            'livefeed': 'true',
+            'clearlogo': broadcast['channel']['logo'],
+            'clearart': None,
+            'banner': None,
+            'isFree': broadcast['media']['availableFor'] == 'ANONYMOUS'
+        }
+
+        channels.append(item)
+
+    return channels
 
 
 def get_basic_live_channels():
@@ -148,6 +244,7 @@ def get_sportv4_live():
                 'plot': None,
                 'duration': None,
             }]
+
 
 def __get_transmissions_page(results, page=1):
     headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
@@ -518,6 +615,10 @@ def get_premiere_live_24h_channels():
     return live
 
 
+def __append_result(fn, list, *args):
+    list += fn(*args)['results']
+
+
 def get_premiere_games(meta={}):
 
     live = []
@@ -526,13 +627,18 @@ def get_premiere_games(meta={}):
     headers = {'Accept-Encoding': 'gzip'}
 
     page = 1
-    has_more = True
-    while has_more:
-        result = client.request(PREMIERE_NEXT_MATCHES_JSON + str(page), headers=headers)
-        live_games += result['results']
-        has_more = result['pagination']['has_next']
-        if has_more:
-            page = page + 1
+    result = client.request(PREMIERE_NEXT_MATCHES_JSON + str(page), headers=headers)
+    live_games += result['results']
+    pages = result['pagination']['pages']
+
+    if pages > 1:
+        threads = []
+        for page in range(2, pages + 1):
+            print ('PFC URL: ' + PREMIERE_NEXT_MATCHES_JSON + str(page))
+            threads.append(workers.Thread(__append_result, client.request, live_games, PREMIERE_NEXT_MATCHES_JSON + str(page), True, True, False, None, None, headers, False, False, None, None, None, '', '30', False))
+
+        [i.start() for i in threads]
+        [i.join() for i in threads]
 
     for game in live_games:
         livemeta = meta.copy()

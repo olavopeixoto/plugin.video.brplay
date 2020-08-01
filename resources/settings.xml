@@ -64,6 +64,13 @@
 		<setting id="show_adult" type="bool" label="33401" default="true" />
 <!--		<setting id="sexy_hot_pagination" type="bool" label="33402" default="true" enable="eq(-1,true)"/>-->
 		<setting type="sep" />
+
+		<setting type="lsep" label="Oi Play"></setting>
+		<setting id="oiplay_available" type="bool" label="34113" default="true" />
+		<setting id="oiplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)"/>
+		<setting id="oiplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)"/>
+
+		<setting type="sep" />
 	</category>
 
 	<category label="33001">

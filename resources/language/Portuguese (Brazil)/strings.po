@@ -423,3 +423,7 @@ msgstr "Longitude"
 msgctxt "#34112"
 msgid "Custom"
 msgstr "Personalizada"
+
+msgctxt "#34113"
+msgid "Enable Oi Play"
+msgstr "Habilitar Oi Play"

@@ -34,14 +34,10 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
         if not proxy is None:
             control.log("proxy: %s" % proxy)
             handlers += [urllib2.ProxyHandler(proxy), urllib2.HTTPHandler]
-            opener = urllib2.build_opener(*handlers)
-            opener = urllib2.install_opener(opener)
 
         if output == 'cookie' or output == 'extended' or output == 'cookiejar' or not close == True:
             cookies = cookielib.LWPCookieJar()
             handlers += [urllib2.HTTPHandler(), urllib2.HTTPSHandler(), urllib2.HTTPCookieProcessor(cookies)]
-            opener = urllib2.build_opener(*handlers)
-            opener = urllib2.install_opener(opener)
 
         try:
             if sys.version_info < (2, 7, 9): raise Exception()
@@ -49,8 +45,6 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
             handlers += [urllib2.HTTPSHandler(context=ssl_context)]
-            opener = urllib2.build_opener(*handlers)
-            opener = urllib2.install_opener(opener)
         except:
             pass
 
@@ -85,11 +79,17 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             class NoRedirection(urllib2.HTTPErrorProcessor):
                 def http_response(self, request, response): return response
 
+            handlers += [NoRedirection]
+
             opener = urllib2.build_opener(NoRedirection)
             opener = urllib2.install_opener(opener)
 
             try: del headers['Referer']
             except: pass
+
+        if handlers:
+            opener = urllib2.build_opener(*handlers)
+            opener = urllib2.install_opener(opener)
 
         request = urllib2.Request(url, data=post, headers=headers)
 

@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.34" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.40" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
-		<import addon="script.module.beautifulsoup" version="3.2.1"/>
 		<import addon="script.module.requests" version="0.13.2"/>
 		<import addon="script.module.buggalo" version="1.1.6"/>
 		<import addon="script.module.pytz" version="2014.2"/>
@@ -23,7 +22,7 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.31
+		<news>0.0.40
 			- Support for 4k HDR content
 			- Support for local programming
 			- Support for Futura Live Channel
@@ -50,6 +49,8 @@
 			- Option to hide PFC games
 			- Option to hide BBB channels
 			- Fix search engine
+			- Fix for sexyhot and globosat
+			- New Content Provider: Oi Play Support (Live Channels only)
         </news>
 	</extension>
 </addon>
