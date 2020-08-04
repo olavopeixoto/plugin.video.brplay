@@ -27,7 +27,6 @@ from resources.lib.modules import workers
 
 
 def request(url, close=True, redirect=True, error=False, proxy=None, post=None, headers=None, mobile=False, XHR=False, limit=None, referer=None, cookie=None, output='', timeout='30', headRequest=False):
-
     try:
         handlers = []
 

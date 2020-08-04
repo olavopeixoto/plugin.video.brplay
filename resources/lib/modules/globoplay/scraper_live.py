@@ -103,7 +103,10 @@ def __get_affiliate_live_channels(affiliate):
         'affiliate': geo_position,
         'brplayprovider': 'globoplay',
         'affiliate_code': code,
-        'logo': None
+        'logo': None,
+        'thumb': live_program['thumb'],
+        'poster': live_program['poster'],
+        'fanart': live_program['fanart']
     }
 
     item.update(program_description)
@@ -111,7 +114,7 @@ def __get_affiliate_live_channels(affiliate):
     item.pop('datetimeutc', None)
 
     title = program_description['title'] if 'title' in program_description else live_program['title']
-    subtitle = program_description['subtitle'] if 'subtitle' in program_description else live_program['title']
+    # subtitle = program_description['subtitle'] if 'subtitle' in program_description else live_program['title']
 
     safe_tvshowtitle = program_description['tvshowtitle'] if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else ''
     safe_subtitle = program_description['subtitle'] if 'subtitle' in program_description and program_description['subtitle'] and not safe_tvshowtitle.startswith(program_description['subtitle']) else ''
@@ -155,13 +158,15 @@ def __get_live_program(affiliate='RJ'):
 
     response = client.request(url, headers=headers)
 
-    if not 'live' in response:
+    if not response or 'live' not in response:
         return None
 
     live = response['live']
 
     return {
         'poster': live['poster'],
+        'thumb': live['poster_safe_area'],
+        'fanart': live['background_image'],
         'program_id': live['program_id'],
         'program_id_epg': live['program_id_epg'],
         'title': live['program_name']
@@ -182,8 +187,11 @@ def get_program_description(program_id_epg, program_id, affiliate='RJ'):
 
 
 def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
+
     control.makeFile(control.dataPath)
     dbcon = database.connect(control.cacheFile)
+
+    response = None
 
     try:
         dbcur = dbcon.cursor()
@@ -203,8 +211,10 @@ def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
         pass
 
     control.log("Fetching FullDaySchedule for %s: %s" % (affiliate, date_str))
+
     r = __get_full_day_schedule(date_str, affiliate)
-    if (r is None or r == []) and not response is None:
+
+    if (r is None or r == []) and response is not None:
         return response
     elif r is None or r == []:
         return []
@@ -225,9 +235,14 @@ def __get_full_day_schedule(today, affiliate='RJ'):
 
     url = "https://api.globoplay.com.br/v1/epg/%s/praca/%s?api_key=%s" % (today, affiliate, GLOBOPLAY_APIKEY)
     headers = {'Accept-Encoding': 'gzip'}
+
     slots = client.request(url, headers=headers)['gradeProgramacao']['slots']
 
     result = []
+
+    if not slots:
+        return result
+
     for index, slot in enumerate(slots):
         cast = None
         castandrole = None
