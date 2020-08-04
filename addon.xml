@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.41" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.42" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -22,36 +22,8 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.40
-			- Support for 4k HDR content
-			- Support for local programming
-			- Support for Futura Live Channel
-			- Suport for BBB (Globosat and GloboPlay)
-			- Suport for Universal Channel Live
-			- Support for Globosat Play Geolocation
-			- Updated Combate scraper logic
-			- Added more Combate content
-			- Globosat Play and Sexyhot Play now use Globo Play credentials (must be associated to the provider in the website)
-			- Support for additional Globo affiliates
-			- update Globoplay epg API
-			- option to set different credentials for Globosat play
-			- option to disable Globosat play
-			- Fix Globosat authentication
-			- Updated Globosat VOD API to work with seasons and episodes
-			- Fix for separated Globoplay x Globosat credentials
-			- Added support for SexyHot live channel
-			- Fixed SexyHot VOD videos
-			- Added support for GloboPlay affiliate based on IP geo location
-			- Added support for custom GloboPlay affiliate using latidute and longitude settings
-			- Fix for Futura Live Channel
-			- Fix PFC Live games
-			- Fix issue with UFC vod videos
-			- Option to hide PFC games
-			- Option to hide BBB channels
-			- Fix search engine
-			- Fix for sexyhot and globosat
-			- New Content Provider: Oi Play Support (Live Channels only)
-			- General compatibility fixes
+		<news>0.0.42
+			- Fix globosat login (single globo login)
         </news>
 	</extension>
 </addon>

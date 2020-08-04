@@ -36,14 +36,13 @@ def get_authorized_channels(retry=1):
     if not token:
         return []
 
-    client_id = "85014160-e953-4ddb-bbce-c8271e4fde74"
-    channels_url = "https://gsatmulti.globo.com/oauth/sso/login/?chave=%s&token=%s" % (client_id, token)
+    channels_url = "https://gsatmulti.globo.com/apis/user/%s/" % token
 
     channels = []
 
     pkgs_response = client.request(channels_url, headers={"Accept-Encoding": "gzip"})
 
-    if not pkgs_response or 'pacotes' not in pkgs_response:
+    if not pkgs_response or 'provider_accounts' not in pkgs_response:
         if retry > 0:
             retry = retry - 1
             control.clear_globosat_credentials()
@@ -53,25 +52,36 @@ def get_authorized_channels(retry=1):
 
     # control.log("-- PACKAGES: %s" % repr(pkgs_response))
 
-    pkgs = pkgs_response['pacotes']
+    pkgs = pkgs_response['provider_accounts']
 
     channel_ids = []
     for pkg in pkgs:
-        for channel in pkg['canais']:
+        for channel in pkg['channels']:
             if channel['id_globo_videos'] not in channel_ids:
                 channel_ids.append(channel['id_globo_videos'])
                 channels.append({
                     "id": channel['id_globo_videos'],
-                    # "channel_id": channel['id_globo_videos'],
-                    "id_cms": channel['id_cms'],
-                    "logo": channel['logo_fundo_claro'],
-                    "name": channel['nome'],
-                    "slug": channel['slug'],
-                    "adult": channel['slug'] == 'sexyhot' or channel['slug'] == 'sexy-hot',
-                    "vod": "vod" in channel['acls'],
-                    "live": "live" in channel['acls']
+                    "name": channel['name'],
+                    "adult": channel['id_globo_videos'] in [2065,2006],
+                    'slug': '',
+                    'logo': '',
+                    'color': '',
                 })
 
+    broadcasts_url = 'https://products-jarvis.globo.com/graphql?query=query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20color%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&operationName=getChannelsList&variables=%7B%22page%22%3A1%2C%22perPage%22%3A200%7D'
+    query_response = client.request(broadcasts_url, headers={"Accept-Encoding": "gzip", "x-tenant-id": "globosat-play"})
+
+    for broadcast in query_response['data']['broadcastChannels']['resources']:
+        channel = next((channel for channel in channels if int(broadcast['id']) == int(channel['id'])), None)
+        if channel:
+            channel.update({
+                'slug': broadcast['slug'],
+                'logo': broadcast['logo'],
+                'color': broadcast['color'],
+                "name": broadcast['name']
+            })
+
+    # result = list(filter(lambda x: 'slug' in x, channels))
     return channels
 
 

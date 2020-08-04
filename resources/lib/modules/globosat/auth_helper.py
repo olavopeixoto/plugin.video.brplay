@@ -1,5 +1,5 @@
 from resources.lib.modules import control
-from resources.lib.modules.globosat.auth import auth as authenticator
+from resources.lib.modules.globoplay.auth import auth as authenticator
 
 
 def get_credentials():
@@ -19,9 +19,10 @@ def get_credentials():
 
 
 def get_globosat_token():
-    return get_credentials()[0]
+    return get_credentials()['GLBID']
 
 
 def get_globosat_cookie(provider_id):
     credentials = get_credentials()
-    return {'WMPTOKEN_%s' % provider_id: credentials[0], 'GLOBO_ID': credentials[1]} if provider_id else {'GLBID': credentials[1]}
+    credentials = credentials['GLBID']
+    return {'WMPTOKEN_%s' % provider_id: credentials, 'GLOBO_ID': credentials} if provider_id else {'GLBID': credentials}

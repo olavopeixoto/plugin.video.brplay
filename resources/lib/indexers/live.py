@@ -39,27 +39,9 @@ class Live:
         [i.start() for i in threads]
         [i.join() for i in threads]
 
-        # live.append({
-        #     'slug': 'bandnews',
-        #     'name': 'Bandnews',
-        #     'title': 'Bandnews',
-        #     'sorttitle': 'Bandnews',
-        #     'logo': os.path.join(control.artPath(), 'logo_bandnews.png'),
-        #     # 'clearlogo': os.path.join(control.artPath(), 'logo_bandnews.png'),
-        #     'color': None,
-        #     'fanart': os.path.join(control.artPath(), 'fanart_bandnews.jpg'),
-        #     'thumb': None,
-        #     'playable': 'true',
-        #     'plot': None,
-        #     'id': -1,
-        #     'channel_id': -1,
-        #     'duration': None,
-        #     'url': 'http://evcv.mm.uol.com.br:1935/band/bandnews/playlist.m3u8'
-        # })
-
-        # live = sorted(live, key=lambda k: k['sorttitle'])
-        # live = sorted(live, key=lambda k: '1' if 'isFolder' in k and k['isFolder'] == 'true' else '0')
-        # live = sorted(live, key=lambda k: k['dateadded'] if 'dateadded' in k else None, reverse=True)
+        live = sorted(live, key=lambda k: k['sorttitle'])
+        live = sorted(live, key=lambda k: '1' if 'isFolder' in k and k['isFolder'] == 'true' else '0')
+        live = sorted(live, key=lambda k: k['dateadded'] if 'dateadded' in k else None, reverse=True)
 
         # shuffle(live)
 
@@ -190,7 +172,7 @@ class Live:
             list_items.append((url, item, isFolder))
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
-        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
+        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
         control.addItems(syshandle, list_items)

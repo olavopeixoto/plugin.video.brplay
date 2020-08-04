@@ -22,8 +22,10 @@ NEXT_ICON = os.path.join(control.artPath(), 'next.png')
 REPLAY_ICON = os.path.join(control.artPath(), 'returning-tvshows.png')
 REPLAY_ICON_POSTER = os.path.join(control.artPath(), 'returning-tvshows-poster.png')
 
-DRM_CHANNELS = ['megapix', 'megapix-2', 'telecine']
-BLACKLIST_CHANNELS = ['multishow-2', 'telecine', 'sexy-hot', 'globonews-2', 'megapix', 'telecine-zone', 'big-brother-brasil-1', 'big-brother-brasil-2']
+# DRM_CHANNELS = ['megapix', 'megapix-2', 'telecine']
+DRM_CHANNELS = [1990, 2079, 1966]
+# BLACKLIST_CHANNELS = ['multishow-2', 'telecine', 'sexy-hot', 'globonews-2', 'megapix', 'telecine-zone', 'big-brother-brasil-1', 'big-brother-brasil-2']
+BLACKLIST_CHANNELS = [2060, 1966, 1966, 2069, 1990, 2013, 2012, 2058, 2002, 2001, 2006]
 
 
 class Vod:
@@ -40,13 +42,13 @@ class Vod:
 
         channels = cache.get(self.__get_vod_channels, 360, table="channels")
 
-        channels = [channel for channel in channels if channel['slug'] not in BLACKLIST_CHANNELS]
+        channels = [channel for channel in channels if channel['id'] not in BLACKLIST_CHANNELS]
 
         if not control.show_adult_content:
             channels = [channel for channel in channels if not channel["adult"]]
 
         if not control.is_inputstream_available():
-            channels = [channel for channel in channels if channel['slug'] not in DRM_CHANNELS]
+            channels = [channel for channel in channels if channel['id'] not in DRM_CHANNELS]
 
         return channels
 

@@ -30,7 +30,7 @@ class Indexer:
 
         if not control.ignore_channel_authorization:
             control.log("Channels Found: %s" % live)
-            authorized_channels = [channel for channel in self.get_authorized_channels() if channel["live"]]
+            authorized_channels = [channel for channel in self.get_authorized_channels()]
             control.log("Authorized Channels: %s" % authorized_channels)
             live = [channel for channel in live if self.is_in(channel, authorized_channels)]
 
@@ -87,10 +87,10 @@ class Indexer:
     def get_vod(self):
         vod = self.get_authorized_channels()
 
-        vod = [channel for channel in vod if channel["vod"] and not channel["slug"].startswith("sportv-")]
+        vod = [channel for channel in vod if not channel['name'].lower().startswith("sportv ")]
 
         for item in vod:
-            item["brplayprovider"] = "globosat" if item['slug'] != 'sexyhot' and item['slug'] != 'sexy-hot' else 'sexyhot'
+            item["brplayprovider"] = "globosat" if item['id'] not in [2065] else 'sexyhot'
 
         return vod
 
