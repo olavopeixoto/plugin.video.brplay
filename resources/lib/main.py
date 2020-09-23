@@ -3,6 +3,7 @@
 import json
 import urlparse
 import buggalo
+import traceback
 
 
 class Main:
@@ -39,9 +40,14 @@ class Main:
 
             provider = params.get('provider')
 
-            metaJson = json.loads(meta) if meta is not None else None
+            try:
+                metaJson = json.loads(meta) if meta is not None else None
+            except:
+                traceback.print_exc()
+                metaJson = {}
+                pass
 
-            isFolder = params.get('isFolder')
+            is_folder = params.get('isFolder')
 
             url = params.get('url')
 
@@ -103,10 +109,10 @@ class Main:
 
             elif action == 'search':
                 from resources.lib.indexers import navigator
-                print 'SEARCH -->'
-                print q
-                print 'PAGE -->'
-                print page
+                print('SEARCH -->')
+                print(q)
+                print('PAGE -->')
+                print(page)
                 navigator.navigator().search(q, page)
 
             elif action == 'featured':
@@ -171,7 +177,7 @@ class Main:
             ###GLOBOSAT PLAY
 
             #PREMIER FC
-            elif action == 'playlive' and provider == 'premierefc':
+            elif action == 'openvideos' and provider == 'premierefc':
                 from resources.lib.indexers import live
                 live.Live().get_subitems_pfc(metaJson)
 
@@ -231,7 +237,7 @@ class Main:
 
             ###GLOBO PLAY
 
-            elif action == 'playlive' and provider == 'multicam' and (isFolder is True or str(isFolder).lower() == 'true'):
+            elif action == 'playlive' and provider == 'multicam' and (is_folder is True or str(is_folder).lower() == 'true'):
                 from resources.lib.indexers import live
                 live.Live().get_subitems_bbb(id_globo_videos)
 

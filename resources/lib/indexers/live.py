@@ -146,16 +146,16 @@ class Live:
 
             item.setProperty('Fanart_Image', fanart)
 
-            if 'hd' not in channel or channel['hd'] == True:
-                video_info = {'aspect': 1.78, 'width': 1280, 'height': 720}
+            if 'hd' not in channel or channel['hd'] is True:
+                video_info = {'aspect': '1.78', 'width': '1280', 'height': '720'}
             else:
-                video_info = {'aspect': 1.78, 'width': 720, 'height': 480}
+                video_info = {'aspect': '1.78', 'width': '720', 'height': '480'}
 
             item.addStreamInfo('video', video_info)
 
             item.addContextMenuItems(cm)
             item.setProperty('IsPlayable', 'false' if isFolder or not isPlayable else 'true')
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             item.setContentLookup(False)
 
@@ -171,9 +171,9 @@ class Live:
 
             list_items.append((url, item, isFolder))
 
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
-        # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATEADDED)
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_VIDEO_SORT_TITLE)
+        control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 
         control.addItems(syshandle, list_items)
         control.category(handle=syshandle, category=control.lang(32001).encode('utf-8'))

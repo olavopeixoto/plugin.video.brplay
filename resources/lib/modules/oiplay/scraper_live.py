@@ -30,6 +30,8 @@ def get_channel_epg_now(channel):
     program = now['program']
 
     title = program['seriesTitle']
+    series = u" (S" + str(program['seasonNumber']) + u':E' + str(program['episodeNumber']) + u")" if program['programType'] == 'Series' else u''
+    episode_title = program['title'] + series if 'title' in program and program['title'] != title else ''
     studio = response['title']
 
     thumb = None
@@ -47,9 +49,9 @@ def get_channel_epg_now(channel):
 
     return {
         'slug': response['callLetter'],
-        'name': "[B]" + studio + "[/B][I] - " + title + "[/I]",
+        'name': u"[B]" + studio + u"[/B][I] - " + title + (u': ' + episode_title if episode_title else u'') + u"[/I]",
         'studio': studio,
-        'title': title,
+        'title': episode_title,
         'tvshowtitle': title,
         'sorttitle': studio,
         'thumb': thumb,
@@ -73,6 +75,8 @@ def get_channel_epg_now(channel):
         'genre': program['genres'],
         'rating': program['rating'],
         'year': program['releaseYear'],
+        'episode': program['episodeNumber'] if program['episodeNumber'] else None,
+        'season': program['seasonNumber'] if program['seasonNumber'] else None,
         "mediatype": 'episode' if program['episodeNumber'] else 'video'
     }
 

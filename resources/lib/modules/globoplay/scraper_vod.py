@@ -9,6 +9,7 @@ from resources.lib.modules import workers
 from resources.lib.modules import cache
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
+GLOBO_LOGO_WHITE = 'https://s2.glbimg.com/1D3_vIjzzFrXkfMVFmEcMqq7gQk=/285x285/https://s2.glbimg.com/nItvOm5LGvf7xhO-zkUsoeFbVMY=/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
 GLOBO_FANART = 'https://s02.video.glbimg.com/x720/4452349.jpg'
 
 GLOBOPLAY_URL = 'https://api.globoplay.com.br'
@@ -41,19 +42,17 @@ THUMB_URL = 'http://s01.video.glbimg.com/x720/%s.jpg'
 
 def get_globoplay_channels():
 
-    channels = []
-
-    channels.append({
-            'slug': 'globo',
-            'name': 'Globo',
-            'logo': GLOBO_LOGO,
-            'clearlogo': GLOBO_LOGO,
-            'fanart': GLOBO_FANART,
-            'playable': 'false',
-            'plot': None,
-            'id': 196,
-            'adult': False
-        })
+    channels = [{
+        'slug': 'globo',
+        'name': 'Globo',
+        'logo': GLOBO_LOGO_WHITE,
+        'clearlogo': GLOBO_LOGO_WHITE,
+        'fanart': GLOBO_FANART,
+        'playable': 'false',
+        'plot': None,
+        'id': 196,
+        'adult': False
+    }]
 
     return channels
 

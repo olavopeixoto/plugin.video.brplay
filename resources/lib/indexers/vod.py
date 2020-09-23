@@ -25,7 +25,7 @@ REPLAY_ICON_POSTER = os.path.join(control.artPath(), 'returning-tvshows-poster.p
 # DRM_CHANNELS = ['megapix', 'megapix-2', 'telecine']
 DRM_CHANNELS = [1990, 2079, 1966]
 # BLACKLIST_CHANNELS = ['multishow-2', 'telecine', 'sexy-hot', 'globonews-2', 'megapix', 'telecine-zone', 'big-brother-brasil-1', 'big-brother-brasil-2']
-BLACKLIST_CHANNELS = [2060, 1966, 1966, 2069, 1990, 2013, 2012, 2058, 2002, 2001, 2006]
+BLACKLIST_CHANNELS = [2060, 1966, 1966, 2069, 1990, 2013, 2012, 2058, 2002, 2001, 2006, 0]  # 1995
 
 
 class Vod:
@@ -263,7 +263,7 @@ class Vod:
             item = control.item(label=label)
 
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -328,7 +328,7 @@ class Vod:
 
             item.setArt(art)
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -367,7 +367,7 @@ class Vod:
             # item.setProperty('Fanart_Image', GLOBO_FANART)
 
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -456,7 +456,7 @@ class Vod:
                 item.setProperty('totaltime', str(duration))
 
             item.setArt(art)
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
@@ -486,7 +486,7 @@ class Vod:
 
         item.setArt(art)
         item.setProperty('IsPlayable', "false")
-        item.setInfo(type='video', infoLabels=meta)
+        item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
         control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -544,7 +544,7 @@ class Vod:
 
             item.setArt(art)
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -576,7 +576,7 @@ class Vod:
                     item.setArt(art)
 
                 item.setProperty('IsPlayable', "false")
-                item.setInfo(type='video', infoLabels=meta)
+                item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
                 control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -676,7 +676,7 @@ class Vod:
 
             item.setArt(art)
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -788,6 +788,8 @@ class Vod:
                 'sorttitle': "%03d" % (index,)
             })
 
+            sysmeta = urllib.quote_plus(json.dumps(meta))
+
             item = control.item(label=label)
 
             poster = program['poster'] if 'poster' in program else None
@@ -816,14 +818,14 @@ class Vod:
                 if program['brplayprovider'] == 'globoplay':
                     url = '%s?action=openvideos&provider=%s&program_id=%s&id_globo_videos=%s&poster=%s&bingewatch=%s&fanart=%s' % (sysaddon, program['brplayprovider'], program['id'], id_globo_videos, thumb, is_bingewatch, fanart)
                 else:
-                    url = '%s?action=openvideos&provider=%s&id_globo_videos=%s' % (sysaddon, program['brplayprovider'], id_globo_videos)
+                    url = '%s?action=openvideos&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], id_globo_videos, sysmeta)
 
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             item.setArt(art)
             item.setProperty('IsPlayable', 'true' if is_playable else 'false')
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             # if is_playable:
             #     item.setMimeType("application/vnd.apple.mpegurl")
@@ -860,7 +862,7 @@ class Vod:
             item.setProperty('Fanart_Image', fanart)
 
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
@@ -898,7 +900,7 @@ class Vod:
             item.setProperty('Fanart_Image', GLOBO_FANART)
 
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
@@ -919,7 +921,7 @@ class Vod:
             item.setProperty('Fanart_Image', fanart)
 
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels = meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
@@ -944,7 +946,7 @@ class Vod:
             item.setProperty('Fanart_Image', fanart)
 
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             cm = []
             cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
@@ -969,7 +971,7 @@ class Vod:
         item.setProperty('Fanart_Image', fanart)
 
         item.setProperty('IsPlayable', "false")
-        item.setInfo(type='video', infoLabels=meta)
+        item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
         cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
         item.addContextMenuItems(cm)
@@ -1064,7 +1066,7 @@ class Vod:
             item.setArt(art)
             item.addContextMenuItems(cm)
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
             # except:
@@ -1074,7 +1076,7 @@ class Vod:
 
         control.category(handle=syshandle, category=control.lang(32002).encode('utf-8'))
 
-        control.content(syshandle, 'files')
+        # control.content(syshandle, 'files')
         control.directory(syshandle, cacheToDisc=False)
 
     def category_combate_directory(self, items):
@@ -1185,8 +1187,7 @@ class Vod:
             item.setProperty('IsPlayable', "false")
             item.setInfo(type='video', infoLabels = meta)
 
-            cm = []
-            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)

@@ -569,3 +569,66 @@ def get_affiliates_by_id(id):
 
     # Default Rio de Janeiro
     return [all_affiliates[0]]
+
+
+INFO_LABELS = [
+    'genre',
+    'country',
+    'year',
+    'episode',
+    'season',
+    'sortepisode',
+    'sortseason',
+    'episodeguide',
+    'showlink',
+    'top250',
+    'setid',
+    'tracknumber',
+    'rating',
+    'userrating',
+    'watched',
+    'playcount',
+    'overlay',
+    'cast',
+    'castandrole',
+    'director',
+    'mpaa',
+    'plot',
+    'plotoutline',
+    'title',
+    'originaltitle',
+    'sorttitle',
+    'duration',
+    'studio',
+    'tagline',
+    'writer',
+    'tvshowtitle',
+    'premiered',
+    'status',
+    'set',
+    'setoverview',
+    'tag',
+    'imdbnumber',
+    'code',
+    'aired',
+    'credits',
+    'lastplayed',
+    'album',
+    'artist',
+    'votes',
+    'path',
+    'trailer',
+    'dateadded',
+    'mediatype',
+    'dbid'
+]
+
+
+def filter_info_labels(info_labels):
+    labels = {}
+
+    for key in info_labels.keys():
+        if key in INFO_LABELS:
+            labels[key] = info_labels[key]
+
+    return labels

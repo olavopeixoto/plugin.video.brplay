@@ -22,7 +22,8 @@ INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
 PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
 
 GET_GRAPHQL_ALL_BROADCASTS_VARIABLES = '{{"logoScale":"X42","date":"{date}"}}'
-GET_GRAPHQL_ALL_BROADCASTS = 'https://products-jarvis.globo.com/graphql?operationName=getAllBroadcasts&variables={variables}&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%223ed5d9a9bca84fd2cda18fc0e59a2fb626fb5bbe7205a507af3392e66809528b%22%7D%7D'
+GET_GRAPHQL_ALL_BROADCASTS_PERSISTED = 'https://products-jarvis.globo.com/graphql?operationName=getAllBroadcasts&variables={variables}&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%223ed5d9a9bca84fd2cda18fc0e59a2fb626fb5bbe7205a507af3392e66809528b%22%7D%7D'
+GET_GRAPHQL_ALL_BROADCASTS = 'https://products-jarvis.globo.com/graphql?query=query%20getAllBroadcasts%28%24logoScale%3A%20BroadcastChannelTrimmedLogoScales%20%3D%20X56%29%20%7B%0A%20%20broadcasts%20%7B%0A%20%20%20%20mediaId%0A%20%20%20%20mutedMediaId%0A%20%20%20%20promotionalMediaId%0A%20%20%20%20promotionalText%0A%20%20%20%20geofencing%0A%20%20%20%20geoblocked%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20color%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20text%3A%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20trimmedLogo%28scale%3A%20%24logoScale%29%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20epgCurrentSlots%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20composite%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20media%20%7B%0A%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0A&operationName=getAllBroadcasts&variables={variables}'
 
 GLOBOSAT_TRANSMISSIONS = GLOBOSAT_API_URL + '/transmissions.json?page=%s'
 GLOBOSAT_LIVE_JSON = GLOBOSAT_URL + '/xhr/transmissoes/ao-vivo.json'
@@ -56,7 +57,8 @@ THUMBS = {
     '1984': 'bra24ha',
     '1997': 'univ24ha',
     '2000': 'syfy24ha',
-    '2023': 'stduniv24ha'
+    '2023': 'stduniv24ha',
+    '2006': 'sexy24ha'
 }
 
 
@@ -80,6 +82,9 @@ def getAllBroadcasts():
     channels = []
 
     for broadcast in response['data']['broadcasts']:
+        if 'epgCurrentSlots' not in broadcast or not broadcast['epgCurrentSlots']:
+            continue
+
         program = broadcast['epgCurrentSlots'][0]
 
         live_text = u' (' + control.lang(32004) + u')' if program['liveBroadcast'] else u''
@@ -539,29 +544,29 @@ def get_premiere_live_games():
             extra_games_str = ''
 
         #PREMIERE
-        live.append({
-            'slug': 'premiere-fc',
-            'name': u'[B]\u2063Próximos Jogos[/B]',
-            'studio': 'Premiere FC',
-            'title': u'\u2063Veja a Programação',
-            'tvshowtitle': u'Próximos Jogos',
-            'sorttitle': 'Premiere FC',
-            'clearlogo': PREMIERE_LOGO,
-            'fanart': PREMIERE_FANART,
-            'thumb': PREMIERE_FANART,
-            'playable': 'false',
-            'plot': title,
-            'id': None,
-            'channel_id': 1995,
-            'duration': None,
-            'isFolder': 'true',
-            'logo': offline_games[0]['home']['logo_60x60_url'],
-            'logo2': offline_games[0]['away']['logo_60x60_url'],
-            'initials1': offline_games[0]['home']['abbreviation'],
-            'initials2': offline_games[0]['away']['abbreviation'],
-            'gamedetails': offline_games[0]['championship'] + extra_games_str,
-            'brplayprovider': 'premierefc'
-        })
+        # live.append({
+        #     'slug': 'premiere-fc',
+        #     'name': u'[B]\u2063Próximos Jogos[/B]',
+        #     'studio': 'Premiere FC',
+        #     'title': u'\u2063Veja a Programação',
+        #     'tvshowtitle': u'Próximos Jogos',
+        #     'sorttitle': 'Premiere FC',
+        #     'clearlogo': PREMIERE_LOGO,
+        #     'fanart': PREMIERE_FANART,
+        #     'thumb': PREMIERE_FANART,
+        #     'playable': 'false',
+        #     'plot': title,
+        #     'id': None,
+        #     'channel_id': 1995,
+        #     'duration': None,
+        #     'isFolder': 'true',
+        #     'logo': offline_games[0]['home']['logo_60x60_url'],
+        #     'logo2': offline_games[0]['away']['logo_60x60_url'],
+        #     'initials1': offline_games[0]['home']['abbreviation'],
+        #     'initials2': offline_games[0]['away']['abbreviation'],
+        #     'gamedetails': offline_games[0]['championship'] + extra_games_str,
+        #     'brplayprovider': 'premierefc'
+        # })
 
     return live
 
@@ -620,7 +625,7 @@ def __append_result(fn, list, *args):
 
 
 def get_premiere_games(meta={}):
-
+    meta = meta or {}
     live = []
     live_games = []
 

@@ -17,6 +17,7 @@ addonFanart = control.addonFanart()
 # traktCredentials = trakt.getTraktCredentialsInfo()
 # traktIndicators = trakt.getTraktIndicatorsInfo()
 
+
 class navigator:
     def root(self):
         if control.is_globosat_available() or control.is_globoplay_available():

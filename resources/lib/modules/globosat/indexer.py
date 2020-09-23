@@ -57,7 +57,8 @@ class Indexer:
         programs = scraper.get_channel_cards(channel_id)
 
         for item in programs:
-            item["brplayprovider"] = "globosat"
+            if 'brplayprovider' not in item:
+                item["brplayprovider"] = "globosat"
 
         return programs
 

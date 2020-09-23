@@ -84,7 +84,7 @@ class Player(xbmc.Player):
         item = control.item(path=url)
         item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
         item.setProperty('IsPlayable', 'true')
-        item.setInfo(type='Video', infoLabels=meta)
+        item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))
 
         item.setContentLookup(False)
 

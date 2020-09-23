@@ -67,7 +67,7 @@ class Indexer:
 
             item.setArt(art)
             item.setProperty('IsPlayable', 'true')
-            item.setInfo(type='video', infoLabels=meta)
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             control.addItem(handle=syshandle, url=action_url, listitem=item, isFolder=isFolder)
 

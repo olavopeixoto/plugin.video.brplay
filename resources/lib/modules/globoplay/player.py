@@ -199,7 +199,7 @@ class Player(xbmc.Player):
         control.log("Resolved URL: %s" % repr(url))
 
         item = control.item(path=url)
-        item.setInfo(type='video', infoLabels=meta)
+        item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
         item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
         item.setProperty('IsPlayable', 'true')
 

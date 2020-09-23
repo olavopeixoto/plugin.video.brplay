@@ -6,6 +6,7 @@ from resources.lib.modules import control
 from resources.lib.modules.globosat import auth_helper
 import urllib
 import requests
+import os
 
 GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
 GLOBOSAT_SEARCH = 'https://globosatplay.globo.com/busca/pagina/%s.json?q=%s'
@@ -28,6 +29,19 @@ GLOBOSAT_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&page=%s&per_page=%s'
 GLOBOSAT_DEL_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&id=%s'
 
 GLOBOSAT_WATCH_HISTORY = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s&page=%s&per_page=%s'
+
+artPath = control.artPath()
+PREMIERE_LOGO = os.path.join(artPath, 'logo_premiere.png')
+PREMIERE_FANART = os.path.join(artPath, 'fanart_premiere_720.jpg')
+
+PREMIERE_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?order=asc&page='
+
+
+CHANNEL_MAP = {
+    1995: 936,
+    2065: 692,
+    2006: 692
+}
 
 
 def get_authorized_channels(retry=1):
@@ -71,8 +85,15 @@ def get_authorized_channels(retry=1):
     broadcasts_url = 'https://products-jarvis.globo.com/graphql?query=query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20color%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&operationName=getChannelsList&variables=%7B%22page%22%3A1%2C%22perPage%22%3A200%7D'
     query_response = client.request(broadcasts_url, headers={"Accept-Encoding": "gzip", "x-tenant-id": "globosat-play"})
 
-    for broadcast in query_response['data']['broadcastChannels']['resources']:
-        channel = next((channel for channel in channels if int(broadcast['id']) == int(channel['id'])), None)
+    resources = []
+    resources.extend(query_response['data']['broadcastChannels']['resources'])
+
+    query_response = client.request(broadcasts_url, headers={"Accept-Encoding": "gzip", "x-tenant-id": "sexy-hot"})
+
+    resources.extend(query_response['data']['broadcastChannels']['resources'])
+
+    for broadcast in resources:
+        channel = next((channel for channel in channels if int(broadcast['id']) == int(channel['id']) and int(channel['id']) > 0 or (CHANNEL_MAP.get(int(channel['id']), -1) == int(broadcast['id']))), None)
         if channel:
             channel.update({
                 'slug': broadcast['slug'],
@@ -120,6 +141,10 @@ def get_channel_programs(channel_id):
 
 
 def get_channel_cards(channel_id_globo_videos):
+
+    if str(channel_id_globo_videos) == str(1995):
+        return get_premiere_cards()
+
     headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
 
     page = 1
@@ -151,6 +176,29 @@ def get_channel_cards(channel_id_globo_videos):
         })
 
     return programs
+
+
+def get_premiere_cards():
+    return [{
+            'id': 1995,
+            'id_globo_videos': None,
+            'title': u'\u2063Veja a Programação',
+            'name': u'[B]\u2063Próximos Jogos[/B]',
+            'fanart': PREMIERE_FANART,
+            'poster': None,
+            'plot': 'Veja os jogos programados',
+            'kind': None,
+            'brplayprovider': 'premierefc',
+            'studio': 'Premiere FC',
+            'tvshowtitle': u'Próximos Jogos',
+            'sorttitle': 'Premiere FC',
+            'clearlogo': PREMIERE_LOGO,
+            'thumb': PREMIERE_FANART,
+            'playable': 'false',
+            'channel_id': 1995,
+            'duration': None,
+            'isFolder': 'true',
+        }]
 
 
 def get_card_seasons(id_globo_videos):

@@ -33,7 +33,72 @@ def get_categories():
 def get_videos(page=1):
     page_size = 24
     variables = '{{"id":"7e679166-caa2-457c-a5f3-56ff7ca79a69","page":{page},"perPage":{pagesize}}}'
-    url = 'https://products-jarvis.globo.com/graphql?operationName=getOffer&variables={var}&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22ed91671dc38a0f931c33239fd7b299d9035ea25177c212eb05fd512ab69ee134%22%7D%7D'
+    query = '''query getOffer($id: ID!, $page: Int, $perPage: Int) {
+  genericOffer(id: $id) {
+    ... on Offer {
+      id
+      contentType
+      items: paginatedItems(page: $page, perPage: $perPage) {
+        page
+        nextPage
+        perPage
+        hasNextPage
+        resources {
+          ...VideoFragment
+          ...TitleFragment
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+}
+fragment VideoFragment on Video {
+  id
+  availableFor
+  headline
+  kind
+  duration
+  formattedDuration
+  thumb
+  liveThumbnail
+  preview
+  originalContent
+  exhibitedAt
+  title {
+    titleId
+    headline
+    slug
+    __typename
+  }
+  channel {
+    id
+    name
+    slug
+    __typename
+  }
+  __typename
+}
+fragment TitleFragment on Title {
+  titleId
+  headline
+  slug
+  poster {
+    web
+    __typename
+  }
+  channel {
+    id
+    name
+    slug
+    __typename
+  }
+  __typename
+}'''
+    # url = 'https://products-jarvis.globo.com/graphql?operationName=getOffer&variables={var}&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22ed91671dc38a0f931c33239fd7b299d9035ea25177c212eb05fd512ab69ee134%22%7D%7D'
+    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={var}'
     headers = {
         'x-tenant-id': 'sexy-hot',
         'x-platform-id': 'web',
@@ -43,7 +108,7 @@ def get_videos(page=1):
         'accept-encoding': 'gzip'
     }
 
-    result = client.request(url.format(var=urllib.quote_plus(variables.format(page=page, pagesize=page_size))), headers=headers)
+    result = client.request(url.format(query=urllib.quote_plus(query), var=urllib.quote_plus(variables.format(page=page, pagesize=page_size))), headers=headers)
 
     videos = []
 
