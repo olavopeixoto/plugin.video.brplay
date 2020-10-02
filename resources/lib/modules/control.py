@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, json, threading
+import os, json, threading, time
 
 import xbmc, xbmcaddon, xbmcplugin, xbmcgui, xbmcvfs
 
@@ -651,3 +651,7 @@ def filter_info_labels(info_labels):
             labels[key] = info_labels[key]
 
     return labels
+
+
+def to_timestamp(date):
+    return int((time.mktime(date.timetuple()) + date.microsecond / 1000000.0))

@@ -64,6 +64,10 @@ msgctxt "#31116"
 msgid "All"
 msgstr "Todas"
 
+msgctxt "#31108"
+msgid "Show Globo Internacional"
+msgstr "Exibir Globo Internacional"
+
 msgctxt "#31117"
 msgid "Recife"
 msgstr "Recife"

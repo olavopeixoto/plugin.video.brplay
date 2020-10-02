@@ -11,6 +11,7 @@ from sqlite3 import dbapi2 as database
 import time
 import os
 from scraper_vod import GLOBOPLAY_CONFIGURATION
+import urllib
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
 GLOBO_FANART = os.path.join(control.artPath(), 'globo.jpg')
@@ -33,45 +34,57 @@ def get_live_channels():
 
     live = []
 
-    config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
+    if control.setting('show_multicam') == 'true':
+        config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
 
-    # multicams = config['multicamLabel']
-    multicam = config['growth']['menu'] if 'growth' in config and 'menu' in config['growth'] and 'is_enabled' in config['growth']['menu'] and config['growth']['menu']['is_enabled'] else None
+        # multicams = config['multicamLabel']
+        multicam = config['growth']['menu'] if 'growth' in config and 'menu' in config['growth'] and 'is_enabled' in config['growth']['menu'] and config['growth']['menu']['is_enabled'] else None
 
-    if multicam and control.setting('show_multicam') == 'true':
-        title = multicam['label_item']
-        live.append({
-            'slug': 'multicam',
-            'name': '[B]' + title + '[/B]',
-            'studio': 'Big Brother Brasil',
-            'title': title,
-            'tvshowtitle': '',
-            'sorttitle': title,
-            'logo': LOGO_BBB,
-            'clearlogo': LOGO_BBB,
-            'fanart': FANART_BBB,
-            'thumb': FANART_BBB,
-            'playable': 'false',
-            'plot': None,
-            'id': multicam['link_program_id'],
-            'channel_id': config['channel_id'],
-            'duration': None,
-            'isFolder': 'true',
-            'brplayprovider': 'multicam'
-        })
+        if multicam:
+            title = multicam['label_item']
+            live.append({
+                'slug': 'multicam',
+                'name': '[B]' + title + '[/B]',
+                'studio': 'Big Brother Brasil',
+                'title': title,
+                'tvshowtitle': '',
+                'sorttitle': title,
+                'logo': LOGO_BBB,
+                'clearlogo': LOGO_BBB,
+                'fanart': FANART_BBB,
+                'thumb': FANART_BBB,
+                'playable': 'false',
+                'plot': None,
+                'id': multicam['link_program_id'],
+                'channel_id': config['channel_id'],
+                'duration': None,
+                'isFolder': 'true',
+                'brplayprovider': 'multicam'
+            })
 
-    threads = [workers.Thread(__append_result, __get_affiliate_live_channels, live, affiliate) for affiliate in affiliates]
-    [i.start() for i in threads]
-    [i.join() for i in threads]
+    show_globo_internacional = control.setting('show_globo_international') == 'true'
+
+    if len(affiliates) == 1 and show_globo_internacional:
+        affiliate = __get_affiliate_live_channels(affiliates[0])
+        live.append(affiliate)
+    else:
+        threads = [workers.Thread(__append_result, __get_affiliate_live_channels, live, affiliate) for affiliate in affiliates]
+        if show_globo_internacional:
+            threads.append(workers.Thread(__append_result, get_globo_americas, live))
+        [i.start() for i in threads]
+        [i.join() for i in threads]
 
     seen = []
     return filter(lambda x: seen.append(x['affiliate_code'] if 'affiliate_code' in x else '$FOO$') is None if 'affiliate_code' not in x or x['affiliate_code'] not in seen else False, live)
 
 
-def __append_result(fn, list, *args):
-        item = fn(*args)
-        if item:
-            list.append(item)
+def __append_result(fn, item_list, *args):
+    item = fn(*args)
+    if item:
+        if isinstance(item, list):
+            item_list.extend(item)
+        else:
+            item_list.append(item)
 
 
 def __get_affiliate_live_channels(affiliate):
@@ -387,3 +400,107 @@ def get_affiliate_by_coordinates(latitude, longitude):
     # }
 
     return result
+
+
+def get_globo_americas():
+
+    GLOBO_AMERICAS_ID = 7832875
+
+    is_globosat_available = control.is_globosat_available()
+
+    headers = {
+        "Accept-Encoding": "gzip",
+        "User-Agent": "Globo Play/0 (iPhone)",
+        "x-tenant-id": "globo-play-us"
+    }
+
+    now = datetime.datetime.now()
+    date = now.strftime('%Y-%m-%d')
+    variables = urllib.quote_plus('{{"date":"{}"}}'.format(date))
+    query = 'query%20getEpgBroadcastList%28%24date%3A%20Date%21%29%20%7B%0A%20%20broadcasts%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20mediaId%0A%20%20media%20%7B%0A%20%20%20%20serviceId%0A%20%20%20%20headline%0A%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20availableFor%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20transmissionId%0A%20%20geofencing%0A%20%20geoblocked%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20color%0A%20%20%20%20name%0A%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%7D%0A%20%20epgByDate%28date%3A%20%24date%29%20%7B%0A%20%20%20%20entries%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20alternativeTime%0A%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20landscape%0A%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20directors%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cast%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20genres%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
+    url = 'https://jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=variables)
+    response = client.request(url, headers=headers)
+    broadcasts = response['data']['broadcasts']
+
+    items = []
+
+    utc_now = control.to_timestamp(datetime.datetime.now())
+
+    for broadcast in broadcasts:
+        media_id = str(broadcast.get('mediaId', 0))
+
+        if is_globosat_available and media_id != str(GLOBO_AMERICAS_ID):
+            continue
+
+        epg = next((epg for epg in broadcast['epgByDate']['entries'] if epg['startTime'] <= utc_now < epg['endTime']), {})
+
+        channel = broadcast.get('channel', {}) or {}
+
+        logo = channel.get('logo', None)
+        channel_name = broadcast.get('media', {}).get('headline', '')
+        fanart = broadcast.get('imageOnAir', None)
+        channel_id = channel.get('id', 0)
+        service_id = broadcast.get('media', {}).get('serviceId', 0)
+        channel_slug = '%s-americas' % channel.get('name', '').lower().replace(' ', '')
+
+        duration = epg.get('durationInMinutes', 0) * 60
+
+        title_obj = epg.get('title', {}) or {}
+
+        title = epg.get('name', '')
+        description = title_obj.get('description', None) or epg.get('description', '')
+        fanart = title_obj.get('cover', {}).get('landscape', fanart) or fanart
+
+        year = title_obj.get('releaseYear', None)
+        country = [c.get('name') for c in title_obj.get('countries', []) or [] if 'name' in c and c['name']]
+        genres = [c.get('name') for c in title_obj.get('genres', []) or [] if 'name' in c and c['name']]
+        cast = [c.get('name') for c in title_obj.get('cast', []) or [] if 'name' in c and c['name']]
+        director = [c.get('name') for c in title_obj.get('directors', []) or [] if 'name' in c and c['name']]
+        rating = epg.get('contentRating', '')
+
+        name = ('[B]' if not control.isFTV else '') + channel_name + ('[/B]' if not control.isFTV else '') + ('[I] - ' + title + '[/I]' if title else '')
+
+        program_datetime = datetime.datetime.utcfromtimestamp(epg.get('startTime', 0)) + util.get_utc_delta()
+        next_start = datetime.datetime.utcfromtimestamp(epg.get('endTime', 0)) + util.get_utc_delta()
+
+        plotoutline = datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M')
+
+        if not description or len(description) < 3:
+            description = '%s | %s' % (title, plotoutline) if title else plotoutline
+
+        item = {
+            'name': name,
+            'title': title,
+            'tvshowtitle': title,
+            'plot': description,
+            'plotoutline': plotoutline,
+            "tagline": description,
+            'duration': duration,
+            "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
+            'brplayprovider': 'globoplay',
+            'logo': logo,
+            'clearlogo': logo,
+            'thumb': fanart,
+            'poster': None,
+            'fanart': fanart,
+            'slug': channel_slug,
+            'sorttitle': channel_name,
+            'studio': channel_name,
+            'playable': 'true',
+            'id': media_id,
+            'channel_id': channel_id,
+            'service_id': service_id,
+            'live': epg.get('liveBroadcast', False) or False,
+            'year': year,
+            'country': country,
+            'genre': genres,
+            'cast': cast,
+            'director': director,
+            'mpaa': rating,
+            'livefeed': 'false',  # force vod player for us channels
+            "mediatype": 'video'  # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+        }
+
+        items.append(item)
+
+    return items

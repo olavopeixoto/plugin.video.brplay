@@ -54,11 +54,12 @@
 		<setting id="globoplay_username" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31109" visible="eq(-2,true)" enable="!eq(-1,)" default="" subsetting="true" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
-		<!-- Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania|Belem|Salvador|Florianopolis|Sao Luis|Vitoria -->
-		<setting id="globo_affiliate" type="select" label="31111" lvalues="31116|34112|33103|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135|31126|31119|31123|31137|31125" default="1" visible="eq(-3,true)" subsetting="true" />
-		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)+eq(-4,true)" subsetting="true" />
-		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-5,true)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
-		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-6,true)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
+		<!-- Internacional, Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania|Belem|Salvador|Florianopolis|Sao Luis|Vitoria -->
+		<setting id="show_globo_international" type="bool" label="31108" default="false" visible="eq(-3,true)" subsetting="true" />
+		<setting id="globo_affiliate" type="select" label="31111" lvalues="31116|34112|33103|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135|31126|31119|31123|31137|31125" default="1" visible="eq(-4,true)" subsetting="true" />
+		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)+eq(-5,true)" subsetting="true" />
+		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-6,true)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
+		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-7,true)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
 
 		<setting type="sep" />
 
