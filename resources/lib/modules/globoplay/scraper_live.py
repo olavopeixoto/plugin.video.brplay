@@ -64,7 +64,7 @@ def get_live_channels():
 
     show_globo_internacional = control.setting('show_globo_international') == 'true'
 
-    if len(affiliates) == 1 and show_globo_internacional:
+    if len(affiliates) == 1 and not show_globo_internacional:
         affiliate = __get_affiliate_live_channels(affiliates[0])
         live.append(affiliate)
     else:
