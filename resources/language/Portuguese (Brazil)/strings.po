@@ -36,6 +36,10 @@ msgctxt "#31100"
 msgid "Globo Play"
 msgstr "Globo Play"
 
+msgctxt "#31101"
+msgid "Enable Globo Play"
+msgstr "Habilitar Globo Play"
+
 msgctxt "#31111"
 msgid "Affiliate"
 msgstr "Afiliada"
@@ -297,8 +301,8 @@ msgid "Show Full Videos Only"
 msgstr "Exibir apenas vídeos na íntegra"
 
 msgctxt "#33401"
-msgid "Show Adult Content"
-msgstr "Exibir conteúdo adulto"
+msgid "Enable Sexyhot Play"
+msgstr "Habilitar Sexyhot Play"
 
 msgctxt "#33402"
 msgid "Use Pagination"
@@ -427,3 +431,47 @@ msgstr "Personalizada"
 msgctxt "#34113"
 msgid "Enable Oi Play"
 msgstr "Habilitar Oi Play"
+
+msgctxt "#34114"
+msgid "Enable 4K when available"
+msgstr "Habilitar 4k UHD quando disponível"
+
+msgctxt "#34115"
+msgid "Enable HDR when available"
+msgstr "Habilitar HDR quando disponível"
+
+msgctxt "#34116"
+msgid "Enable high resolution images when available"
+msgstr "Habilitar imagens em alta resolução quando disponíveis"
+
+msgctxt "#34117"
+msgid "Disable InputStream.Adaptive"
+msgstr "Desativar InputStream.Adaptive"
+
+msgctxt "#34118"
+msgid "Prefer SmoothStreaming for DRM"
+msgstr "Preferir SmoothStreaming para conteúdos com DRM"
+
+msgctxt "#34119"
+msgid "Prefer PlayReady for DRM"
+msgstr "Preferir PlayReady para conteúdos com DRM"
+
+msgctxt "#34120"
+msgid "Prefer Dash over HLS"
+msgstr "Preferir Dash ao invés de HLS"
+
+msgctxt "#34121"
+msgid "Play multi part videos as playlist"
+msgstr "Reproduzir videos com múltiplas partes como uma playlist"
+
+msgctxt "#34122"
+msgid "Debug Log"
+msgstr "Registro de depuração"
+
+msgctxt "#34123"
+msgid "Enable TNT Play"
+msgstr "Habilitar TNT Play"
+
+msgctxt "#34124"
+msgid "Provider"
+msgstr "Operadora"

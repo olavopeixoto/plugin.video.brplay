@@ -255,14 +255,24 @@ def is_inputstream_available():
 
 
 def is_globosat_available():
-    return setting('globosat_available') == 'true' and (is_globoplay_available() if setting('use_globoplay_credentials_for_globosat') == 'true' else setting('globosat_username') != '' and setting('globosat_password') != '')
+
+    if setting('globosat_available') != 'true':
+        return False
+
+    if is_globoplay_available() and setting('use_globoplay_credentials_for_globosat') == 'true':
+        return True
+
+    username = setting('globosat_username')
+    password = setting('globosat_password')
+
+    return username and password and username.strip() != '' and password.strip() != ''
 
 
 def is_globoplay_available():
     username = setting('globoplay_username')
     password = setting('globoplay_password')
 
-    return username and password and username.strip() != '' and password.strip() != ''
+    return setting('globoplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
 
 
 def is_oiplay_available():
@@ -270,6 +280,13 @@ def is_oiplay_available():
     password = setting('oiplay_password')
 
     return setting('oiplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_tntplay_available():
+    username = setting('tntplay_account')
+    password = setting('tntplay_password')
+
+    return setting('tntplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
 
 
 def getKodiVersion():
@@ -451,13 +468,15 @@ def queueItem():
 
 
 def clear_credentials():
-    setSetting("sexyhot_credentials", None)
-    setSetting("globosat_credentials", None)
-    setSetting("globoplay_credentials", None)
+    setSetting("sexyhot_credentials", u'')
+    setSetting("globosat_credentials", u'')
+    setSetting("globoplay_credentials", u'')
+    setSetting("tntplay_token", u'')
+    setSetting("oiplay_access_token_response", u'')
 
 
 def clear_globosat_credentials():
-    setSetting("globosat_credentials", None)
+    setSetting("globosat_credentials", u'')
 
 
 def log(msg):

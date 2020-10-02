@@ -75,6 +75,7 @@ def get_authorized_channels(retry=1):
                 channel_ids.append(channel['id_globo_videos'])
                 channels.append({
                     "id": channel['id_globo_videos'],
+                    "service_id": channel['service_id'],
                     "name": channel['name'],
                     "adult": channel['id_globo_videos'] in [2065,2006],
                     'slug': '',

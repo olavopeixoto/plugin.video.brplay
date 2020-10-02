@@ -12,21 +12,24 @@ class Indexer:
 
         live = []
 
-        threads = [
-            workers.Thread(self.__append_result, scraper.getAllBroadcasts, live),
-            # workers.Thread(self.__append_result, scraper.get_basic_live_channels, live),
-            # workers.Thread(self.__append_result, scraper.get_combate_live_channels, live),
-            # workers.Thread(self.__append_result, scraper.get_premiere_live_24h_channels, live)
-        ]
-
-        if control.setting('show_pfc_games') == 'true':
-            threads.append(workers.Thread(self.__append_result, scraper.get_premiere_live_games, live))
-
         if control.setting('show_bbb') == 'true':
-            threads.append(workers.Thread(self.__append_result, scraper.get_bbb_channels, live))
+            threads = [
+                workers.Thread(self.__append_result, scraper.getAllBroadcasts, live),
+                # workers.Thread(self.__append_result, scraper.get_basic_live_channels, live),
+                # workers.Thread(self.__append_result, scraper.get_combate_live_channels, live),
+                # workers.Thread(self.__append_result, scraper.get_premiere_live_24h_channels, live)
+            ]
 
-        [i.start() for i in threads]
-        [i.join() for i in threads]
+            # if control.setting('show_pfc_games') == 'true':
+            #     threads.append(workers.Thread(self.__append_result, scraper.get_premiere_live_games, live))
+
+            if control.setting('show_bbb') == 'true':
+                threads.append(workers.Thread(self.__append_result, scraper.get_bbb_channels, live))
+
+            [i.start() for i in threads]
+            [i.join() for i in threads]
+        else:
+            live = scraper.getAllBroadcasts()
 
         if not control.ignore_channel_authorization:
             control.log("Channels Found: %s" % live)
@@ -43,6 +46,8 @@ class Indexer:
 
         for channel in authorized_channels:
             if str(channel['id']) == str(live['channel_id']):
+                return True
+            if 'service_id' in channel and channel['service_id'] and 'service_id' in live and live['service_id'] and str(channel['service_id']) == str(live['service_id']):
                 return True
 
         return False

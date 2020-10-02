@@ -313,5 +313,12 @@ class Main:
                 from resources.lib.modules.oiplay import player
                 player.Player().playlive(id_globo_videos, meta)
 
+
+            ###TNT Play
+
+            elif action == 'playlive' and provider == 'tntplay':
+                from resources.lib.modules.tntplay import player
+                player.Player().playlive(id_globo_videos, meta)
+
         except Exception:
             buggalo.onExceptionRaised()

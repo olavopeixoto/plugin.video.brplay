@@ -13,6 +13,7 @@ from resources.lib.modules.globoplay import scraper_live as globoplay_live
 from resources.lib.modules.globosat import indexer as globosat
 from resources.lib.modules.sexyhotplay import indexer as sexyhotplay
 from resources.lib.modules.oiplay import scraper_live as oiplay
+from resources.lib.modules.tntplay import scraper_live as tntplay
 
 
 class Live:
@@ -36,11 +37,14 @@ class Live:
         if control.is_oiplay_available():
             threads.append(workers.Thread(self.append_result, oiplay.get_live_channels, live))
 
+        if control.is_tntplay_available():
+            threads.append(workers.Thread(self.append_result, tntplay.get_live_channels, live))
+
         [i.start() for i in threads]
         [i.join() for i in threads]
 
         live = sorted(live, key=lambda k: k['sorttitle'])
-        live = sorted(live, key=lambda k: '1' if 'isFolder' in k and k['isFolder'] == 'true' else '0')
+        # live = sorted(live, key=lambda k: '1' if 'isFolder' in k and k['isFolder'] == 'true' else '0')
         live = sorted(live, key=lambda k: k['dateadded'] if 'dateadded' in k else None, reverse=True)
 
         # shuffle(live)

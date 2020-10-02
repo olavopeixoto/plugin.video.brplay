@@ -36,6 +36,10 @@ msgctxt "#31100"
 msgid "Globo Play"
 msgstr ""
 
+msgctxt "#31101"
+msgid "Enable Globo Play"
+msgstr ""
+
 msgctxt "#31111"
 msgid "Affiliate"
 msgstr ""
@@ -297,7 +301,7 @@ msgid "Show Full Videos Only"
 msgstr ""
 
 msgctxt "#33401"
-msgid "Show Adult Content"
+msgid "Enable Sexyhot Play"
 msgstr ""
 
 msgctxt "#33402"
@@ -426,4 +430,48 @@ msgstr ""
 
 msgctxt "#34113"
 msgid "Enable Oi Play"
+msgstr ""
+
+msgctxt "#34114"
+msgid "Enable 4K when available"
+msgstr ""
+
+msgctxt "#34115"
+msgid "Enable HDR when available"
+msgstr ""
+
+msgctxt "#34116"
+msgid "Enable high resolution images when available"
+msgstr ""
+
+msgctxt "#34117"
+msgid "Disable InputStream.Adaptive"
+msgstr ""
+
+msgctxt "#34118"
+msgid "Prefer SmoothStreaming for DRM"
+msgstr ""
+
+msgctxt "#34119"
+msgid "Prefer PlayReady for DRM"
+msgstr ""
+
+msgctxt "#34120"
+msgid "Prefer Dash over HLS"
+msgstr ""
+
+msgctxt "#34121"
+msgid "Play multi part videos as playlist"
+msgstr ""
+
+msgctxt "#34122"
+msgid "Debug Log"
+msgstr ""
+
+msgctxt "#34123"
+msgid "Enable TNT Play"
+msgstr ""
+
+msgctxt "#34124"
+msgid "Provider"
 msgstr ""

@@ -3,14 +3,16 @@
 	<!-- 32346 = Accounts -->
 	<category label="32346">
 
-		<setting type="lsep" label="Globosat Play"></setting>
+		<setting type="lsep" label="Globosat Play"/>
 		<setting id="globosat_available" type="bool" label="34108" default="true" />
-		<setting id="use_globoplay_credentials_for_globosat" type="bool" label="34109" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
-		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-1,false)" enable="eq(-1,false)"/>
-		<setting id="globosat_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,false)"/>
-		<setting id="globosat_geofence" type="select" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" enable="eq(-4,true)"/>
-		<setting id="show_bbb" type="bool" label="33404" default="true" visible="eq(-5,true)" />
-		<setting id="show_pfc_games" type="bool" label="33405" default="true" visible="eq(-6,true)" />
+		<setting id="use_globoplay_credentials_for_globosat" type="bool" label="34109" default="true" visible="eq(-1,true)" subsetting="true" />
+		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-2,true)+eq(-1,false)" subsetting="true" />
+		<setting id="globosat_password" type="text" option="hidden" label="31109" default="" visible="eq(-3,true)+eq(-2,false)" subsetting="true" />
+		<setting id="globosat_geofence" type="select" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" subsetting="true" />
+		<setting id="show_bbb" type="bool" label="33404" default="true" visible="eq(-5,true)" subsetting="true" />
+		<setting id="show_pfc_games" type="bool" label="33405" default="true" visible="false" subsetting="true" />
+		<!-- 33401 = Show Adult Content -->
+		<setting id="show_adult" type="bool" label="33401" default="true" visible="eq(-7,true)" subsetting="true" />
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
 		<!-- 31109 = Password -->
@@ -46,36 +48,42 @@
 		<!-- 31137 = Natal -->
 		<!-- 31138 = Boa Vista -->
 		<!-- 31139 = Porto Velho -->
-		<setting type="lsep" label="31100"></setting>
+		<setting type="lsep" label="Globo Play"/>
 
-		<setting id="globoplay_username" type="text" label="31110" default="" />
-		<setting id="globoplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" />
+		<setting id="globoplay_available" type="bool" label="31101" default="true" />
+		<setting id="globoplay_username" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
+		<setting id="globoplay_password" type="text" option="hidden" label="31109" visible="eq(-2,true)" enable="!eq(-1,)" default="" subsetting="true" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
 		<!-- Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania|Belem|Salvador|Florianopolis|Sao Luis|Vitoria -->
-		<setting id="globo_affiliate" type="select" label="31111" lvalues="31116|34112|33103|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135|31126|31119|31123|31137|31125" default="1" />
-		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)"/>
-		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)" enable="eq(-2,1)|eq(-1,true)"/>
-		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)" enable="eq(-3,1)|eq(-2,true)"/>
+		<setting id="globo_affiliate" type="select" label="31111" lvalues="31116|34112|33103|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135|31126|31119|31123|31137|31125" default="1" visible="eq(-3,true)" subsetting="true" />
+		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)+eq(-4,true)" subsetting="true" />
+		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-5,true)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
+		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-6,true)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
 
-		<setting type="lsep" label="SexyHot"></setting>
-
-		<!-- 33401 = Show Adult Content -->
-		<!-- 33402 = Use Pagination -->
-		<setting id="show_adult" type="bool" label="33401" default="true" />
-<!--		<setting id="sexy_hot_pagination" type="bool" label="33402" default="true" enable="eq(-1,true)"/>-->
 		<setting type="sep" />
 
-		<setting type="lsep" label="Oi Play"></setting>
+		<setting type="lsep" label="Oi Play"/>
 		<setting id="oiplay_available" type="bool" label="34113" default="true" />
-		<setting id="oiplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)"/>
-		<setting id="oiplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)"/>
+		<setting id="oiplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
+		<setting id="oiplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
+
+		<setting type="sep" />
+
+		<setting type="lsep" label="TNT Play"/>
+		<setting id="tntplay_available" type="bool" label="34123" default="true" />
+		<setting id="tntplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
+		<setting id="tntplay_password" type="text" option="hidden" label="31109" default="" visible="eq(-2,true)" subsetting="true" />
+		<setting id="tntplay_provider" type="select" label="34124" default="oitv" values="oitv" visible="eq(-3,true)" subsetting="true" />
+		<setting id="tntplay_country" type="text"  default="BR" visible="false" subsetting="true" />
+		<setting id="tntplay_device_id" type="text" label="Device ID" default="" visible="eq(-5,true)" enable="false" subsetting="true" />
+		<setting id="tntplay_token" type="text"  default="" visible="false" subsetting="true" />
 
 		<setting type="sep" />
 	</category>
 
 	<category label="33001">
 		<setting id="use_proxy" type="bool" label="31004" default="false" />
-		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)" visible="eq(-1,true)" />
+		<setting id="proxy_url" type="text" label="URL" enable="eq(-1,true)" visible="eq(-1,true)" subsetting="true" />
 		<setting type="sep" />
 
 		<!-- 33101 = Bandwidth 	-->
@@ -94,45 +102,45 @@
 		<setting id="proxy_type" type="enum" label="33201" lvalues="33202|33203" default="1" visible="eq(-1,1)"/>
 		<!--<setting id="average_download_speed" type="number" option="float" label="33200" range="0,999999999999" default="0" enable="false" visible="eq(-2,1)"/>-->
 
-		<setting type="lsep" label="34107"></setting>
+		<setting type="lsep" label="34107"/>
 
-		<setting id="enable_4k" type="bool" label="Enable 4K when available" default="true" />
-		<setting id="enable_hdr" type="bool" label="Enable HDR when available" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
-		<setting id="enable_4k_fanart" type="bool" label="Enable high resolution images when available" default="false" visible="eq(-2,true)" enable="eq(-2,true)"/>
+		<setting id="enable_4k" type="bool" label="34114" default="true" />
+		<setting id="enable_hdr" type="bool" label="34115" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
+		<setting id="enable_4k_fanart" type="bool" label="34116" default="false" visible="eq(-2,true)" enable="eq(-2,true)"/>
 
-		<setting type="lsep" label="Advanced" visible="System.HasAddon(inputstream.adaptive)"></setting>
+		<setting type="lsep" label="Advanced" visible="System.HasAddon(inputstream.adaptive)"/>
 
-		<setting id="disable_inputstream_adaptive" type="bool" label="Disable InputStream.Adaptive" default="true" visible="System.HasAddon(inputstream.adaptive)"/>
-		<setting id="prefer_smoothstreaming" type="bool" label="Prefer SmoothStreaming for DRM" default="false" visible="false" />
-		<setting id="prefer_playready" type="bool" label="Prefer PlayReady for DRM" default="false" visible="false"/>
-		<setting id="prefer_dash" type="bool" label="Prefer Dash over HLS" default="false" visible="System.HasAddon(inputstream.adaptive)+eq(-3,false)" />
+		<setting id="disable_inputstream_adaptive" type="bool" label="34117" default="true" visible="System.HasAddon(inputstream.adaptive)"/>
+		<setting id="prefer_smoothstreaming" type="bool" label="34118" default="false" visible="false" />
+		<setting id="prefer_playready" type="bool" label="34119" default="false" visible="false"/>
+		<setting id="prefer_dash" type="bool" label="34120" default="false" visible="System.HasAddon(inputstream.adaptive)+eq(-3,false)" />
 
 	</category>
 
 	<!-- 32310 = General -->
 	<category label="32310">
 
-		<setting type="lsep" label="Globo Play"></setting>
+		<setting type="lsep" label="Globo Play"/>
 
 		<!-- 33301 = Show Full Videos Only -->
 		<setting id="globo_play_full_videos" type="bool" label="33301" default="true" />
-		<setting id="play_children" type="bool" label="Play multi part videos as playlist" default="true" />
+		<setting id="play_children" type="bool" label="34121" default="true" />
 		<setting type="sep" />
 
-		<setting type="lsep" label="Globosat Play"></setting>
+		<setting type="lsep" label="Globosat Play"/>
 
 		<setting id="ignore_channel_authorization" type="bool" label="33403" default="false"/>
 		<setting type="sep" />
 
 		<!-- 33501 = Clear Cache -->
 		<!-- 33502 = Addon Maintenance -->
-		<setting type="lsep" label="33502"></setting>
+		<setting type="lsep" label="33502"/>
 		<setting id="clear" type="action" label="33501" action="RunPlugin(plugin://plugin.video.brplay/?action=clear)"/>
 		<setting id="clearAuth" type="action" label="33503" action="RunPlugin(plugin://plugin.video.brplay/?action=clearAuth)"/>
 		<setting type="sep" />
 
-		<setting type="lsep" label="Debug"></setting>
-		<setting id="enable_log" type="bool" label="Debug Log" default="false" />
+		<setting type="lsep" label="Debug"/>
+		<setting id="enable_log" type="bool" label="34122" default="false" />
 
 	</category>
 </settings>

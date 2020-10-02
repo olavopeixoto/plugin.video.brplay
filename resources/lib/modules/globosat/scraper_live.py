@@ -17,6 +17,7 @@ GLOBOSAT_API_CHANNELS = GLOBOSAT_API_URL + '/channels.json?page=%d'
 COMBATE_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/combateplay'
 GLOBOSAT_SIMULCAST_URL = 'https://api-simulcast.globosat.tv/v1/globosatplay'
 PREMIERE_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?order=asc&page='
+PREMIERE_LIVE_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?order=asc&status=live&page='
 PREMIERE_NEXT_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?status=not_started&order=asc&page='
 INFO_URL = 'http://api.globovideos.com/videos/%s/playlist'
 PREMIERE_24H_SIMULCAST = 'https://api-simulcast.globosat.tv/v1/premiereplay/'
@@ -58,7 +59,8 @@ THUMBS = {
     '1997': 'univ24ha',
     '2000': 'syfy24ha',
     '2023': 'stduniv24ha',
-    '2006': 'sexy24ha'
+    '2006': 'sexy24ha',
+    '1960': 'cbt24ha'
 }
 
 
@@ -118,9 +120,10 @@ def getAllBroadcasts():
             'live': program['liveBroadcast'],
             'playable': 'true',
             'plot': program['description'] or '' if not control.isFTV else ' ',
-            'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + datetime.datetime.strftime(program_date + datetime.timedelta(seconds=duration), '%H:%M'),
+            'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + datetime.datetime.strftime(endTime, '%H:%M'),
             'id': broadcast['mediaId'],
             'channel_id': broadcast['channel']['id'],
+            'service_id': broadcast['media']['serviceId'],
             'duration': int(duration),
             'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
             'brplayprovider': 'globosat',
@@ -498,23 +501,20 @@ def get_combate_live_channels():
 def get_premiere_live_games():
 
     live = []
-    all_games = []
+    live_games = []
 
     headers = {'Accept-Encoding': 'gzip'}
     page = 1
     has_more = True
     while has_more:
-        result = client.request(PREMIERE_MATCHES_JSON + str(page), headers=headers, error=True)
-        all_games += result['results']
+        result = client.request(PREMIERE_LIVE_MATCHES_JSON + str(page), headers=headers, error=True)
+        live_games += result['results']
         has_more = result['pagination']['has_next'] or not result or 'pagination' not in result or 'has_next' not in result['pagination']
         if has_more:
             page = page + 1
 
-    if not all_games:
+    if not live_games:
         return []
-
-    live_games = list(filter(lambda x: x['status'] == 'live', all_games))
-    offline_games = list(filter(lambda x: x['status'] != 'live' and x['status'] != 'ended', all_games))
 
     for game in live_games:
         live_game = __get_game_data(game, {
@@ -532,41 +532,6 @@ def get_premiere_live_games():
             'title': u'\u2063' + live_game['title']
         })
         live.append(live_game)
-
-    if len(offline_games) > 0:
-        if len(offline_games) > 1:
-            plural = 's' if len(offline_games) > 1 else ''
-            title = '%s jogo%s programado%s' % (len(offline_games), plural, plural)
-            extra_plural = 's' if len(offline_games) - 1 > 1 else ''
-            extra_games_str = ' + ' + str(len(offline_games) - 1) + ' jogo' + extra_plural
-        else:
-            title = ''
-            extra_games_str = ''
-
-        #PREMIERE
-        # live.append({
-        #     'slug': 'premiere-fc',
-        #     'name': u'[B]\u2063Próximos Jogos[/B]',
-        #     'studio': 'Premiere FC',
-        #     'title': u'\u2063Veja a Programação',
-        #     'tvshowtitle': u'Próximos Jogos',
-        #     'sorttitle': 'Premiere FC',
-        #     'clearlogo': PREMIERE_LOGO,
-        #     'fanart': PREMIERE_FANART,
-        #     'thumb': PREMIERE_FANART,
-        #     'playable': 'false',
-        #     'plot': title,
-        #     'id': None,
-        #     'channel_id': 1995,
-        #     'duration': None,
-        #     'isFolder': 'true',
-        #     'logo': offline_games[0]['home']['logo_60x60_url'],
-        #     'logo2': offline_games[0]['away']['logo_60x60_url'],
-        #     'initials1': offline_games[0]['home']['abbreviation'],
-        #     'initials2': offline_games[0]['away']['abbreviation'],
-        #     'gamedetails': offline_games[0]['championship'] + extra_games_str,
-        #     'brplayprovider': 'premierefc'
-        # })
 
     return live
 

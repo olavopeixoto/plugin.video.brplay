@@ -44,7 +44,7 @@ def get(function, timeout, *args, **table):
         t1 = int(match[3])
         t2 = int(time.time())
         update = timeout and (abs(t2 - t1) / 3600) >= int(timeout)
-        if update == False:
+        if update is False:
             return response
     except:
         pass
