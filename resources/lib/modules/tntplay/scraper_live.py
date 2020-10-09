@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import requests
 import datetime
 import time
@@ -13,8 +15,8 @@ CHANNEL_MAP = {
 
 LOGO_MAP = {
     'TNTLA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/tnt_left.png',
-    'TNTSLA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/tnts-pt.png?a=3',
-    'SPACELA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/space.png?a=3',
+    'TNTSLA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/tnts-pt.png',
+    'SPACELA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/space.png',
 }
 
 
@@ -43,6 +45,7 @@ def get_live_channels():
 
         program_details_url = 'http://schedule.dmti.cloud/show-detail?id={id}&mapped=true&output=json'.format(id=programme.get('contentId', ''))
         program_details_response = requests.get(program_details_url).json()
+
         details_key = next(iter(program_details_response.keys()), None)
         details = program_details_response.get(details_key, {}) or {}
 

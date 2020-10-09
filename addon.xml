@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.46" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="0.0.47" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -22,12 +22,8 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.46
-			- Implemented TNT Play Live Channels
-			- Implemented Globo Internacional (Americas) live channel
-			- Fix globosat live channels
-			- Fix sexyhot live channel
-			- Moved next PFC games out from Live channels to On Demand section
+		<news>0.0.47
+			- Implemented TNT Play VOD
         </news>
 	</extension>
 </addon>

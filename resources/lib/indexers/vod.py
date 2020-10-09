@@ -11,6 +11,7 @@ from resources.lib.modules.globosat import indexer as globosat
 from resources.lib.modules import control
 from resources.lib.modules.globoplay import indexer as globoplay
 from resources.lib.modules.globosat import scraper_combate
+from resources.lib.modules.tntplay import scraper_vod as tnt_vod
 from resources.lib.modules import cache
 from resources.lib.modules import workers
 from resources.lib.modules import util
@@ -40,7 +41,7 @@ class Vod:
 
     def get_vod_channels(self):
 
-        channels = cache.get(self.__get_vod_channels, 360, table="channels")
+        channels = cache.get(self.__get_vod_channels, 360, control.is_globosat_available(), control.is_globoplay_available(), control.is_tntplay_available(), table="channels")
 
         channels = [channel for channel in channels if channel['id'] not in BLACKLIST_CHANNELS]
 
@@ -52,15 +53,18 @@ class Vod:
 
         return channels
 
-    def __get_vod_channels(self):
+    def __get_vod_channels(self, is_globosat_available, is_globoplay_available, is_tntplay_available):
 
         channels = []
 
-        if control.is_globosat_available():
-            channels += globosat.Indexer().get_vod()
+        if is_globosat_available:
+            channels.extend(globosat.Indexer().get_vod())
 
-        if control.is_globoplay_available():
-            channels += globoplay.Indexer().get_vod()
+        if is_globoplay_available:
+            channels.extend(globoplay.Indexer().get_vod())
+
+        if is_tntplay_available:
+            channels.extend(tnt_vod.get_channels())
 
         channels = sorted(channels, key=lambda k: k['name'])
 
@@ -70,10 +74,13 @@ class Vod:
         programs = cache.get(globosat.Indexer().get_channel_programs, 1, channel_id)
         self.programs_directory(programs)
 
-    def get_channel_categories(self, slug='globo'):
+    def get_channel_categories(self, slug='globo', provider='globoplay'):
         if slug == 'combate':
             categories = cache.get(scraper_combate.get_combate_categories, 1)
             self.category_combate_directory(categories)
+        elif provider == 'tntplay':
+            categories = tnt_vod.get_channel_categories(slug)
+            self.category_directory(categories, provider=provider)
         else:
             categories = globoplay.Indexer().get_channel_categories()
             extras = globoplay.Indexer().get_extra_categories()
@@ -183,9 +190,16 @@ class Vod:
         subcategories = cache.get(globoplay.Indexer().get_category_subcategories, 1, category)
         self.programs_directory(programs, subcategories, category)
 
-    def get_programs_by_subcategory(self, category, subcategory):
-        subcategories = cache.get(globoplay.Indexer().get_category_programs, 1, category, subcategory)
+    def get_programs_by_subcategory(self, category, subcategory, provider='globoplay'):
+        if provider == 'tntplay':
+            subcategories = tnt_vod.get_content(category, subcategory)
+        else:
+            subcategories = cache.get(globoplay.Indexer().get_category_programs, 1, category, subcategory)
         self.programs_directory(subcategories)
+
+    def get_genres(self, category):
+        genres = cache.get(tnt_vod.get_genres, 1, category)
+        self.programs_directory([], genres, category=category, provider='tntplay')
 
     def get_states(self):
         states = cache.get(globoplay.Indexer().get_states, 1)
@@ -278,20 +292,26 @@ class Vod:
         episodes, nextpage, total_pages, days = cache.get(globoplay.Indexer().get_videos_by_program, 1, program_id, page, bingewatch)
         self.episodes_directory(episodes, program_id, nextpage, total_pages, days=days, poster=poster, provider=provider, fanart=fanart)
 
-    def get_seasons_by_program(self, id_globo_videos):
+    def get_seasons_by_program(self, id_globo_videos, provider='globosat'):
         if not util.is_number(id_globo_videos):
             control.infoDialog('[%s] %s' % (self.__class__.__name__, 'NO VIDEO ID'), 'ERROR')
             return
-
-        card = cache.get(globosat.Indexer().get_seasons_by_program, 1, id_globo_videos)
+        if str(provider) == 'tntplay':
+            card = tnt_vod.get_seasons(id_globo_videos)
+        else:
+            card = cache.get(globosat.Indexer().get_seasons_by_program, 1, id_globo_videos)
 
         if 'seasons' in card and card['seasons'] and len(card['seasons']) > 0:
             self.seasons_directory(card)
         else:
             self.get_episodes_by_program(card['id'])
 
-    def get_episodes_by_program(self, id_program, id_season=None):
-        episodes = cache.get(globosat.Indexer().get_episodes_by_program, 1, id_program, id_season)
+    def get_episodes_by_program(self, id_program, id_season=None, provider='globosat'):
+        if provider == 'tntplay':
+            episodes = tnt_vod.get_episodes(id_season)
+        else:
+            episodes = cache.get(globosat.Indexer().get_episodes_by_program, 1, id_program, id_season)
+
         self.episodes_directory(episodes)
 
     def get_videos_by_program_date(self, program_id, date, poster=None, provider=None, bingewatch=False, fanart=None):
@@ -502,7 +522,7 @@ class Vod:
         list += results
 
     def episodes_directory(self, items, program_id=None, next_page=None, total_pages=None, next_action='openvideos', days=[], poster=None, provider=None, is_favorite=False, is_watchlater=False, fanart=None):
-        if items is None or len(items) == 0:
+        if not items:
             control.idle()
             sys.exit()
 
@@ -516,7 +536,7 @@ class Vod:
         addWatchLater = control.lang(32075).encode('utf-8')
         removeWatchLater = control.lang(32076).encode('utf-8')
 
-        content = 'videos'
+        content = 'episodes'  # 'videos'
         sort = True
 
         if days:
@@ -593,26 +613,26 @@ class Vod:
 
                 provider = provider or video['brplayprovider'] if 'brplayprovider' in video else provider
 
-                action = 'playvod' if not meta['live'] else 'playlive'
+                action = 'playvod' if not meta.get('live', False) else 'playlive'
 
                 url = '%s?action=%s&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, action, provider, video['id'], sysmeta)
 
                 item = control.item(label=label)
 
-                local_fanart = fanart if fanart is not None else meta['fanart'] if 'fanart' in meta else GLOBO_FANART
+                local_fanart = fanart if fanart is not None else meta.get('fanart', None) if 'fanart' in meta else GLOBO_FANART
 
-                clearlogo = meta['clearlogo'] if 'clearlogo' in meta else None
+                clearlogo = meta.get('clearlogo', None) if 'clearlogo' in meta else None
 
-                poster = meta['poster'] if 'poster' in meta else poster
+                poster = meta.get('poster', None) if 'poster' in meta else poster
 
-                art = {'thumb': meta['thumb'], 'poster': poster, 'fanart': local_fanart, 'clearlogo': clearlogo}
+                art = {'thumb': meta.get('thumb', None), 'poster': poster, 'fanart': local_fanart, 'clearlogo': clearlogo}
 
                 item.setProperty('Fanart_Image', local_fanart)
 
-                offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
+                offset = float(meta.get('milliseconds_watched', 0)) / 1000.0 if 'milliseconds_watched' in meta else 0
 
                 if 'duration' in meta:
-                    duration = float(meta['duration']) if 'duration' in meta else offset
+                    duration = float(meta.get('duration', offset)) if 'duration' in meta else offset
                     duration = duration * 1000.0
                     item.setProperty('totaltime', str(duration))
 
@@ -680,10 +700,13 @@ class Vod:
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
-        if not next_page and next_action == 'openvideos' and sort:
-            control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATE)
+        if not provider or provider in ['globosat', 'globoplay']:
+            if not next_page and next_action == 'openvideos' and sort:
+                control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_DATE)
+            else:
+                control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_UNSORTED)
         else:
-            control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_UNSORTED)
+            control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_EPISODE)
 
         control.content(syshandle, content)
         control.directory(syshandle, cacheToDisc=False)
@@ -734,16 +757,17 @@ class Vod:
 
             item.setArt(art)
             item.setProperty('IsPlayable', "false")
-            item.setInfo(type='video', infoLabels={
-                'year': season['year'],
-                'season': season['number'],
+            info_labels = {
+                'year': season.get('year', None),
+                'season': season.get('number', None) or card.get('season', 0),
                 'overlay': 4,
                 'mediatype': 'season',
-                'plot': season['description'] or card['plot'],
-                'plotoutline': season['description'] or card['plot'],
-                'episode': season['episodes_number'],
-                'season': card['season']
-            })
+                'plot': season.get('description', None) or card.get('plot', None),
+                'plotoutline': season.get('description', None) or card.get('plot', None),
+                'episode': season.get('episodes_number', None) or season.get('episode', None),
+            }
+            info_labels.update(control.filter_info_labels(season))
+            item.setInfo(type='video', infoLabels=info_labels)
 
             cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
 
@@ -756,7 +780,7 @@ class Vod:
         control.content(syshandle, content)
         control.directory(syshandle, cacheToDisc=False)
 
-    def programs_directory(self, items, folders=[], category=None, kind=None):
+    def programs_directory(self, items, folders=[], category=None, kind=None, provider='globoplay'):
         sysaddon = sys.argv[0]
         syshandle = int(sys.argv[1])
 
@@ -778,7 +802,7 @@ class Vod:
 
             is_bingewatch = media_kind == 'bingewatch'
 
-            id_globo_videos = program['id_globo_videos'] if 'id_globo_videos' in program and program['id_globo_videos'] else None
+            id_globo_videos = program['id_globo_videos'] if 'id_globo_videos' in program and program['id_globo_videos'] else program['id'] if 'id' in program and program['id'] else None
 
             meta = program
             meta.update({
@@ -845,7 +869,7 @@ class Vod:
             meta = {}
             meta.update({'title': subcategory})
 
-            url = '%s?action=opencategory&provider=%s&category=%s&subcategory=%s' % (sysaddon, 'globoplay', urllib.quote_plus(category), urllib.quote_plus(subcategory))
+            url = '%s?action=opencategory&provider=%s&category=%s&subcategory=%s' % (sysaddon, provider, urllib.quote_plus(category), urllib.quote_plus(subcategory))
 
             item = control.item(label=label)
 
@@ -869,10 +893,13 @@ class Vod:
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
-        control.content(syshandle, 'tvshows')
+        if items:
+            control.content(syshandle, 'tvshows')
+        else:
+            control.content(syshandle, 'files')
         control.directory(syshandle, cacheToDisc=False)
 
-    def category_directory(self, items, extras, provider='globoplay'):
+    def category_directory(self, items, extras=[], provider='globoplay', action='opencategory'):
         if items is None or len(items) == 0:
             control.idle()
             sys.exit()
@@ -909,7 +936,7 @@ class Vod:
             meta = {}
             meta.update({'title': title})
 
-            url = '%s?action=opencategory&provider=%s&category=%s' % (sysaddon, provider, title)
+            url = '%s?action=%s&provider=%s&category=%s' % (sysaddon, action, provider, title)
 
             item = control.item(label=label)
 
@@ -929,7 +956,7 @@ class Vod:
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
         # 4K Content
-        if control.is_4k_enabled:
+        if control.is_4k_enabled and provider == 'globoplay':
             label = control.lang(34107).encode('utf-8')
             meta = {}
             meta.update({'title': label})
@@ -954,29 +981,30 @@ class Vod:
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
-        # Programas Locais
-        label = control.lang(34106).encode('utf-8')
-        meta = {}
-        meta.update({'title': label})
+        if provider == 'globoplay':
+            # Programas Locais
+            label = control.lang(34106).encode('utf-8')
+            meta = {}
+            meta.update({'title': label})
 
-        url = '%s?action=openlocal&provider=%s' % (sysaddon, provider)
+            url = '%s?action=openlocal&provider=%s' % (sysaddon, provider)
 
-        item = control.item(label=label)
+            item = control.item(label=label)
 
-        fanart = GLOBO_FANART
+            fanart = GLOBO_FANART
 
-        art = {'fanart': fanart}
-        item.setArt(art)
+            art = {'fanart': fanart}
+            item.setArt(art)
 
-        item.setProperty('Fanart_Image', fanart)
+            item.setProperty('Fanart_Image', fanart)
 
-        item.setProperty('IsPlayable', "false")
-        item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
+            item.setProperty('IsPlayable', "false")
+            item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
-        cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
-        item.addContextMenuItems(cm)
+            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
+            item.addContextMenuItems(cm)
 
-        control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
+            control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
 
         # control.addSortMethod(int(sys.argv[1]), control.SORT_METHOD_LABEL_IGNORE_FOLDERS)
 

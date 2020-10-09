@@ -9,7 +9,7 @@
 		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-2,true)+eq(-1,false)" subsetting="true" />
 		<setting id="globosat_password" type="text" option="hidden" label="31109" default="" visible="eq(-3,true)+eq(-2,false)" subsetting="true" />
 		<setting id="globosat_geofence" type="select" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" subsetting="true" />
-		<setting id="show_bbb" type="bool" label="33404" default="true" visible="eq(-5,true)" subsetting="true" />
+		<setting id="show_bbb" type="bool" label="33404" default="false" visible="false" subsetting="true" />
 		<setting id="show_pfc_games" type="bool" label="33405" default="true" visible="false" subsetting="true" />
 		<!-- 33401 = Show Adult Content -->
 		<setting id="show_adult" type="bool" label="33401" default="true" visible="eq(-7,true)" subsetting="true" />
@@ -74,7 +74,7 @@
 		<setting id="tntplay_available" type="bool" label="34123" default="true" />
 		<setting id="tntplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="tntplay_password" type="text" option="hidden" label="31109" default="" visible="eq(-2,true)" subsetting="true" />
-		<setting id="tntplay_provider" type="select" label="34124" default="oitv" values="oitv" visible="eq(-3,true)" subsetting="true" />
+		<setting id="tntplay_provider" type="select" label="34124" default="9" values="TV Alphaville|BluTV|Vivo Banda Larga ou TV|Claro tv|TVN|Cabo Telecom|Multiplay Telecom|Sky Brasil|Algar Telecom|Oi|Claro Net Tv" visible="eq(-3,true)" subsetting="true" />
 		<setting id="tntplay_country" type="text"  default="BR" visible="false" subsetting="true" />
 		<setting id="tntplay_device_id" type="text" label="Device ID" default="" visible="eq(-5,true)" enable="false" subsetting="true" />
 		<setting id="tntplay_token" type="text"  default="" visible="false" subsetting="true" />

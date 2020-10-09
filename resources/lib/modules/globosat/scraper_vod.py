@@ -84,12 +84,26 @@ def get_authorized_channels(retry=1):
                 })
 
     broadcasts_url = 'https://products-jarvis.globo.com/graphql?query=query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20color%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&operationName=getChannelsList&variables=%7B%22page%22%3A1%2C%22perPage%22%3A200%7D'
-    query_response = client.request(broadcasts_url, headers={"Accept-Encoding": "gzip", "x-tenant-id": "globosat-play"})
+    query_response = client.request(broadcasts_url, headers={
+        "Accept-Encoding": "gzip",
+        "x-tenant-id": "globosat-play",
+        'x-platform-id': 'web',
+        'x-device-id': 'desktop',
+        'x-client-version': '0.4.3',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
+    })
 
     resources = []
     resources.extend(query_response['data']['broadcastChannels']['resources'])
 
-    query_response = client.request(broadcasts_url, headers={"Accept-Encoding": "gzip", "x-tenant-id": "sexy-hot"})
+    query_response = client.request(broadcasts_url, headers={
+        "Accept-Encoding": "gzip",
+        "x-tenant-id": "sexy-hot",
+        'x-platform-id': 'web',
+        'x-device-id': 'desktop',
+        'x-client-version': '0.4.3',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
+    })
 
     resources.extend(query_response['data']['broadcastChannels']['resources'])
 

@@ -109,10 +109,10 @@ class Main:
 
             elif action == 'search':
                 from resources.lib.indexers import navigator
-                print('SEARCH -->')
-                print(q)
-                print('PAGE -->')
-                print(page)
+                control.log('SEARCH -->')
+                control.log(q)
+                control.log('PAGE -->')
+                control.log(page)
                 navigator.navigator().search(q, page)
 
             elif action == 'featured':
@@ -319,6 +319,29 @@ class Main:
             elif action == 'playlive' and provider == 'tntplay':
                 from resources.lib.modules.tntplay import player
                 player.Player().playlive(id_globo_videos, meta)
+
+            elif action == 'openchannel' and provider == 'tntplay':
+                from resources.lib.indexers import vod
+                vod.Vod().get_channel_categories(slug, provider)
+
+            elif action == 'opencategory' and provider == 'tntplay':
+                from resources.lib.indexers import vod
+                if subcategory is None:
+                    vod.Vod().get_genres(category)
+                else:
+                    vod.Vod().get_programs_by_subcategory(category, subcategory, provider=provider)
+
+            elif action == 'playvod' and provider == 'tntplay':
+                from resources.lib.modules.tntplay import player
+                player.Player().playlive(id_globo_videos, meta, True)
+
+            elif action == 'openvideos' and provider == 'tntplay':
+                from resources.lib.indexers import vod
+                vod.Vod().get_seasons_by_program(id_globo_videos, provider)
+
+            elif action == 'openepisodes' and provider == 'tntplay':
+                from resources.lib.indexers import vod
+                vod.Vod().get_episodes_by_program(program_id, season_id, provider)
 
         except Exception:
             buggalo.onExceptionRaised()

@@ -411,7 +411,10 @@ def get_globo_americas():
     headers = {
         "Accept-Encoding": "gzip",
         "User-Agent": "Globo Play/0 (iPhone)",
-        "x-tenant-id": "globo-play-us"
+        "x-tenant-id": "globo-play-us",
+        'x-platform-id': 'web',
+        'x-device-id': 'desktop',
+        'x-client-version': '0.4.3'
     }
 
     now = datetime.datetime.now()

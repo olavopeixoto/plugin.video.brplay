@@ -35,11 +35,8 @@ class Player(xbmc.Player):
 
         encrypted = 'drm' in data and 'licenseUrl' in data['drm']
 
-        if encrypted:
-            print('DRM Video!')
-
         if encrypted and not control.is_inputstream_available():
-            control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
+            control.okDialog(u'Oi Play', control.lang(34103).encode('utf-8'))
             return
 
         url = data['individualization']['url']
@@ -194,28 +191,28 @@ class Player(xbmc.Player):
             'Authorization': 'Bearer ' + token
         }
 
-        print('OIPLAY GET ' + url)
-        print(headers)
+        control.log('OIPLAY GET ' + url)
+        control.log(headers)
 
         try:
             individualize = client.request(url, headers=headers)
 
-            print(individualize)
+            control.log(individualize)
 
-            print(individualize['individualization']['url'])
+            control.log(individualize['individualization']['url'])
 
             return individualize
         except:
 
-            print 'RETRYING...'
+            control.log('RETRYING...')
 
             headers['Authorization'] = 'Bearer ' + gettoken(account, password, force_new=True)
 
-            print('OIPLAY GET ' + url)
-            print(headers)
+            control.log('OIPLAY GET ' + url)
+            control.log(headers)
 
             individualize = client.request(url, headers=headers)
 
-            print(individualize)
+            control.log(individualize)
 
             return individualize

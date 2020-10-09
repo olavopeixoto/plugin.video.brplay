@@ -44,7 +44,7 @@ def get_account_details(account, deviceid, token):
     response = client.request(url, headers=headers)
 
     if 'upmProfiles' not in response:
-        print(response)
+        control.log(response)
         return details
 
     profiles = sorted(response['upmProfiles'], key=lambda k: k['upmProfileType']['id'])
@@ -86,7 +86,7 @@ def gettoken(user, password, force_new=False):
             if not success:
                 response = __login(user, password)
 
-    print(response)
+    control.log(response)
 
     response['date'] = datetime.datetime.utcnow()
 
@@ -97,7 +97,7 @@ def gettoken(user, password, force_new=False):
 
 def __refresh_token(refresh_token):
 
-    print('REFRESH TOKEN')
+    control.log('REFRESH TOKEN')
 
     body = {
         'client_id': 'e722caf1-7c47-4398-ac7f-f75a5f843906',
@@ -106,7 +106,7 @@ def __refresh_token(refresh_token):
         'refresh_token': refresh_token
     }
 
-    print(body)
+    control.log(body)
 
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -124,29 +124,21 @@ def __refresh_token(refresh_token):
 
 def __login(user, password):
 
-    print('LOGIN OIPLAY')
+    control.log('LOGIN OIPLAY')
 
     session = requests.session()
 
     url = 'https://apim.oi.net.br/oic?state=eyJzdGF0ZSI6InN0YXRlIiwidGFyZ2V0X3VyaSI6Ii9kby1sb2dpbiJ9&client_id=e722caf1-7c47-4398-ac7f-f75a5f843906&response_type=code&scope=openid%20customer_info%20oob&redirect_uri=https://oiplay.tv/login'
 
-    # print('OIPLAY GET ' + url)
-
     response = session.get(url)
-
-    # print(response.content)
 
     url = re.findall(r'action="([^"]+)"', response.content)[0]
 
     url = 'https://logintv.oi.com.br' + url
 
-    # print('OIPLAY POST ' + url)
-
     session.post(url)
 
     url_login = 'https://logintv.oi.com.br/nidp/wsfed/ep?sid=0&sid=0'
-
-    # print('OIPLAY POST ' + url_login)
 
     response = session.post(url_login, data={
         'option': 'credential',
@@ -181,8 +173,6 @@ def __login(user, password):
         'grant_type': 'authorization_code',
         'redirect_uri': 'https://oiplay.tv/login'
     }
-
-    # print('OIPLAY POST ' + ACCESS_TOKEN_URL)
 
     token_response = session.post(ACCESS_TOKEN_URL, data=post)
 

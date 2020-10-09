@@ -51,6 +51,7 @@ SORT_METHOD_CHANNEL = xbmcplugin.SORT_METHOD_CHANNEL
 SORT_METHOD_DATE = xbmcplugin.SORT_METHOD_DATE
 SORT_METHOD_DATEADDED = xbmcplugin.SORT_METHOD_DATEADDED
 SORT_METHOD_PLAYLIST_ORDER = xbmcplugin.SORT_METHOD_PLAYLIST_ORDER
+SORT_METHOD_EPISODE = xbmcplugin.SORT_METHOD_EPISODE
 
 #
 # SORT_METHOD_ALBUM = 13
@@ -188,6 +189,8 @@ is_4k_images_enabled =  xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'tru
 log_enabled = setting('enable_log') == 'true'
 
 disable_inputstream_adaptive = setting("disable_inputstream_adaptive") == 'true'
+
+prefer_dash = setting('prefer_dash') == 'true'
 
 
 def get_current_brasilia_utc_offset():
@@ -479,9 +482,19 @@ def clear_globosat_credentials():
     setSetting("globosat_credentials", u'')
 
 
-def log(msg):
+LOGDEBUG = 0
+LOGERROR = 4
+LOGFATAL = 6
+LOGINFO = 1
+LOGNONE = 7
+LOGNOTICE = 2
+LOGSEVERE = 5
+LOGWARNING = 3
+
+
+def log(msg, level=LOGNOTICE):
     if log_enabled:
-        xbmc.log('[plugin.video.brplay] - ' + str(msg), xbmc.LOGNOTICE)  # xbmc.LOGDEBUG
+        xbmc.log('[plugin.video.brplay] - ' + str(msg), level)  # xbmc.LOGDEBUG
 
 
 def get_coordinates(affiliate):

@@ -3,12 +3,22 @@
 import json
 import sys
 from urlparse import urlparse
-import threading
 import resources.lib.modules.control as control
 from resources.lib.modules import hlshelper
 import requests
 import xbmc
-from auth import get_token, get_device_id
+from auth import get_token, get_device_id, logout
+import traceback
+
+LANGUAGE = control.lang(34125).encode('utf-8')
+
+proxy = None #control.proxy_url
+proxy = None if proxy is None or proxy == '' else {
+    'http': proxy,
+    'https': proxy,
+}
+
+vod_platform = 'PCTV_DASH' if control.prefer_dash else 'PCTV'
 
 
 class Player(xbmc.Player):
@@ -21,34 +31,22 @@ class Player(xbmc.Player):
         self.video_id = None
         self.offset = 0.0
 
-    def playlive(self, id, meta):
+    def playlive(self, id, meta, encrypted=False):
 
-        control.log("Oi Play - play_stream: id=%s | meta=%s" % (id, meta))
+        control.log("TNT Play - play_stream: id=%s | meta=%s" % (id, meta))
 
         if id is None: return
 
         try:
-            url = self.geturl(id)
+            url = self.geturl(id, encrypted=encrypted)
         except Exception as ex:
-            control.okDialog(control.lang(31200), str(ex))
+            control.log(traceback.format_exc(), control.LOGERROR)
+            control.okDialog(u'TNT Play', str(ex))
             return
-
-        encrypted = False  # 'drm' in data and 'licenseUrl' in data['drm']
-
-        if encrypted:
-            print('DRM Video!')
 
         if encrypted and not control.is_inputstream_available():
-            control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
+            control.okDialog(u'TNT Play', control.lang(34103).encode('utf-8'))
             return
-
-        # url = data['individualization']['url']
-
-        # url = url.replace('https://', 'http://')  # hack
-
-        # info = data['token']['cmsChannelItem']
-
-        # title = info['title']
 
         control.log("live media url: %s" % url)
 
@@ -58,13 +56,6 @@ class Player(xbmc.Player):
             meta = {
                 "playcount": 0,
                 "overlay": 6,
-                # "title": title,
-                # "thumb": info['positiveLogoUrl'],
-                # "mediatype": "video",
-                # "aired": None,
-                # "genre": info["categoryName"],
-                # "plot": title,
-                # "plotoutline": title
             }
 
         poster = meta['poster'] if 'poster' in meta else None
@@ -72,14 +63,15 @@ class Player(xbmc.Player):
 
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
 
-        self.isLive = True  # info['isLive']
+        self.isLive = not encrypted
 
         parsed_url = urlparse(url)
+
         if ".m3u8" in parsed_url.path:
             self.url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
         else:
             self.url = url
-            mime_type, stopEvent, cookies = 'video/mp4', None, None
+            mime_type, stopEvent, cookies = None, None, None
 
         if self.url is None:
             if stopEvent:
@@ -98,24 +90,56 @@ class Player(xbmc.Player):
 
         item.setContentLookup(False)
 
-        # if ".mpd" in parsed_url.path:
-        #     mime_type = 'application/dash+xml'
-        #     item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-        #     if self.isLive:
-        #         item.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
-        #
-        # else:
-        item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+        manifest_type = 'hls' if parsed_url.path.endswith(".m3u8") else 'mpd'
 
         if encrypted:
             control.log("DRM: com.widevine.alpha")
-            # licence_url = data['drm']['licenseUrl'] + '&token=' + data['drm']['jwtToken']
-            # item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
-            # item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
+            licence_url = 'https://widevine.license.istreamplanet.com/widevine/api/license/7837c2c6-8fe4-4db0-9900-1bd66c21ffa3'
+            item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
+            item.setProperty('inputstream.adaptive.manifest_type', manifest_type)
 
-        # if mime_type:
-        #     item.setMimeType(mime_type)
-        #     control.log("MIME TYPE: %s" % repr(mime_type))
+            cookie = get_token()
+            retry = 1
+            token = ''
+            while retry >= 0:
+                retry = retry - 1
+
+                headers = {
+                    'Accept': 'application/json',
+                    'cookie': 'avs_cookie=' + cookie,
+                    'User-Agent': 'Tnt/2.2.13.1908061505 CFNetwork/1107.1 Darwin/19.0.0'
+                }
+                drm_url = 'https://api.tntgo.tv/AGL/1.0/A/{lang}/{platform}/TNTGO_LATAM_BR/CONTENT/GETDRMTOKEN/{id}'.format(lang=LANGUAGE, platform=vod_platform, id=id)
+
+                control.log('TNT DRM GET %s' % drm_url)
+                control.log(headers)
+
+                drm_response = requests.get(drm_url, headers=headers, proxies=proxy).json() or {}
+
+                control.log(drm_response)
+
+                if drm_response.get('resultCode', 'KO') == u'OK':
+                    token = drm_response.get('resultObj')
+                    break
+
+                if drm_response.get('message', '') == 'Token not valid':
+                    cookie = get_token(True)
+                else:
+                    logout()
+                    control.infoDialog(drm_response.get('message', u'DRM ERROR'), icon='ERROR')
+                    return
+
+            key_headers = 'x-isp-token=%s&Origin=https://www.tntgo.tv' % token
+            license_key = '%s|%s|R{SSM}|' % (licence_url, key_headers)
+            item.setProperty('inputstream.adaptive.license_key', license_key)
+        else:
+            item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+            # mime_type = 'application/vnd.apple.mpegurl'
+            # item.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
+
+        if mime_type:
+            item.setMimeType(mime_type)
+            control.log("MIME TYPE: %s" % repr(mime_type))
 
         if not cookies and control.is_inputstream_available():
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
@@ -125,11 +149,13 @@ class Player(xbmc.Player):
 
         control.log("Done playing. Quitting...")
 
-    def geturl(self, channel, cookie=None):
+    def geturl(self, content_id, cookie=None, encrypted=False):
 
         device_id = get_device_id()
 
-        url = 'https://apac.ti-platform.com/AGL/1.0/R/ENG/PCTV/TNTGO_LATAM_BR/CONTENT/CDN/?id=%s&type=VOD&asJson=Y&accountDeviceId=%s' % (channel, device_id)
+        platform = 'PCTV' if not encrypted else vod_platform  # 'PCTV_DASH'
+
+        url = 'https://apac.ti-platform.com/AGL/1.0/R/%s/%s/TNTGO_LATAM_BR/CONTENT/CDN/?id=%s&type=VOD&asJson=Y&accountDeviceId=%s' % (LANGUAGE, platform, content_id, device_id)
 
         retry = True if not cookie else False
 
@@ -144,15 +170,16 @@ class Player(xbmc.Player):
         control.log('TNT GET ' + url)
         control.log(headers)
 
-        result = json.loads(requests.get(url, headers=headers).content)
+        result = requests.get(url, headers=headers, proxies=proxy).json() or {}
 
         control.log(result)
 
-        if 'message' in result and result['message'] == 'Token not valid' and retry:
+        if 'message' in result and result['message'] == u'Token not valid' and retry:
             cookie = get_token(True)
-            return self.geturl(channel, cookie)
+            return self.geturl(content_id, cookie, encrypted)
 
         if result.get('resultCode', u'KO') == u'KO':
-            raise Exception('%s: %s' % (result.get('message', u'ERROR'), result.get('errorDescription', u'UNKNOWN')))
+            logout()
+            raise Exception('%s: %s' % (result.get('message', u'STREAM URL ERROR'), result.get('errorDescription', u'UNKNOWN')))
 
-        return result['resultObj']['src']
+        return result.get('resultObj', {}).get('src', None)

@@ -238,7 +238,7 @@ msgstr "Remover do Assistir Mais Tarde do Globosat"
 
 msgctxt "#32080"
 msgid "Featured"
-msgstr "Destaques Globosat"
+msgstr "Destaques"
 
 msgctxt "#32090"
 msgid "Favorites"
@@ -479,3 +479,24 @@ msgstr "Habilitar TNT Play"
 msgctxt "#34124"
 msgid "Provider"
 msgstr "Operadora"
+
+msgctxt "#34125"
+msgid "ENG"
+msgstr "POR"
+
+msgctxt "#34126"
+msgid "All Genres"
+msgstr "Todos os Gêneros"
+
+msgctxt "#34127"
+msgid "Series"
+msgstr "Séries"
+
+msgctxt "#34128"
+msgid "Movies"
+msgstr "Filmes"
+
+
+msgctxt "#34129"
+msgid "Provider not implemented"
+msgstr "Provedor não implementado"

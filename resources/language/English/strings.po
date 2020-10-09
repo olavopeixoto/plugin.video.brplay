@@ -479,3 +479,24 @@ msgstr ""
 msgctxt "#34124"
 msgid "Provider"
 msgstr ""
+
+msgctxt "#34125"
+msgid "ENG"
+msgstr ""
+
+msgctxt "#34126"
+msgid "All Genres"
+msgstr ""
+
+msgctxt "#34127"
+msgid "Series"
+msgstr ""
+
+msgctxt "#34128"
+msgid "Movies"
+msgstr ""
+
+
+msgctxt "#34129"
+msgid "Provider not implemented"
+msgstr ""

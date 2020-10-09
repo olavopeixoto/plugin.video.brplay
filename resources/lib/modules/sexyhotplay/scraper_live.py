@@ -19,10 +19,11 @@ def get_broadcast():
 
     url = 'https://products-jarvis.globo.com/graphql?query=query%20getBroadcast%28%24mediaId%3A%20ID%21%2C%20%24coordinates%3A%20CoordinatesData%2C%20%24logoScale%3A%20BroadcastChannelTrimmedLogoScales%20%3D%20X56%29%20%7B%0A%20%20broadcast%28mediaId%3A%20%24mediaId%2C%20coordinates%3A%20%24coordinates%29%20%7B%0A%20%20%20%20mediaId%0A%20%20%20%20mutedMediaId%0A%20%20%20%20promotionalMediaId%0A%20%20%20%20promotionalText%0A%20%20%20%20geoblocked%0A%20%20%20%20geofencing%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20trimmedLogo%28scale%3A%20%24logoScale%29%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20imageOnAir%3A%20imageOnAir%28scale%3A%20X720%29%0A%20%20%20%20epgCurrentSlots%28limit%3A%203%29%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%7D%0A%20%20%20%20media%20%7B%0A%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20availableFor%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D&operationName=getBroadcast&variables=%7B%22logoScale%22%3A%22X42%22%2C%22mediaId%22%3A%226988462%22%7D'
     headers = {
-        'x-client-version': '0.4.3',
-        'x-device-id': 'desktop',
+        'x-tenant-id': 'sexy-hot',
         'x-platform-id': 'web',
-        'x-tenant-id': 'sexy-hot'
+        'x-device-id': 'desktop',
+        'x-client-version': '0.4.3',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
     }
     response = client.request(url, headers=headers)
 
@@ -32,9 +33,11 @@ def get_broadcast():
 
     program = broadcast['epgCurrentSlots'][0]
 
+    program_name = program['name'] + (u': ' + program['metadata'] if program['metadata'] else u'')
+
     live_text = ' (' + control.lang(32004) + ')' if program['liveBroadcast'] else ''
     name = "[B]" + broadcast['channel']['name'] + "[/B]" + (
-        '[I] - ' + (program['name'] or '') + '[/I]' if program['name'] else '') + live_text
+        '[I] - ' + program_name + '[/I]' if program_name else '') + live_text
 
     fanart = broadcast['imageOnAir']  # FANART_URL.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
     thumb = THUMB_URL + '?v=' + str(int(time.time()))  # THUMB_URL.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
@@ -42,8 +45,6 @@ def get_broadcast():
     program_date = datetime.datetime.fromtimestamp(program['startTime'])
     endTime = datetime.datetime.fromtimestamp(program['endTime'])
     duration = (endTime - program_date).total_seconds()
-
-    program_name = program['name'] + (u': ' + program['metadata'] if program['metadata'] else u'')
 
     item = {
         'slug': broadcast['channel']['slug'],
