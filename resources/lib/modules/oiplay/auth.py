@@ -7,7 +7,6 @@ import urlparse
 from json import JSONEncoder
 import pickle
 import resources.lib.modules.control as control
-from resources.lib.modules import client
 
 
 ACCESS_TOKEN_URL = 'https://apim.oi.net.br/connect/oauth2/token_endpoint/access_token'
@@ -31,7 +30,7 @@ def get_account_details(account, deviceid, token):
     }
 
     if details['oiplay_default_profile']:
-        print ('ACCOUNT DETAILS FROM CACHE: ' + json.dumps(details))
+        control.log('ACCOUNT DETAILS FROM CACHE: ' + json.dumps(details))
         return details
 
     headers = {
@@ -41,7 +40,7 @@ def get_account_details(account, deviceid, token):
         'Authorization': 'Bearer ' + token
     }
     url = PROFILES_URL.format(account=account, deviceid=deviceid)
-    response = client.request(url, headers=headers)
+    response = requests.get(url, headers=headers).json()
 
     if 'upmProfiles' not in response:
         control.log(response)
@@ -58,7 +57,7 @@ def get_account_details(account, deviceid, token):
 
     control.setSetting('oiplay_default_profile', str(default_profile))
 
-    print ('ACCOUNT DETAILS FROM URL: ' + json.dumps(response))
+    control.log('ACCOUNT DETAILS FROM URL: ' + json.dumps(response))
 
     return response
 
@@ -75,7 +74,7 @@ def gettoken(user, password, force_new=False):
             refresh_token = auth_json['refresh_token']
 
             if auth_json['date'] + datetime.timedelta(seconds=auth_json['expires_in']) > datetime.datetime.utcnow():
-                print 'ACCESS TOKEN FROM FILE: ' + auth_json['access_token']
+                control.log('ACCESS TOKEN FROM FILE: ' + auth_json['access_token'])
                 return auth_json['access_token']
 
         if not refresh_token:
@@ -103,7 +102,7 @@ def __refresh_token(refresh_token):
         'client_id': 'e722caf1-7c47-4398-ac7f-f75a5f843906',
         'client_secret': 'b1e75e98-0833-4c67-aed7-9f1f232c8e0f',
         'grant_type': 'refresh_token',
-        'refresh_token': refresh_token
+        'refresh_token': str(refresh_token)
     }
 
     control.log(body)
@@ -114,7 +113,11 @@ def __refresh_token(refresh_token):
         'User-Agent': 'OiPlay-Store/5.1.1 (iPhone; iOS 13.3.1; Scale/3.00)'
     }
 
-    response = client.request(ACCESS_TOKEN_URL, headers=headers, post=body)
+    response = requests.post(ACCESS_TOKEN_URL, json=body, headers=headers)
+
+    # response.raise_for_status()
+
+    response = response.json()
 
     if not response or 'access_token' not in response:
         return False, None
@@ -138,14 +141,22 @@ def __login(user, password):
 
     session.post(url)
 
-    url_login = 'https://logintv.oi.com.br/nidp/wsfed/ep?sid=0&sid=0'
+    url_login = 'https://logintv.oi.com.br/nidp/wsfed/ep?sid=0'
 
     response = session.post(url_login, data={
         'option': 'credential',
-        'urlRedirect': 'https://logintv.oi.com.br/nidp/wsfed/ep?sid=0&sid=0',
+        'urlRedirect': 'https://logintv.oi.com.br/nidp/wsfed/ep?sid=0',
         'Ecom_User_ID': user,
         'Ecom_Password': password
     })
+
+    # control.log(response.content)
+
+    url = re.findall(r"window.location.href='([^']+)';", response.content)[0]
+
+    control.log('GET %s' % url)
+
+    response = session.get(url)
 
     html = BeautifulSoup(response.content)
 
