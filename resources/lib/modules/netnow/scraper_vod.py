@@ -36,6 +36,12 @@ CATEGORY_SLUG = {
     CATEGORIES.CLUBE: 'home-now-clube'
 }
 
+CATEGORIES_HIDE = [
+    'live',
+    'categories',  # TODO
+    'tv_channels'  # TODO
+]
+
 
 def get_channels():
     return [{
@@ -81,7 +87,7 @@ def get_page(category):
 
     response = _get_page(category)
 
-    return [item.get('title', '').encode('utf-8') for item in response.get('response', {}).get('categories', []) if item.get('type', '') != 'live']
+    return [item.get('title', '').encode('utf-8') for item in response.get('response', {}).get('categories', []) if item.get('type', '') not in CATEGORIES_HIDE]
 
 
 def get_content(category, subcategory):
@@ -129,6 +135,7 @@ def _hydrate_content(content):
                 'fanart': content.get('images', {}).get('banner', None),
                 'clearlogo': content.get('tvChannel', {}).get('logo', None),
                 'kind': 'movies' if content.get('type', '') == 'movie' else 'episode' if content.get('type', '') == "episode" else 'tvshow',
+                'mediatype': 'movie' if content.get('type', '') == 'movie' else 'episode' if content.get('type', '') == "episode" else 'tvshow',
                 'plot': content.get('description', None),
                 'plotoutline': content.get('description', None),
                 'genre': content.get('genres', []),
@@ -143,6 +150,7 @@ def _hydrate_content(content):
                 'userrating': content.get('userRating', None),
                 'mpaa': content.get('ageRating', None),
                 'encrypted': True,
+                'trailer': content.get('trailerUri', None),
                 'brplayprovider': 'nowonline'
             }
 
@@ -178,7 +186,8 @@ def get_seasons(id):
             'cast': content.get('actors', []),
             'episode': content.get('episodeNumber', None),
             'season': content.get('seasonNumber', None),
-            'mpaa': content.get('ageRating', None)
+            'mpaa': content.get('ageRating', None),
+            'mediatype': 'season'
         }
 
         program['seasons'].append(season)
