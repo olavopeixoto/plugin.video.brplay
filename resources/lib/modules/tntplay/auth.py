@@ -305,10 +305,6 @@ def net_login(session, response, username, password):
 
     post_url = urlparse.urljoin(response.url, form['action'])
 
-    control.log('STEP 2')
-    control.log(post_url)
-    control.log(form_data)
-
     response = session.post(post_url, data=form_data, proxies=proxy)
 
     response.raise_for_status()

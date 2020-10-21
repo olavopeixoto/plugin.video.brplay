@@ -12,6 +12,7 @@ from resources.lib.modules import control
 from resources.lib.modules.globoplay import indexer as globoplay
 from resources.lib.modules.globosat import scraper_combate
 from resources.lib.modules.tntplay import scraper_vod as tnt_vod
+from resources.lib.modules.netnow import scraper_vod as netnow
 from resources.lib.modules import cache
 from resources.lib.modules import workers
 from resources.lib.modules import util
@@ -41,7 +42,7 @@ class Vod:
 
     def get_vod_channels(self):
 
-        channels = cache.get(self.__get_vod_channels, 360, control.is_globosat_available(), control.is_globoplay_available(), control.is_tntplay_available(), table="channels")
+        channels = cache.get(self.__get_vod_channels, 360, control.is_globosat_available(), control.is_globoplay_available(), control.is_tntplay_available(), control.is_nowonline_available(), table="channels")
 
         channels = [channel for channel in channels if channel['id'] not in BLACKLIST_CHANNELS]
 
@@ -53,7 +54,7 @@ class Vod:
 
         return channels
 
-    def __get_vod_channels(self, is_globosat_available, is_globoplay_available, is_tntplay_available):
+    def __get_vod_channels(self, is_globosat_available, is_globoplay_available, is_tntplay_available, is_netnow_available):
 
         channels = []
 
@@ -65,6 +66,9 @@ class Vod:
 
         if is_tntplay_available:
             channels.extend(tnt_vod.get_channels())
+
+        if is_netnow_available:
+            channels.extend(netnow.get_channels())
 
         channels = sorted(channels, key=lambda k: k['name'])
 
@@ -80,6 +84,9 @@ class Vod:
             self.category_combate_directory(categories)
         elif provider == 'tntplay':
             categories = tnt_vod.get_channel_categories(slug)
+            self.category_directory(categories, provider=provider)
+        elif provider == 'nowonline':
+            categories = netnow.get_channel_categories(slug)
             self.category_directory(categories, provider=provider)
         else:
             categories = globoplay.Indexer().get_channel_categories()
@@ -193,13 +200,19 @@ class Vod:
     def get_programs_by_subcategory(self, category, subcategory, provider='globoplay'):
         if provider == 'tntplay':
             subcategories = tnt_vod.get_content(category, subcategory)
+        elif provider == 'nowonline':
+            subcategories = netnow.get_content(category, subcategory)
         else:
             subcategories = cache.get(globoplay.Indexer().get_category_programs, 1, category, subcategory)
         self.programs_directory(subcategories)
 
-    def get_genres(self, category):
-        genres = cache.get(tnt_vod.get_genres, 1, category)
-        self.programs_directory([], genres, category=category, provider='tntplay')
+    def get_genres(self, category, provider):
+        if provider == 'tntplay':
+            genres = cache.get(tnt_vod.get_genres, 1, category)
+        else:
+            genres = netnow.get_page(category)  #cache.get(netnow.get_page, 1, category)
+
+        self.programs_directory([], genres, category=category, provider=provider)
 
     def get_states(self):
         states = cache.get(globoplay.Indexer().get_states, 1)
@@ -298,17 +311,21 @@ class Vod:
             return
         if str(provider) == 'tntplay':
             card = tnt_vod.get_seasons(id_globo_videos)
+        elif str(provider) == 'nowonline':
+            card = netnow.get_seasons(id_globo_videos)
         else:
             card = cache.get(globosat.Indexer().get_seasons_by_program, 1, id_globo_videos)
 
         if 'seasons' in card and card['seasons'] and len(card['seasons']) > 0:
             self.seasons_directory(card)
         else:
-            self.get_episodes_by_program(card['id'])
+            self.get_episodes_by_program(card['id'], provider=provider)
 
     def get_episodes_by_program(self, id_program, id_season=None, provider='globosat'):
         if provider == 'tntplay':
             episodes = tnt_vod.get_episodes(id_season)
+        elif provider == 'nowonline':
+            episodes = netnow.get_episodes(id_program, id_season)
         else:
             episodes = cache.get(globosat.Indexer().get_episodes_by_program, 1, id_program, id_season)
 
@@ -785,7 +802,7 @@ class Vod:
         syshandle = int(sys.argv[1])
 
         # 32072 = "Refresh" 
-        refreshMenu = control.lang(32072).encode('utf-8')
+        refresh_menu = control.lang(32072).encode('utf-8')
 
         has_playable_item = False
 
@@ -797,8 +814,9 @@ class Vod:
 
             is_music_video = media_kind == 'shows'
             is_movie = media_kind == 'movies'
+            is_episode = media_kind == 'episodes'
 
-            is_playable = is_music_video or is_movie
+            is_playable = is_music_video or is_movie or is_episode
 
             is_bingewatch = media_kind == 'bingewatch'
 
@@ -844,7 +862,7 @@ class Vod:
                 else:
                     url = '%s?action=openvideos&provider=%s&id_globo_videos=%s&meta=%s' % (sysaddon, program['brplayprovider'], id_globo_videos, sysmeta)
 
-            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
+            cm = [(refresh_menu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             item.setArt(art)
@@ -888,7 +906,7 @@ class Vod:
             item.setProperty('IsPlayable', "false")
             item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
-            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
+            cm = [(refresh_menu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
@@ -908,7 +926,7 @@ class Vod:
         syshandle = int(sys.argv[1])
 
         # 32072 = "Refresh" 
-        refreshMenu = control.lang(32072).encode('utf-8')
+        refresh_menu = control.lang(32072).encode('utf-8')
 
         for extra in extras:
             id = extra['id']
@@ -950,7 +968,7 @@ class Vod:
             item.setProperty('IsPlayable', "false")
             item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
-            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
+            cm = [(refresh_menu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
@@ -976,7 +994,7 @@ class Vod:
             item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
             cm = []
-            cm.append((refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon))
+            cm.append((refresh_menu, 'RunPlugin(%s?action=refresh)' % sysaddon))
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)
@@ -1001,7 +1019,7 @@ class Vod:
             item.setProperty('IsPlayable', "false")
             item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
 
-            cm = [(refreshMenu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
+            cm = [(refresh_menu, 'RunPlugin(%s?action=refresh)' % sysaddon)]
             item.addContextMenuItems(cm)
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=True)

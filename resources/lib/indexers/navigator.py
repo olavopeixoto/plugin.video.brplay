@@ -20,9 +20,9 @@ addonFanart = control.addonFanart()
 
 class navigator:
     def root(self):
-        if control.is_globosat_available() or control.is_globoplay_available() or control.is_oiplay_available() or control.is_tntplay_available():
+        if control.is_globosat_available() or control.is_globoplay_available() or control.is_oiplay_available() or control.is_tntplay_available() or control.is_nowonline_available():
             self.add_directory_item(32001, 'liveChannels', 'live.png', 'live.png')
-            if control.is_globosat_available() or control.is_globoplay_available() or control.is_tntplay_available():
+            if control.is_globosat_available() or control.is_globoplay_available() or control.is_tntplay_available() or control.is_nowonline_available():
                 self.add_directory_item(32002, 'vodChannels', 'ondemand.png', 'ondemand.png')
         else:
             self.add_directory_item(32005, 'settings', 'tools.png', 'tools.png')

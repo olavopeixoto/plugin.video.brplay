@@ -4,7 +4,7 @@
 	<category label="32346">
 
 		<setting type="lsep" label="Globosat Play"/>
-		<setting id="globosat_available" type="bool" label="34108" default="true" />
+		<setting id="globosat_available" type="bool" label="34108" default="false" />
 		<setting id="use_globoplay_credentials_for_globosat" type="bool" label="34109" default="true" visible="eq(-1,true)" subsetting="true" />
 		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-2,true)+eq(-1,false)" subsetting="true" />
 		<setting id="globosat_password" type="text" option="hidden" label="31109" default="" visible="eq(-3,true)+eq(-2,false)" subsetting="true" />
@@ -50,7 +50,7 @@
 		<!-- 31139 = Porto Velho -->
 		<setting type="lsep" label="Globo Play"/>
 
-		<setting id="globoplay_available" type="bool" label="31101" default="true" />
+		<setting id="globoplay_available" type="bool" label="31101" default="false" />
 		<setting id="globoplay_username" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31109" visible="eq(-2,true)" enable="!eq(-1,)" default="" subsetting="true" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
@@ -64,20 +64,29 @@
 		<setting type="sep" />
 
 		<setting type="lsep" label="Oi Play"/>
-		<setting id="oiplay_available" type="bool" label="34113" default="true" />
+		<setting id="oiplay_available" type="bool" label="34113" default="false" />
 		<setting id="oiplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="oiplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
 
 		<setting type="sep" />
 
 		<setting type="lsep" label="TNT Play"/>
-		<setting id="tntplay_available" type="bool" label="34123" default="true" />
+		<setting id="tntplay_available" type="bool" label="34123" default="false" />
 		<setting id="tntplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="tntplay_password" type="text" option="hidden" label="31109" default="" visible="eq(-2,true)" subsetting="true" />
 		<setting id="tntplay_provider" type="select" label="34124" default="9" values="TV Alphaville|BluTV|Vivo Banda Larga ou TV|Claro tv|TVN|Cabo Telecom|Multiplay Telecom|Sky Brasil|Algar Telecom|Oi|Claro Net Tv" visible="eq(-3,true)" subsetting="true" />
 		<setting id="tntplay_country" type="text"  default="BR" visible="false" subsetting="true" />
 		<setting id="tntplay_device_id" type="text" label="Device ID" default="" visible="eq(-5,true)" enable="false" subsetting="true" />
 		<setting id="tntplay_token" type="text"  default="" visible="false" subsetting="true" />
+
+		<setting type="sep" />
+
+		<setting type="lsep" label="Now Online"/>
+		<setting id="nowonline_available" type="bool" label="34130" default="false" />
+		<setting id="nowonline_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
+		<setting id="nowonline_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
+		<setting id="nowonline_credentials" type="text"  default="" visible="false" subsetting="true" />
+		<setting id="nowonline_device_id" type="text"  default="" visible="false" subsetting="true" />
 
 		<setting type="sep" />
 	</category>

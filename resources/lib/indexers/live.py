@@ -14,6 +14,7 @@ from resources.lib.modules.globosat import indexer as globosat
 from resources.lib.modules.sexyhotplay import indexer as sexyhotplay
 from resources.lib.modules.oiplay import scraper_live as oiplay
 from resources.lib.modules.tntplay import scraper_live as tntplay
+from resources.lib.modules.netnow import scraper_live as netnow
 
 
 class Live:
@@ -39,6 +40,9 @@ class Live:
 
         if control.is_tntplay_available():
             threads.append(workers.Thread(self.append_result, tntplay.get_live_channels, live))
+
+        if control.is_nowonline_available():
+            threads.append(workers.Thread(self.append_result, netnow.get_live_channels, live))
 
         [i.start() for i in threads]
         [i.join() for i in threads]
@@ -165,7 +169,7 @@ class Live:
 
             if 'duration' in channel and channel['duration'] is not None:
                 duration = float(meta['duration'])
-                startdate = util.strptime_workaround(channel['dateadded'], '%Y-%m-%d %H:%M:%S') if 'dateadded' in channel else None
+                startdate = util.strptime_workaround(channel['dateadded'], '%Y-%m-%d %H:%M:%S') if 'dateadded' in channel and channel['dateadded'] else None
                 offset = float(util.get_total_seconds(datetime.datetime.now() - startdate)) if startdate else 0
                 item.setProperty('Progress', str((offset / duration) * 100) if duration else str(0))
                 item.setProperty('totaltime', str(duration))

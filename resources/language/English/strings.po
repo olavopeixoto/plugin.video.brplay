@@ -500,3 +500,7 @@ msgstr ""
 msgctxt "#34129"
 msgid "Provider not implemented"
 msgstr ""
+
+msgctxt "#34130"
+msgid "Enable Now Online"
+msgstr ""

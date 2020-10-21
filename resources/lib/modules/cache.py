@@ -8,13 +8,18 @@ except: from pysqlite2 import dbapi2 as database
 from resources.lib.modules import control
 
 try:
+    import cPickle as pickle
+except:
+    import pickle
+
+try:
     from collections import OrderedDict
 except ImportError:
     # python 2.6 or earlier, use backport
     OrderedDict = None
 
 
-def get(function, timeout, *args, **table):
+def get(function, timeout, *args, **kargs):
     # try:
     response = None
 
@@ -23,12 +28,16 @@ def get(function, timeout, *args, **table):
 
     a = hashlib.md5()
     for i in args: a.update(str(i))
+    for key in kargs:
+        if key != 'table':
+            a.update('%s=%s' % (key, str(kargs[key])))
     a = str(a.hexdigest())
     # except:
     #     pass
 
     try:
-        table = table['table']
+        table = kargs['table']
+        kargs.pop('table', None)
     except:
         table = 'rel_list'
 
@@ -39,18 +48,25 @@ def get(function, timeout, *args, **table):
         dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
         match = dbcur.fetchone()
 
-        response = eval(match[2].encode('utf-8'))
+        response = pickle.loads(match[2].encode('utf-8'))
 
         t1 = int(match[3])
         t2 = int(time.time())
         update = timeout and (abs(t2 - t1) / 3600) >= int(timeout)
         if update is False:
+            control.log('RESULT FROM CACHE')
             return response
+        control.log('CACHE EXPIRED')
     except:
+        control.log('NO CACHE FOUND')
         pass
 
     # try:
-    r = function(*args)
+    if kargs:
+        r = function(*args, **kargs)
+    else:
+        r = function(*args)
+
     if (r is None or r == []) and response is not None:
         return response
     elif r is None or r == []:
@@ -59,7 +75,8 @@ def get(function, timeout, *args, **table):
     #     return
 
     # try:
-    r = repr(r)
+    # r = repr(r)
+    r = pickle.dumps(r)
     t = int(time.time())
     dbcur.execute("CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response TEXT, ""added TEXT, ""UNIQUE(func, args)"");" % table)
     dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
@@ -69,9 +86,10 @@ def get(function, timeout, *args, **table):
     #     pass
 
     # try:
-    return eval(r.encode('utf-8'))
+    # return eval(r.encode('utf-8'))
+    return pickle.loads(r)
     # except:
-    #     pass
+    #     return eval(r)
 
 
 def timeout(function, *args, **table):

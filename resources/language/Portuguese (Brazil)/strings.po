@@ -500,3 +500,7 @@ msgstr "Filmes"
 msgctxt "#34129"
 msgid "Provider not implemented"
 msgstr "Provedor não implementado"
+
+msgctxt "#34130"
+msgid "Enable Now Online"
+msgstr "Habilitar Now Online"

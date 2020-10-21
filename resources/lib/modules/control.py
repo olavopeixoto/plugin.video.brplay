@@ -292,6 +292,13 @@ def is_tntplay_available():
     return setting('tntplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
 
 
+def is_nowonline_available():
+    username = setting('nowonline_account')
+    password = setting('nowonline_password')
+
+    return setting('nowonline_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
 def getKodiVersion():
     return infoLabel("System.BuildVersion").split(' ')[0]
 
@@ -476,6 +483,7 @@ def clear_credentials():
     setSetting("globoplay_credentials", u'')
     setSetting("tntplay_token", u'')
     setSetting("oiplay_access_token_response", u'')
+    setSetting("nowonline_credentials", u'')
 
 
 def clear_globosat_credentials():

@@ -28,9 +28,9 @@ def get_globo_live_id():
 
 def get_live_channels():
 
-    affiliate_temp = control.setting('globo_affiliate')
+    affiliate_id = control.setting('globo_affiliate')
 
-    affiliates = control.get_affiliates_by_id(int(affiliate_temp))
+    affiliates = control.get_affiliates_by_id(int(affiliate_id))
 
     live = []
 
