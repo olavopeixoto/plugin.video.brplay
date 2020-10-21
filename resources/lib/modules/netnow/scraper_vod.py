@@ -42,6 +42,8 @@ CATEGORIES_HIDE = [
     'tv_channels'  # TODO
 ]
 
+FANART = 'https://t2.tudocdn.net/391136'
+
 
 def get_channels():
     return [{
@@ -51,6 +53,7 @@ def get_channels():
         "adult": False,
         'slug': 'netnow',
         'logo': 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcScaBeflBdP6AdV246I7YtH6j9r997X39OeHg&usqp=CAU',
+        'fanart': FANART,
         'brplayprovider': 'nowonline',
         # 'color': '#FFFFFF'
     }]

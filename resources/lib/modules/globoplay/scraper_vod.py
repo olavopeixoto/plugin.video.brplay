@@ -10,7 +10,7 @@ from resources.lib.modules import cache
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
 GLOBO_LOGO_WHITE = 'https://s2.glbimg.com/1D3_vIjzzFrXkfMVFmEcMqq7gQk=/285x285/https://s2.glbimg.com/nItvOm5LGvf7xhO-zkUsoeFbVMY=/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
-GLOBO_FANART = 'https://s02.video.glbimg.com/x720/4452349.jpg'
+GLOBO_FANART = 'https://s2.glbimg.com/5W0g4WWbGIf_5DM-LOGw3pu_SXY=/0x1080/https://s2.glbimg.com/2JaDCs2FslvxWxR77j2978kuEd8=/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2019/A/l/J78Zh9SIWTxXVrDBza2A/onairglobo.jpg'
 
 GLOBOPLAY_URL = 'https://api.globoplay.com.br'
 GLOBOPLAY_APIKEY = '4c3f033123840f740508ec49e89e5142'  # '35978230038e762dd8e21281776ab3c9'
@@ -265,7 +265,7 @@ def get_most_watched_videos():
 
 def get_globo_programs():
     headers = {'Accept-Encoding': 'gzip'}
-    categories_json = client.request(GLOBOPLAY_CATEGORIES, headers=headers)['categories']
+    categories_json = cache.get(client.request, 1, GLOBOPLAY_CATEGORIES, headers=headers).get('categories', [])
     categories = [json['title'].capitalize() for json in categories_json]
 
     programs = [{'category': json['title'].capitalize(), 'programs': [{

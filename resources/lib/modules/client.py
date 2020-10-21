@@ -207,7 +207,7 @@ def request(url, close=True, redirect=True, error=False, proxy=None, post=None, 
             if encoding == 'gzip':
                 result = gzip.GzipFile(fileobj=StringIO.StringIO(result)).read()
 
-        control.log("response (%s): %s" % (rid, result))
+        control.log("response (%s): %s" % (rid, result[:500]))
 
         if response.headers and response.headers.get('content-type') and ('application/json' in response.headers.get('content-type') or 'text/javascript' in response.headers.get('content-type')):
             return json.loads(result, object_pairs_hook=OrderedDict) if OrderedDict else json.loads(result)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import re,hashlib,time
+import re,hashlib,time,traceback
 
 try: from sqlite3 import dbapi2 as database
 except: from pysqlite2 import dbapi2 as database
@@ -47,17 +47,20 @@ def get(function, timeout, *args, **kargs):
         dbcur = dbcon.cursor()
         dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
         match = dbcur.fetchone()
+        if match and len(match) > 3:
+            response = pickle.loads(str(match[2]))
 
-        response = pickle.loads(match[2].encode('utf-8'))
-
-        t1 = int(match[3])
-        t2 = int(time.time())
-        update = timeout and (abs(t2 - t1) / 3600) >= int(timeout)
-        if update is False:
-            control.log('RESULT FROM CACHE')
-            return response
-        control.log('CACHE EXPIRED')
-    except:
+            t1 = int(match[3])
+            t2 = int(time.time())
+            update = timeout and (abs(t2 - t1) / 3600) >= int(timeout)
+            if update is False:
+                control.log('RESULT FROM CACHE')
+                return response
+            control.log('CACHE EXPIRED')
+        else:
+            control.log('NO CACHE FOUND')
+    except Exception:
+        control.log(traceback.format_exc(), control.LOGERROR)
         control.log('NO CACHE FOUND')
         pass
 
@@ -76,18 +79,19 @@ def get(function, timeout, *args, **kargs):
 
     # try:
     # r = repr(r)
-    r = pickle.dumps(r)
+    r_raw = r
+    r = pickle.dumps(r, 0)
     t = int(time.time())
-    dbcur.execute("CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response TEXT, ""added TEXT, ""UNIQUE(func, args)"");" % table)
+    dbcur.execute("CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response BLOB, ""added TEXT, ""UNIQUE(func, args)"");" % table)
     dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-    dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, r, t))
+    dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, buffer(r), t))
     dbcon.commit()
     # except:
     #     pass
 
     # try:
     # return eval(r.encode('utf-8'))
-    return pickle.loads(r)
+    return r_raw
     # except:
     #     return eval(r)
 
