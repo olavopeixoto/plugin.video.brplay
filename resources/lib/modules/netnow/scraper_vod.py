@@ -5,6 +5,9 @@ import requests
 import resources.lib.modules.control as control
 from resources.lib.modules import cache
 from resources.lib.modules import workers
+import player
+
+PLAYER_HANDLER = player.__name__
 
 
 proxy = control.proxy_url
@@ -43,24 +46,24 @@ CATEGORIES_HIDE = [
 ]
 
 FANART = 'https://t2.tudocdn.net/391136'
+THUMB = 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcScaBeflBdP6AdV246I7YtH6j9r997X39OeHg&usqp=CAU'
 
 
 def get_channels():
     return [{
-        "id": 'NETNOW',
-        "service_id": -1,
-        "name": 'Now Online',
+        'handler': __name__,
+        'method': 'get_channel_categories',
+        "label": 'Now Online',
         "adult": False,
-        'slug': 'netnow',
-        'logo': 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcScaBeflBdP6AdV246I7YtH6j9r997X39OeHg&usqp=CAU',
-        'fanart': FANART,
-        'brplayprovider': 'nowonline',
-        # 'color': '#FFFFFF'
+        'art': {
+            'thumb': THUMB,
+            'fanart': FANART
+        }
     }]
 
 
-def get_channel_categories(channel):
-    return [
+def get_channel_categories():
+    categories = [
         CATEGORIES.INICIO,
         CATEGORIES.ESPECIAIS,
         CATEGORIES.TV,
@@ -71,11 +74,23 @@ def get_channel_categories(channel):
         CATEGORIES.CLUBE,
     ]
 
+    for category in categories:
+        yield {
+            'handler': __name__,
+            'method': 'get_page',
+            'category': category,
+            'label': category,
+            'art': {
+                'thumb': THUMB,
+                'fanart': FANART
+            }
+        }
 
-def _get_page(category):
+
+def _get_page(category, validate=False):
     url = None
 
-    slug = CATEGORY_SLUG.get(category.decode('utf-8'), None)
+    slug = CATEGORY_SLUG.get(category, None)
     if slug:
         url = 'https://www.nowonline.com.br/avsclient/usercontent/categories/{slug}?channel={platform}'.format(platform=PLATFORM, slug=slug)
 
@@ -83,21 +98,41 @@ def _get_page(category):
         control.log('NO CONTENT AVAILABLE FOR CATEGORY: %s' % category)
         return {}
 
-    return request_logged_in(url)
+    return request_logged_in(url, validate=validate)
 
 
 def get_page(category):
 
     response = _get_page(category)
 
-    return [item.get('title', '').encode('utf-8') for item in response.get('response', {}).get('categories', []) if item.get('type', '') not in CATEGORIES_HIDE]
+    response = response.get('response', {}) or {}
+
+    if not response:
+        response = _get_page(category, validate=True)
+        response = response.get('response', {}) or {}
+        if not response:
+            return
+
+    for item in response.get('categories', []):
+        if item.get('type', '') not in CATEGORIES_HIDE:
+            yield {
+                'handler': __name__,
+                'method': 'get_content',
+                'category': category,
+                'subcategory': item.get('title', '').encode('utf-8'),
+                'label': item.get('title', '').encode('utf-8'),
+                'art': {
+                    'thumb': THUMB,
+                    'fanart': FANART
+                }
+            }
 
 
 def get_content(category, subcategory):
 
     response = _get_page(category)
 
-    item = next((item for item in response.get('response', {}).get('categories', []) if item.get('title', '').encode('utf-8') == subcategory), {})
+    item = next((item for item in response.get('response', {}).get('categories', []) if item.get('title', '') == subcategory), {})
 
     if not item.get('contents', []):
         if item.get('type', None) == 'continue_watching':
@@ -120,7 +155,7 @@ def get_content(category, subcategory):
     [i['thread'].start() for i in threads]
     [i['thread'].join() for i in threads]
 
-    return [_hydrate_content(next((t['thread'].get_result().get('response', [])[0] for t in threads if t['id'] == content.get('id', -1)), content)) for content in contents]
+    return [_hydrate_content(next((next(iter(t['thread'].get_result().get('response', [])), {}) for t in threads if t['id'] == content.get('id', -1)), content)) for content in contents]
 
 
 def _get_content(id):
@@ -129,15 +164,14 @@ def _get_content(id):
 
 
 def _hydrate_content(content):
+    playable = content.get('type', '') == 'movie' or content.get('type', '') == "episode"
     return {
+                'handler': PLAYER_HANDLER if playable else __name__,
+                'method': 'playlive' if playable else 'get_seasons',
+                'IsPlayable': playable,
                 'id': content.get('id'),
-                'name': content.get('title', ''),
+                'label': content.get('title', ''),
                 'title': content.get('title', ''),
-                'thumb': content.get('images', {}).get('banner', None) if content.get('type', '') != "episode" else content.get('images', {}).get('coverLandscape', None),
-                'poster': content.get('images', {}).get('coverPortrait', None) if content.get('type', '') == 'movie' else None,
-                'fanart': content.get('images', {}).get('banner', None),
-                'clearlogo': content.get('tvChannel', {}).get('logo', None),
-                'kind': 'movies' if content.get('type', '') == 'movie' else 'episode' if content.get('type', '') == "episode" else 'tvshow',
                 'mediatype': 'movie' if content.get('type', '') == 'movie' else 'episode' if content.get('type', '') == "episode" else 'tvshow',
                 'plot': content.get('description', None),
                 'plotoutline': content.get('description', None),
@@ -154,7 +188,12 @@ def _hydrate_content(content):
                 'mpaa': content.get('ageRating', None),
                 'encrypted': True,
                 'trailer': content.get('trailerUri', None),
-                'brplayprovider': 'nowonline'
+                'art': {
+                    'thumb': content.get('images', {}).get('banner', None) if content.get('type', '') != "episode" else content.get('images', {}).get('coverLandscape', None),
+                    'poster': content.get('images', {}).get('coverPortrait', None) if content.get('type', '') == 'movie' else None,
+                    'fanart': content.get('images', {}).get('banner', None),
+                    'clearlogo': content.get('tvChannel', {}).get('logo', None)
+                }
             }
 
 
@@ -173,15 +212,16 @@ def get_seasons(id):
     for season in seasons:
         poster = content.get('images', {}).get('coverPortrait', None) if content.get('type', '') == 'movie' else content.get('images', {}).get('banner', None)
 
-        season = {
-            'kind': 'season',
-            'id': season.get('seasonNumber', 0),
+        yield {
+            'handler': __name__,
+            'method': 'get_episodes',
+            'id': id,
+            'season_number': season.get('seasonNumber', 0),
+            'label': 'Temporada %s' % season.get('seasonNumber', 0),
             'title': 'Temporada %s' % season.get('seasonNumber', 0),
             'tvshowtitle': content.get('title', ''),
             'plot': content.get('description', None),
             'plotoutline': content.get('description', None),
-            'poster': poster,
-            'fanart': content.get('images', {}).get('banner', None),
             'genre': content.get('genres', []),
             'year': content.get('releaseYear', None),
             'country': content.get('country', None),
@@ -190,12 +230,13 @@ def get_seasons(id):
             'episode': content.get('episodeNumber', None),
             'season': content.get('seasonNumber', None),
             'mpaa': content.get('ageRating', None),
-            'mediatype': 'season'
+            'mediatype': 'season',
+            'content': 'seasons',
+            'art': {
+                'poster': poster,
+                'fanart': content.get('images', {}).get('banner', None)
+            }
         }
-
-        program['seasons'].append(season)
-
-    return program
 
 
 def get_episodes(id, season_number=None):
@@ -203,7 +244,7 @@ def get_episodes(id, season_number=None):
 
     content = next(iter(_get_content(id).get('response', [])), {})
 
-    program = _hydrate_content(content)
+    # program = _hydrate_content(content)
 
     episodes = next((season.get('episodes', []) for season in content.get('seasons', []) if str(season.get('seasonNumber', 0)) == str(season_number) or season_number is None), [])
 
@@ -216,18 +257,21 @@ def get_episodes(id, season_number=None):
     [i['thread'].join() for i in threads]
 
     for eps in episodes:
-        episode = _hydrate_content(next((t['thread'].get_result().get('response', [])[0] for t in threads if t['id'] == eps.get('id', -1)), eps))
-        yield dict(program, **episode)
+        yield _hydrate_content(next((next(iter(t['thread'].get_result().get('response', [])), {}) for t in threads if t['id'] == eps.get('id', -1)), eps))
 
 
-def request_logged_in(url, use_cache=True):
-    headers, cookies = get_request_data()
+def request_logged_in(url, use_cache=True, validate=False):
+    headers, cookies = get_request_data(validate)
 
     control.log('GET %s' % url)
     if use_cache:
         response = cache.get(requests.get, 1, url, headers=headers, cookies=cookies, table="netnow")
+        if response.status_code >= 400:
+            cache.clear(table="netnow")
     else:
         response = requests.get(url, headers=headers, cookies=cookies)
+
+    response.raise_for_status()
 
     result = response.json()
 

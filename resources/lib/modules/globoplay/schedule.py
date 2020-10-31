@@ -1,10 +1,10 @@
 import re
 
-from resources.lib.modules import client
+import requests
 from resources.lib.modules import control
 
 
-class schedule:
+class Schedule:
 
     def __init__(self):
         pass
@@ -32,7 +32,7 @@ class schedule:
 
         schedule_url = "https://globoplay.globo.com/v/xhr/views/schedule.json?affiliate_slug=%s" % affiliate_slug
 
-        slots = client.request(schedule_url, headers={'Accept-Encoding': 'gzip'})['schedule']['slots']
+        slots = requests.get(schedule_url, headers={'Accept-Encoding': 'gzip'}).json()['schedule']['slots']
 
         result = []
 

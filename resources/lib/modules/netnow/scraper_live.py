@@ -1,11 +1,14 @@
-from resources.lib.modules import client
+import requests
 import datetime
 from auth import PLATFORM
+import player
+
+PLAYER_HANDLER = player.__name__
 
 
 def get_live_channels():
     url = 'https://www.nowonline.com.br/avsclient/epg/livechannels?channel={platform}&channelIds=&numberOfSchedules=2&includes=images'.format(platform=PLATFORM)
-    response = client.request(url)
+    response = requests.get(url).json()
 
     for channel in response.get('response', []):
 
@@ -34,35 +37,30 @@ def get_live_channels():
         name_title = u'%s: T%s E%s' % (title, season, episode) if season else title
 
         yield {
-            'slug': id,
-            'name': u"[B]" + channel_name + u"[/B][I] - " + name_title + u"[/I]",
+            'handler': PLAYER_HANDLER,
+            'method': 'playlive',
+            'id': id,
+            'IsPlayable': True,
+            'livefeed': True,
+            'label': u"[B]" + channel_name + u"[/B][I] - " + name_title + u"[/I]",
             'studio': channel_name,
             'title': title,
             'tvshowtitle': title,
             'sorttitle': channel_name,
-            'thumb': thumb,
-            'logo': logo,
-            'clearlogo': logo,
-            'clearart': logo,
-            'banner': None,
-            # 'poster': poster,
-            'color': None,
-            'fanart': fanart,
-            'id': id,
             'channel_id': id,
-            'brplayprovider': 'nowonline',
-            'playable': 'true',
-            'livefeed': 'true',
             'dateadded': datetime.datetime.strftime(date, '%Y-%m-%d %H:%M:%S'),
             'plot': description,
             'duration': duration,
             'adult': False,
-            'cast': [],
-            'director': [],
             'genre': genre,
             'rating': rating,
-            'year': None,
             'episode': episode,
             'season': season,
-            "mediatype": 'episode' if episode else 'video'
+            "mediatype": 'tvshow',
+            'art': {
+                'thumb': thumb,
+                'clearlogo': logo,
+                # 'poster': poster,
+                'fanart': fanart
+            }
         }

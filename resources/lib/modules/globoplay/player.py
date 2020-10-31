@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import json
 import re
 import sys
-import urllib
 import xbmc
 import auth_helper
+import requests
 from urlparse import urlparse
 from resources.lib.modules import hlshelper
-from resources.lib.modules import client
 from resources.lib.modules import control
 from resources.lib.modules.util import get_signed_hashes
 from resources.lib.modules.globoplay import resourceshelper
 import threading
+import traceback
 
 HISTORY_URL = 'https://api.user.video.globo.com/watch_history/'
 PLAYER_SLUG = 'android'
@@ -29,7 +28,7 @@ class Player(xbmc.Player):
         self.cookies = None
         self.url = None
         self.item = None
-        self.stopPlayingEvent = None
+        self.stop_playing_event = None
         self.credentials = None
         self.program_id = None
         self.video_id = None
@@ -37,14 +36,14 @@ class Player(xbmc.Player):
     def onPlayBackStopped(self):
         control.log("PLAYBACK STOPPED")
 
-        if self.stopPlayingEvent:
-            self.stopPlayingEvent.set()
+        if self.stop_playing_event:
+            self.stop_playing_event.set()
 
     def onPlayBackEnded(self):
         control.log("PLAYBACK ENDED")
 
-        if self.stopPlayingEvent:
-            self.stopPlayingEvent.set()
+        if self.stop_playing_event:
+            self.stop_playing_event.set()
 
     def onPlayBackStarted(self):
         control.log("PLAYBACK STARTED")
@@ -52,40 +51,36 @@ class Player(xbmc.Player):
 
     def play_stream(self, id, meta, children_id=None):
 
+        meta = meta or {}
+
         control.log("GloboPlay - play_stream: id=%s | children_id=%s | meta=%s" % (id, children_id, meta))
 
         if id is None:
             return
 
-        try:
-            meta = json.loads(meta)
-        except:
-            meta = {
-                "playcount": 0,
-                "overlay": 6,
-                "mediatype": "video",
-                "aired": None
-            }
+        self.isLive = False
+        stop_event = None
 
-        self.isLive = 'live' in meta and meta['live']
-
-        if 'livefeed' in meta and meta['livefeed'] == 'true':
+        if meta.get('livefeed', False):
             control.log("PLAY LIVE!")
             self.isLive = True
 
-            affiliate = meta['affiliate'] if 'affiliate' in meta else None
+            latitude = meta.get('lat', None)
+            longitude = meta.get('long', None)
 
-            if affiliate is None:
+            if not latitude or not longitude:
                 code, latitude, longitude = control.get_coordinates(control.get_affiliates_by_id(-1))
-                affiliate = 'lat=%s&long=%s' % (latitude, longitude)
 
-            info = self.__getLiveVideoInfo(id, affiliate)
+            info = self.__getLiveVideoInfo(id, latitude, longitude)
+
             if info is None:
                 return
 
-            item, self.url, stopEvent = self.__get_list_item(meta, info)
+            item, self.url, stop_event = self.__get_list_item(meta, info)
+
         else:
-            info = resourceshelper.get_video_info(id, children_id)
+            # info = resourceshelper.get_video_info(id, children_id)
+            info = resourceshelper.get_video_router(id)
             if info is None:
                 return
 
@@ -95,38 +90,38 @@ class Player(xbmc.Player):
                 xbmc.PlayList(1).clear()
                 first = True
                 for i in info:
-                    hash, user, self.credentials = self.sign_resource(i['resource_id'], i['id'], i['player'], i['version'])
-                    i['hash'] = hash
+                    hash_token, user, self.credentials = self.sign_resource(i['resource_id'], i['id'], i['player'], i['version'])
+                    i['hash'] = hash_token
                     i['user'] = user
-                    item, url, stopEvent = self.__get_list_item(meta, i, False)
+                    item, url, stop_event = self.__get_list_item(meta, i, False)
                     if first:
                         self.url = url
-                        first=False
+                        first = False
                     items.append(item)
                     control.log("PLAYLIST ITEM URL: %s" % url)
                     xbmc.PlayList(1).add(url, item)
                 item = items[0]
             else:
                 control.log("PLAY SINGLE RESOURCE!")
-                hash, user, self.credentials = self.sign_resource(info['resource_id'], info["id"], info['player'], info['version'], meta['anonymous'] if 'anonymous' in meta else False)
-                info['hash'] = hash
+                hash_token, user, self.credentials = self.sign_resource(info['resource_id'], info["id"], info['player'], info['version'], meta['anonymous'] if 'anonymous' in meta else False)
+                info['hash'] = hash_token
                 info['user'] = user
-                item, self.url, stopEvent = self.__get_list_item(meta, info)
+                item, self.url, stop_event = self.__get_list_item(meta, info)
 
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
+
+        self.stop_playing_event = threading.Event()
+        self.stop_playing_event.clear()
+
+        self.program_id = info['program_id'] if 'program_id' in info else meta.get('program_id', None)
+        self.video_id = id
 
         syshandle = int(sys.argv[1])
         control.resolve(syshandle, True, item)
 
-        self.stopPlayingEvent = threading.Event()
-        self.stopPlayingEvent.clear()
-
-        self.program_id = info['program_id'] if 'program_id' in info else None
-        self.video_id = id
-
         first_run = True
         last_time = 0.0
-        while not self.stopPlayingEvent.isSet():
+        while not self.stop_playing_event.isSet():
             if control.monitor.abortRequested():
                 control.log("Abort requested")
                 break
@@ -144,55 +139,52 @@ class Player(xbmc.Player):
                         self.save_video_progress(self.credentials, self.program_id, self.video_id, current_time * 1000, fully_watched=0.9 < percentage_watched <= 1)
             control.sleep(500)
 
-        if stopEvent:
+        if stop_event:
             control.log("Setting stop event for proxy player")
-            stopEvent.set()
+            stop_event.set()
 
         control.log("Done playing. Quitting...")
 
     def __get_list_item(self, meta, info, pick_bandwidth=True):
-        hash = info['hash']
+        hash_token = info['hash']
         user = info['user']
-
-        title = info['title']  # or meta['title'] if 'title' in meta else None
 
         query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
 
         query_string = query_string % {
-            'hash': hash,
+            'hash': hash_token,
             'key': 'app',
             'openClosed': 'F' if info['subscriber_only'] else 'A',
-            'user': user if info['subscriber_only'] else ''
+            'user': user if info['subscriber_only'] else '',
+            'token': hash_token
         }
 
         url = '?'.join([info['url'], query_string])
 
         control.log("live media url: %s" % url)
 
-        meta.update({
-            "genre": info["category"],
-            "plot": info["title"],
-            "plotoutline": info["title"],
-            "title": title
-        })
-
-        poster = meta['poster'] if 'poster' in meta else control.addonPoster()
-        thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
+        # title = info.get('title', '')
+        # meta.update({
+        #     "genre": info["category"],
+        #     "plot": info["title"],
+        #     "plotoutline": info["title"],
+        #     "title": title
+        # })
 
         parsed_url = urlparse(url)
         if parsed_url.path.endswith(".m3u8"):
             if pick_bandwidth:
-                url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
+                url, mime_type, stop_event, cookies = hlshelper.pick_bandwidth(url)
             else:
-                mime_type, stopEvent, cookies = None, None, None
+                mime_type, stop_event, cookies = None, None, None
         else:
             # self.url = url
-            mime_type, stopEvent, cookies = 'video/mp4', None, None
+            mime_type, stop_event, cookies = 'video/mp4', None, None
 
         if url is None:
-            if stopEvent:
+            if stop_event:
                 control.log("Setting stop event for proxy player")
-                stopEvent.set()
+                stop_event.set()
             control.infoDialog(message=control.lang(34100).encode('utf-8'), icon='ERROR')
             return None, None, None
 
@@ -200,16 +192,19 @@ class Player(xbmc.Player):
 
         item = control.item(path=url)
         item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
-        item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
+        item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')
 
         item.setContentLookup(False)
+
+        user_agent = 'User-Agent=Globo Play/0 (iPhone)'
 
         if parsed_url.path.endswith(".mpd"):
             mime_type = 'application/dash+xml'
             if not control.disable_inputstream_adaptive:
                 control.log("Using inputstream.adaptive MPD")
                 item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
+                item.setProperty('inputstream.adaptive.stream_headers', user_agent)
                 item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
         if mime_type:
@@ -219,9 +214,10 @@ class Player(xbmc.Player):
             if not control.disable_inputstream_adaptive:
                 control.log("Using inputstream.adaptive HLS")
                 item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+                item.setProperty('inputstream.adaptive.stream_headers', user_agent)
                 item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 
-        encrypted = 'encrypted' in info and info['encrypted']
+        encrypted = info.get('encrypted', False)
 
         if encrypted and not control.is_inputstream_available():
             control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
@@ -248,9 +244,9 @@ class Player(xbmc.Player):
         if 'subtitles' in info and info['subtitles'] and len(info['subtitles']) > 0:
             item.setSubtitles([sub['url'] for sub in info['subtitles']])
 
-        return item, url, stopEvent
+        return item, url, stop_event
 
-    def __getLiveVideoInfo(self, id, geolocation):
+    def __getLiveVideoInfo(self, id, latitude, longitude):
 
         proxy = control.proxy_url
         proxy = None if proxy is None or proxy == '' else {
@@ -263,21 +259,30 @@ class Player(xbmc.Player):
         if credentials is None:
             return None
 
-        post_data = "%s&player=%s&version=%s" % (geolocation, PLAYER_SLUG, PLAYER_VERSION)
+        post_data = {
+            'player': PLAYER_SLUG,
+            'version': PLAYER_VERSION,
+            'lat': latitude,
+            'long': longitude
+        }
 
         # 4452349
-        hashUrl = 'http://security.video.globo.com/videos/%s/hash' % id
-        hashJson = client.request(hashUrl, error=True, cookie=credentials, mobile=True, headers={
-            "Accept-Encoding": "gzip",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Globo Play/0 (iPhone)"
-        }, post=post_data, proxy=proxy)
+        hash_url = 'http://security.video.globo.com/videos/%s/hash' % id
+        response = requests.post(hash_url, cookies=credentials, headers={
+                                                                "Accept-Encoding": "gzip",
+                                                                "Content-Type": "application/x-www-form-urlencoded",
+                                                                "User-Agent": "Globo Play/0 (iPhone)"
+                                                            }, data=post_data, proxies=proxy)
 
-        hash = get_signed_hashes(hashJson['hash'])[0]
+        response.raise_for_status()
+
+        hash_json = response.json()
+
+        hash_token = get_signed_hashes(hash_json['hash'])[0]
 
         return {
             "id": "-1",
-            "title": hashJson["name"],
+            "title": hash_json["name"],
             # "program": playlistJson["program"],
             # "program_id": playlistJson["program_id"],
             # "provider_id": playlistJson["provider_id"],
@@ -288,11 +293,11 @@ class Player(xbmc.Player):
             "subscriber_only": 'true',
             # "exhibited_at": playlistJson["exhibited_at"],
             "player": PLAYER_SLUG,
-            "url": hashJson["url"],
+            "url": hash_json["url"],
             "query_string_template": "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
-            "thumbUri": hashJson["thumbUri"],
-            "hash": hash,
-            "user": hashJson["user"],
+            "thumbUri": hash_json["thumbUri"],
+            "hash": hash_token,
+            "user": hash_json["user"],
             "credentials": credentials,
             "encrypted": False
         }
@@ -310,18 +315,22 @@ class Player(xbmc.Player):
         else:
             credentials = None
 
-        hashUrl = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
-        hashJson = client.request(hashUrl, cookie=credentials, mobile=False, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
+        hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
+        response = requests.get(hash_url, cookies=credentials, headers={"Accept-Encoding": "gzip"}, proxies=proxy)
 
-        if not hashJson or 'hash' not in hashJson:
-            control.infoDialog(message=control.lang(34101).encode('utf-8'), sound=True, icon='ERROR')
+        response.raise_for_status()
+
+        hash_json = response.json()
+
+        if not hash_json or 'hash' not in hash_json:
+            message = (hash_json or {}).get('message', None) or control.lang(34101).encode('utf-8')
+            control.infoDialog(message=message, sound=True, icon='ERROR')
             control.idle()
             sys.exit()
-            return None
 
-        hash = get_signed_hashes(hashJson['hash'])[0]
+        hash_token = get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
 
-        return hash, hashJson['user'] if 'user' in hashJson else None, credentials
+        return hash_token, hash_json['user'] if 'user' in hash_json else None, credentials
 
     def save_video_progress(self, credentials, program_id, video_id, milliseconds_watched, fully_watched=False):
 
@@ -335,17 +344,18 @@ class Player(xbmc.Player):
 
             control.log("--- SAVE WATCH HISTORY --- %s" % repr(post_data))
 
-            post_data = urllib.urlencode(post_data)
+            response = requests.post(HISTORY_URL, cookies=credentials, headers={
+                                                                "Accept-Encoding": "gzip",
+                                                                "Content-Type": "application/x-www-form-urlencoded",
+                                                                "User-Agent": "Globo Play/0 (iPhone)"
+                                                            }, data=post_data)
 
-            client.request(HISTORY_URL, error=True, cookie=credentials, mobile=True, headers={
-                "Accept-Encoding": "gzip",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "User-Agent": "Globo Play/0 (iPhone)"
-            }, post=post_data)
+            response.raise_for_status()
 
             # import xbmcgui
             # WINDOW = xbmcgui.Window(12006)
             # WINDOW.setProperty("InfoLabelName", "the new value")
 
         except Exception as ex:
+            control.log(traceback.format_exc(), control.LOGERROR)
             control.log("ERROR SAVING VIDEO PROGRESS (GLOBO PLAY): %s" % repr(ex))

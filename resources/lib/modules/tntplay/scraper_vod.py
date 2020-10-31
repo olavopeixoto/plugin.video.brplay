@@ -2,6 +2,9 @@
 
 import requests
 import resources.lib.modules.control as control
+import player
+
+PLAYER_HANDLER = player.__name__
 
 
 CONFIG_URL = 'https://cdn.ti-platform.com/config_TNT.json'
@@ -19,7 +22,7 @@ CHANNEL_SLUG_MAP = {
 }
 
 LOGO_MAP = {
-    'TNTLA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/tnt_left.png',
+    'TNTLA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/tnt.png',
     'TNTSLA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/tnts-pt.png',
     'SPACELA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/space.png',
 }
@@ -39,8 +42,8 @@ IMAGE_TYPE = {
 
 IMAGE_URL = "https://turner-latam-prod.akamaized.net/PROD-LATAM/{pictureUrl}/{pictureUrl}_{imageType}.jpg"
 
-# FANART = 'https://i.pinimg.com/originals/9d/c5/ba/9dc5ba36de7ad6e987c74e5ff4981925.jpg'
-FANART = 'https://www.sportfacts.org/wp-content/uploads/2017/04/Watch-TNT-Online.jpg'
+# FANART = 'https://www.sportfacts.org/wp-content/uploads/2017/04/Watch-TNT-Online.jpg'
+FANART = 'https://i.vimeocdn.com/video/529460829_1280x720.jpg'
 
 PLATFORM = 'PCTV_DASH'
 LANGUAGE = control.lang(34125).encode('utf-8')  # 'ENG'  # 'POR'
@@ -54,57 +57,91 @@ MOVIES = control.lang(34128).upper().encode('utf-8')
 
 def get_channels():
 
-    # channels = []
-    #
-    # for channel_id in CHANNEL_MAP:
-    #     logo = LOGO_MAP[channel_id]
-    #     name = CHANNEL_MAP[channel_id]
-    #     slug = CHANNEL_SLUG_MAP[channel_id]
-    #
-    #     channel = {
-    #         "id": channel_id,
-    #         "service_id": -1,
-    #         "name": name,
-    #         "adult": False,
-    #         'slug': slug,
-    #         'logo': logo,
-    #         'brplayprovider': 'tntplay',
-    #         # 'color': '#FFFFFF'
-    #     }
-    #
-    #     channels.append(channel)
-    #
-    # return channels
-
     return [{
-                "id": 'TNTLA_BR',
-                "service_id": -1,
-                "name": 'TNT',
-                "adult": False,
-                'slug': 'tnt',
-                'logo': LOGO_MAP['TNTLA_BR'],
-                'brplayprovider': 'tntplay',
-                # 'color': '#FFFFFF'
+                'handler': __name__,
+                'method': 'get_channel_categories',
+                'label': 'TNT',
+                'art': {
+                    'thumb': LOGO_MAP['TNTLA_BR'],
+                    'fanart': FANART
+                }
             }]
 
 
-def get_channel_categories(channel):
+def get_channel_categories():
 
-    return [SERIES, MOVIES]
+    yield {
+        'handler': __name__,
+        'method': 'get_genres',
+        'label': MOVIES,
+        'category': MOVIES,
+        'art': {
+            'thumb': LOGO_MAP['TNTLA_BR'],
+            'fanart': FANART
+        }
+    }
+
+    yield {
+        'handler': __name__,
+        'method': 'get_genres',
+        'label': SERIES,
+        'category': SERIES,
+        'art': {
+            'thumb': LOGO_MAP['TNTLA_BR'],
+            'fanart': FANART
+        }
+    }
 
 
 def get_genres(category):
 
-    type = 'movie%2Celemental' if category == MOVIES else 'series'
+    media_type = 'movie%2Celemental' if category == MOVIES else 'series'
 
-    url = 'https://apac.ti-platform.com/AGL/1.0/R/{lang}/{platform}/TNTGO_LATAM_BR/CONTENT/FACET?objectSubtype={type}&facet=genres&filter_brand=tnts%2Ctnt%2Cspace'.format(platform=PLATFORM, type=type, lang=LANGUAGE)
+    url = 'https://apac.ti-platform.com/AGL/1.0/R/{lang}/{platform}/TNTGO_LATAM_BR/CONTENT/FACET?objectSubtype={type}&facet=genres&filter_brand=tnts%2Ctnt%2Cspace'.format(platform=PLATFORM, type=media_type, lang=LANGUAGE)
     result = requests.get(url).json().get('resultObj', {}).get('facets', []) or []
 
-    genres = [FEATURED, ALL_GENRES]
+    yield {
+        'handler': __name__,
+        'method': 'get_content',
+        'label': FEATURED,
+        'category': category,
+        'genre': FEATURED,
+        'properties': {
+            'SpecialSort': 'top'
+        },
+        'art': {
+            'thumb': LOGO_MAP['TNTLA_BR'],
+            'fanart': FANART
+        }
+    }
 
-    genres.extend(sorted([facet.get('key').upper().encode('utf-8') for facet in result]))
+    yield {
+        'handler': __name__,
+        'method': 'get_content',
+        'label': ALL_GENRES,
+        'category': category,
+        'genre': ALL_GENRES,
+        'properties': {
+            'SpecialSort': 'top'
+        },
+        'art': {
+            'thumb': LOGO_MAP['TNTLA_BR'],
+            'fanart': FANART
+        }
+    }
 
-    return genres
+    for facet in result:
+        yield {
+                'handler': __name__,
+                'method': 'get_content',
+                'label': facet.get('key').upper().encode('utf-8'),
+                'category': category,
+                'genre': facet.get('key').upper().encode('utf-8'),
+                'art': {
+                    'thumb': LOGO_MAP['TNTLA_BR'],
+                    'fanart': FANART
+                }
+            }
 
 
 def get_content(category, genre):
@@ -135,13 +172,14 @@ def get_content(category, genre):
         poster = IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType='POSTER')
         fanart = FANART  # IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType=fanart_image_type)
 
+        playable = metadata.get('contentSubtype', '') == 'MOVIE'
+
         program = {
+                    'handler': PLAYER_HANDLER if playable else __name__,
+                    'method': 'playlive' if playable else 'get_seasons',
+                    'IsPlayable': playable,
                     'id': item.get('id'),
-                    'name': metadata.get('title', ''),
-                    'poster': poster,
-                    'fanart': fanart,
-                    'clearlogo': None,
-                    'kind': 'movies' if metadata.get('contentSubtype', '') == 'MOVIE' else 'tvshow',
+                    'label': metadata.get('title', ''),
                     'plot': metadata.get('longDescription', ''),
                     'plotoutline': metadata.get('shortDescription', ''),
                     'genre': metadata.get('genres', None),
@@ -152,7 +190,12 @@ def get_content(category, genre):
                     'episode': metadata.get('episodeNumber', None),
                     'season': metadata.get('season', None),
                     'encrypted': metadata.get('isEncrypted', True),
-                    'brplayprovider': 'tntplay'
+                    'mediatype': 'movie' if metadata.get('contentSubtype', '') == 'MOVIE' else 'tvshow',
+                    # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+                    'art': {
+                        'poster': poster,
+                        'fanart': fanart
+                    }
                 }
 
         yield program
@@ -170,52 +213,41 @@ def get_seasons(id):
     if len(items) > 0:
         item = items[0]
     else:
-        return None
-
-    metadata = item.get('metadata', {})
-
-    show_poster = IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType='POSTER')
-    show_fanart = FANART  # IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType=fanart_image_type)
-    tvshow_name = metadata.get('title', '')
-
-    program = {
-        'id': item.get('id'),
-        'name': metadata.get('title', ''),
-        'poster': show_poster,
-        'fanart': show_fanart,
-        'clearlogo': None,
-        'kind': 'season',
-        'plot': metadata.get('longDescription', ''),
-        'plotoutline': metadata.get('shortDescription', ''),
-        'genre': metadata.get('genres', None),
-        'year': metadata.get('year', None),
-        'country': metadata.get('country', None),
-        'director': metadata.get('directors', []),
-        'cast': metadata.get('actors', []),
-        'episode': metadata.get('episodeNumber', None),
-        'season': metadata.get('season', None),
-        'encrypted': metadata.get('isEncrypted', True),
-        'brplayprovider': 'tntplay',
-        'seasons': []
-    }
+        return
 
     seasons = item.get('contentObjects', [])
 
+    if len(seasons) == 1:
+        obj = seasons[0]
+        obj_meta = obj.get('metadata', {}) or {}
+        return get_episodes(obj_meta.get('contentId'))
+    else:
+        metadata = item.get('metadata', {})
+
+        show_poster = IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType='POSTER')
+        show_fanart = FANART  # IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType=fanart_image_type)
+        tvshow_name = metadata.get('title', '')
+
+        return _get_seasons_internal(seasons, tvshow_name, show_poster, show_fanart)
+
+
+def _get_seasons_internal(seasons, tvshow_name, show_poster, show_fanart):
     for obj in seasons:
 
         obj_meta = obj.get('metadata', {}) or {}
-        picture_url = obj_meta.get('pictureUrl', None) or None
-        poster = IMAGE_URL.format(pictureUrl=picture_url, imageType='POSTER') if picture_url else show_poster
+        # picture_url = obj_meta.get('pictureUrl', None) or None
+        # poster = IMAGE_URL.format(pictureUrl=picture_url, imageType='POSTER') if picture_url else show_poster
 
-        season = {
-            'kind': 'season',
+        yield {
+            'handler': __name__,
+            'method': 'get_episodes',
+            'mediatype': 'season',
             'id': obj_meta.get('contentId'),
+            'label': obj_meta.get('title', ''),
             'title': obj_meta.get('title', ''),
             'tvshowtitle': tvshow_name,
             'plot': obj_meta.get('longDescription', ''),
             'plotoutline': obj_meta.get('shortDescription', ''),
-            'poster': poster,
-            'fanart': show_fanart,
             'genre': obj_meta.get('genres', None),
             'year': obj_meta.get('year', None),
             'country': obj_meta.get('country', None),
@@ -224,11 +256,11 @@ def get_seasons(id):
             'episode': obj_meta.get('episodeNumber', None),
             'season': obj_meta.get('season', None),
             'mpaa': obj_meta.get('pcVodLabel', None),
+            'art': {
+                'poster': show_poster,
+                'fanart': show_fanart
+            }
         }
-
-        program['seasons'].append(season)
-
-    return program
 
 
 def get_episodes(id):
@@ -243,33 +275,13 @@ def get_episodes(id):
     if len(items) > 0:
         item = items[0]
     else:
-        raise StopIteration
+        return
 
     metadata = item.get('metadata', {})
 
     show_poster = IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType='POSTER')
     show_fanart = FANART  # IMAGE_URL.format(pictureUrl=metadata.get('pictureUrl'), imageType=fanart_image_type)
     tvshow_name = metadata.get('title', '')
-
-    program = {
-        'id': item.get('id'),
-        'name': metadata.get('title', ''),
-        'poster': show_poster,
-        'fanart': show_fanart,
-        'clearlogo': None,
-        'kind': 'season',
-        'plot': metadata.get('longDescription', ''),
-        'plotoutline': metadata.get('shortDescription', ''),
-        'genre': metadata.get('genres', None),
-        'year': metadata.get('year', None),
-        'country': metadata.get('country', None),
-        'director': metadata.get('directors', []),
-        'cast': metadata.get('actors', []),
-        'episode': metadata.get('episodeNumber', None),
-        'season': metadata.get('season', None),
-        'encrypted': metadata.get('isEncrypted', True),
-        'brplayprovider': 'tntplay',
-    }
 
     episodes = item.get('contentObjects', [])
 
@@ -282,15 +294,18 @@ def get_episodes(id):
         poster_url = '%s_%s' % (picture_url.split('_')[0], obj_meta.get('emfAttributes', {}).get('TopLevelEntityId', ''))
         poster = IMAGE_URL.format(pictureUrl=poster_url, imageType='POSTER')
 
-        season = {
-            'kind': 'episode',
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'playlive',
+            'IsPlayable': True,
+            'encrypted': metadata.get('isEncrypted', True),
+            'mediatype': 'episode',
             'id': obj_meta.get('contentId'),
+            'label': obj_meta.get('title', ''),
             'title': obj_meta.get('title', ''),
             'tvshowtitle': tvshow_name,
             'plot': obj_meta.get('longDescription', ''),
             'plotoutline': obj_meta.get('shortDescription', ''),
-            'thumb': thumb,
-            'poster': poster,
             'genre': obj_meta.get('genres', None),
             'year': obj_meta.get('year', None),
             'country': obj_meta.get('country', None),
@@ -300,7 +315,10 @@ def get_episodes(id):
             'season': obj_meta.get('season', None),
             'mpaa': obj_meta.get('pcVodLabel', None),
             'duration': obj_meta.get('duration', None),
-            'brplayprovider': 'tntplay'
+            'sort': control.SORT_METHOD_EPISODE,
+            'art': {
+                'thumb': thumb,
+                'poster': poster,
+                'fanart': show_fanart
+            }
         }
-
-        yield dict(program, **season)

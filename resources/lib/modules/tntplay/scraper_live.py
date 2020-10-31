@@ -3,6 +3,8 @@
 import requests
 import datetime
 import time
+import player
+from scraper_vod import FANART
 
 
 POSTER_URL = 'http://i.cdn.turner.com/tntla/images/portal/fixed/cards/{titleId}_424x636{lang}.jpg'
@@ -18,6 +20,9 @@ LOGO_MAP = {
     'TNTSLA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/tnts-pt.png',
     'SPACELA_BR': 'https://turner-latam-prod.akamaized.net/PROD-LATAM/live-channels/space.png',
 }
+
+
+PLAYER_HANDLER = player.__name__
 
 
 def get_live_channels():
@@ -67,40 +72,40 @@ def get_live_channels():
         logo = LOGO_MAP.get(channel.get('callLetter'), None)
 
         results.append({
-        'slug': channel.get('channelName', ''),
-        'name': u"[B]" + channel_name + u"[/B][I] - " + title + (u': ' + subtitle if subtitle else u'') + u"[/I]",
-        'studio': channel_name,
-        'title': subtitle,
-        'originaltitle': details.get('originalTitle', None) or None,
-        'tvshowtitle': title,
-        'sorttitle': channel_name,
-        'thumb': poster_url,
-        'logo': logo,
-        'clearlogo': logo,
-        'clearart': logo,
-        'banner': None,
-        'color': None,
-        'fanart': None,
-        'id': channel.get('channelId', ''),
-        'channel_id': channel.get('channelId', ''),
-        'brplayprovider': 'tntplay',
-        'playable': 'true',
-        'livefeed': 'true',
-        'dateadded': datetime.datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S'),
-        'plot': plot,
-        'plotoutline': plotoutline,
-        'duration': programme.get('duration', 0) or 0,
-        'adult': False,
-        'cast': details.get('actorList', []).split(','),
-        'director': details.get('directorList', []).split(','),
-        'genre': details.get('genreList', None),
-        'rating': details.get('rate', None),
-        'year': details.get('releaseYear', None),
-        'country': details.get('country', None),
-        'episode': details.get('episode', None),
-        'season': details.get('season', None),
-        "mediatype": 'episode' if details.get('episode', None) else 'movie'  # 'video'
-    })
+            'handler': PLAYER_HANDLER,
+            'method': 'playlive',
+            'id': channel.get('channelId', ''),
+            'IsPlayable': True,
+            'livefeed': True,
+            'label': u"[B]" + channel_name + u"[/B][I] - " + title + (u': ' + subtitle if subtitle else u'') + u"[/I]",
+            'studio': channel_name,
+            'title': subtitle,
+            'originaltitle': details.get('originalTitle', None) or None,
+            'tvshowtitle': title,
+            'sorttitle': channel_name,
+            'channel_id': channel.get('channelId', ''),
+            'dateadded': datetime.datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S'),
+            'plot': plot,
+            'plotoutline': plotoutline,
+            'duration': programme.get('duration', 0) or 0,
+            'adult': False,
+            'cast': details.get('actorList', []).split(','),
+            'director': details.get('directorList', []).split(','),
+            'genre': details.get('genreList', None),
+            'rating': details.get('rate', None),
+            'year': details.get('releaseYear', None),
+            'country': details.get('country', None),
+            'episode': details.get('episode', None),
+            'season': details.get('season', None),
+            "mediatype": 'tvshow',
+            'content': 'tvshows',
+            'art': {
+                'thumb': poster_url,
+                'clearlogo': logo,
+                'clearart': logo,
+                'fanart': FANART,
+            }
+        })
 
     return results
 

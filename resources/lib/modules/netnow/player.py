@@ -26,21 +26,13 @@ class Player:
 
     def playlive(self, id, meta):
 
+        meta = meta or {}
+
         control.log("Now Online - play_stream: id=%s | meta=%s" % (id, meta))
 
         if id is None: return
 
-        try:
-            meta = json.loads(meta)
-        except:
-            meta = {
-                "playcount": 0,
-                "overlay": 6,
-                "mediatype": "video",
-                "aired": None
-            }
-
-        self.isLive = meta.get('livefeed', 'false') == 'true'
+        self.isLive = meta.get('livefeed', False)
 
         try:
             url, avs_cookie, login_info, xsrf, device_id, sc_id = self.get_cdn(id, self.isLive)
@@ -118,6 +110,7 @@ class Player:
                 user_agent = 'NOW/1 CFNetwork/1197 Darwin/20.0.0'
 
             key_headers['User-Agent'] = user_agent
+            key_headers['content-type'] = 'application/octet-stream'
 
             license_key = '%s|%s|R{SSM}|' % (licence_url, urllib.urlencode(key_headers))
             item.setProperty('inputstream.adaptive.license_key', license_key)
@@ -175,8 +168,9 @@ class Player:
         sc_id = (response.get('response', {}) or {}).get('scId', None) or None
 
         if not src:
+            status = response.get('status', 'Error') or 'Error'
             message = response.get('message', 'Authentication Error') or 'Authentication Error'
-            raise Exception(message)
+            raise Exception('%s: %s' % (status, message))
 
         if PLATFORM == 'PCTV':
             device_id = self.get_device_id(id, avs_cookie, login_info, xsrf)

@@ -504,3 +504,43 @@ msgstr "Provedor não implementado"
 msgctxt "#34130"
 msgid "Enable Now Online"
 msgstr "Habilitar Now Online"
+
+msgctxt "#34131"
+msgid "Enable Telecine Play"
+msgstr "Habilitar Telecine Play"
+
+msgctxt "#34132"
+msgid "Highlights"
+msgstr "Destaques"
+
+msgctxt "#34133"
+msgid "Coming Soon"
+msgstr "Em Breve"
+
+msgctxt "#34134"
+msgid "History"
+msgstr "Histórico"
+
+msgctxt "#34135"
+msgid "Home"
+msgstr "Início"
+
+msgctxt "#34136"
+msgid "See More"
+msgstr "Veja Mais"
+
+msgctxt "#34137"
+msgid "Season"
+msgstr "Temporada"
+
+msgctxt "#34138"
+msgid "Advanced"
+msgstr "Avançado"
+
+msgctxt "#34139"
+msgid "Default Profile"
+msgstr "Perfil Padrão"
+
+msgctxt "#34140"
+msgid "Invalid credentials. Try again"
+msgstr "Dados inválidos. Tente novamente."

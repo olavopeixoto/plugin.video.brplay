@@ -1,16 +1,17 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.51" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="1.0.0" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
 		<import addon="script.module.buggalo" version="1.1.6"/>
 		<import addon="script.module.pytz" version="2014.2"/>
+<!--		<import addon="script.module.pil" version="5.1.0"/>-->
 	</requires>
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
 	</extension>
 	<extension point="xbmc.addon.metadata">
-		<summary>Globo Play, Globosat Play and Premium Channels on Kodi</summary>
+		<summary>Globo Play, Globosat Play, Telecine and Premium Channels on Kodi</summary>
 		<description>Brazilian video streaming services for subscribers</description>
 		<platform>all</platform>
 		<license>GPL3</license>
@@ -22,9 +23,11 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.51
-			- Implemented support for new provider: Net Now Online (Live and Vod)
-			- fix an issue with the cache module
+		<news>1.0.0
+			- Support for Telecine
+			- New Globo Play, Globosat and Sexyhot GraphQL API
+			- New Logo and fanart
+			- Removed legacy codebase
         </news>
 	</extension>
 </addon>

@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 from resources.lib.modules import control
-from resources.lib.modules import client
+import requests
 import json
 
 try:
@@ -71,16 +71,13 @@ class auth:
             }
         }
 
-        cookies = client.request(self.GLOBO_AUTH_URL, post=json.dumps(payload), headers={
-            'content-type': 'application/json; charset=UTF-8',
-            'accept': 'application/json, text/javascript',
-            'Accept-Encoding': 'gzip'}, output='cookiejar')
+        response = requests.get(self.GLOBO_AUTH_URL, json=payload, headers={
+                                                                    'content-type': 'application/json; charset=UTF-8',
+                                                                    'accept': 'application/json, text/javascript',
+                                                                    'Accept-Encoding': 'gzip'})
 
-        credentials = cookies[self.GLOBOPLAY_TOKEN_ID]
-
-        # cookies = client.request(self.GLOBOSAT_AUTH_URL, headers={'Accept-Encoding': 'gzip', 'Cookie': "%s=%s;" % (self.GLOBOPLAY_TOKEN_ID, globo_id)}, output='cookiejar')
-        #
-        # credentials = cookies[self.GLOBOSATPLAY_TOKEN_ID]
+        response.raise_for_status()
+        credentials = response.cookies.get(self.GLOBOPLAY_TOKEN_ID, None)
 
         control.log("GLOBOSAT CREDENTIALS: %s" % credentials)
 

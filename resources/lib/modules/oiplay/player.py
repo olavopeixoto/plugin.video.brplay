@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import json
+import requests
 import sys
 from urlparse import urlparse
 import threading
@@ -11,7 +11,6 @@ from private_data import get_password
 from private_data import get_device_id
 import resources.lib.modules.control as control
 from resources.lib.modules import hlshelper
-from resources.lib.modules import client
 import xbmc
 
 
@@ -27,11 +26,17 @@ class Player(xbmc.Player):
 
     def playlive(self, id, meta):
 
+        meta = meta or {}
+
         control.log("Oi Play - play_stream: id=%s | meta=%s" % (id, meta))
 
         if id is None: return
 
         data = self.individualize(id)
+
+        if not data:
+            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+            return
 
         encrypted = 'drm' in data and 'licenseUrl' in data['drm']
 
@@ -48,27 +53,6 @@ class Player(xbmc.Player):
         title = info['title']
 
         control.log("live media url: %s" % url)
-
-        try:
-            meta = json.loads(meta)
-        except:
-            meta = {
-                "playcount": 0,
-                "overlay": 6,
-                "title": title,
-                "thumb": info['positiveLogoUrl'],
-                "mediatype": "video",
-                "aired": None,
-                "genre": info["categoryName"],
-                "plot": title,
-                "plotoutline": title
-            }
-
-        # meta.update({
-        #     "genre": info["categoryName"],
-        #     "plot": title,
-        #     "plotoutline": title
-        # })
 
         # poster = meta['poster'] if 'poster' in meta else control.addonPoster()
         thumb = meta['thumb'] if 'thumb' in meta else info['positiveLogoUrl']
@@ -195,7 +179,7 @@ class Player(xbmc.Player):
         control.log(headers)
 
         try:
-            individualize = client.request(url, headers=headers)
+            individualize = requests.get(url, headers=headers).json()
 
             control.log(individualize)
 
@@ -211,7 +195,7 @@ class Player(xbmc.Player):
             control.log('OIPLAY GET ' + url)
             control.log(headers)
 
-            individualize = client.request(url, headers=headers)
+            individualize = requests.get(url, headers=headers).json()
 
             control.log(individualize)
 

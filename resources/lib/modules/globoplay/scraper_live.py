@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from resources.lib.modules import control
-from resources.lib.modules import client
+from resources.lib.modules import cache
 from resources.lib.modules import util
 from resources.lib.modules import workers
-from resources.lib.modules import cache
+import requests
+import player
 import datetime
 import re
 from sqlite3 import dbapi2 as database
 import time
 import os
-from scraper_vod import GLOBOPLAY_CONFIGURATION
 import urllib
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
@@ -19,7 +19,9 @@ GLOBO_FANART = os.path.join(control.artPath(), 'globo.jpg')
 GLOBOPLAY_APIKEY = '35978230038e762dd8e21281776ab3c9'
 
 LOGO_BBB = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/2014/12/1/7e69a2767aebc18453c523637722733d.png'
-FANART_BBB = 'http://s01.video.glbimg.com/x720/244881.jpg'
+FANART_BBB = 'http://s01.video.glbimg.com/x1080/244881.jpg'
+
+PLAYER_HANDLER = player.__name__
 
 
 def get_globo_live_id():
@@ -33,34 +35,6 @@ def get_live_channels():
     affiliates = control.get_affiliates_by_id(int(affiliate_id))
 
     live = []
-
-    if control.setting('show_multicam') == 'true':
-        config = cache.get(client.request, 1, GLOBOPLAY_CONFIGURATION)
-
-        # multicams = config['multicamLabel']
-        multicam = config['growth']['menu'] if 'growth' in config and 'menu' in config['growth'] and 'is_enabled' in config['growth']['menu'] and config['growth']['menu']['is_enabled'] else None
-
-        if multicam:
-            title = multicam['label_item']
-            live.append({
-                'slug': 'multicam',
-                'name': '[B]' + title + '[/B]',
-                'studio': 'Big Brother Brasil',
-                'title': title,
-                'tvshowtitle': '',
-                'sorttitle': title,
-                'logo': LOGO_BBB,
-                'clearlogo': LOGO_BBB,
-                'fanart': FANART_BBB,
-                'thumb': FANART_BBB,
-                'playable': 'false',
-                'plot': None,
-                'id': multicam['link_program_id'],
-                'channel_id': config['channel_id'],
-                'duration': None,
-                'isFolder': 'true',
-                'brplayprovider': 'multicam'
-            })
 
     show_globo_internacional = control.setting('show_globo_international') == 'true'
 
@@ -88,7 +62,7 @@ def __append_result(fn, item_list, *args):
 
 
 def __get_affiliate_live_channels(affiliate):
-    liveglobo = get_globo_live_id()
+    live_globo_id = get_globo_live_id()
 
     code, latitude, longitude = control.get_coordinates(affiliate)
 
@@ -104,22 +78,26 @@ def __get_affiliate_live_channels(affiliate):
     if not live_program:
         return None
 
-    geo_position = 'lat=%s&long=%s' % (latitude, longitude)
-
     program_description = get_program_description(live_program['program_id_epg'], live_program['program_id'], code)
 
     control.log("globo live (%s) program_description: %s" % (code, repr(program_description)))
 
     item = {
-        'plot': None,
-        'duration': None,
-        'affiliate': geo_position,
-        'brplayprovider': 'globoplay',
+        'handler': PLAYER_HANDLER,
+        'method': 'play_stream',
+        'lat': latitude,
+        'long': longitude,
         'affiliate_code': code,
-        'logo': None,
-        'thumb': live_program['thumb'],
-        'poster': live_program['poster'],
-        'fanart': live_program['fanart']
+        'IsPlayable': 'true',
+        'id': live_globo_id,
+        'channel_id': 196,
+        'live': True,
+        'livefeed': True,
+        'mediatype': 'tvshow',
+        'content': 'tvshows',
+        # 'sort': [control.SORT_METHOD_DATEADDED, control.SORT_METHOD_VIDEO_SORT_TITLE, control.SORT_METHOD_LABEL_IGNORE_FOLDERS],
+        'overlay': 6,
+        'playcount': 0
     }
 
     item.update(program_description)
@@ -127,40 +105,30 @@ def __get_affiliate_live_channels(affiliate):
     item.pop('datetimeutc', None)
 
     title = program_description['title'] if 'title' in program_description else live_program['title']
-    # subtitle = program_description['subtitle'] if 'subtitle' in program_description else live_program['title']
-
     safe_tvshowtitle = program_description['tvshowtitle'] if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else ''
     safe_subtitle = program_description['subtitle'] if 'subtitle' in program_description and program_description['subtitle'] and not safe_tvshowtitle.startswith(program_description['subtitle']) else ''
     subtitle_txt = (" / " if safe_tvshowtitle and safe_subtitle else '') + safe_subtitle
     tvshowtitle = " (" + safe_tvshowtitle + subtitle_txt + ")" if safe_tvshowtitle or subtitle_txt else ''
 
     item.update({
-        'slug': 'globo',
-        'name': ('[B]' if not control.isFTV else '') + 'Globo ' + re.sub(r'\d+','',code) + ('[/B]' if not control.isFTV else '') + '[I] - ' + title + (tvshowtitle if not control.isFTV else '') + '[/I]',
-        'title': title, #subtitle,  # 'Globo ' + re.sub(r'\d+','',code) + '[I] - ' + program_description['title'] + '[/I]',
-        'sorttitle': 'Globo ' + re.sub(r'\d+','',code),
-        'clearlogo': GLOBO_LOGO,
-        # 'tagline': program_description['title'],
-        'studio': 'Rede Globo - ' + affiliate,
-        # 'logo': GLOBO_LOGO,
-        'playable': 'true',
-        'id': liveglobo,
-        'channel_id': 196,
-        'live': True,
-        'livefeed': 'true'
+        'label': '[B]Globo %s[/B][I] - %s%s[/I]' % (re.sub(r'\d+', '', code), title, tvshowtitle),
+        'title': title,
+        'sorttitle': 'Globo ' + re.sub(r'\d+', '', code),
+        'studio': 'Rede Globo - ' + affiliate
     })
 
-    if control.isFTV:
-        item.update({'tvshowtitle': title})
+    art = item.get('art', {})
+    if not art.get('thumb', None):
+        art['thumb'] = live_program['thumb']
 
-    if 'fanart' not in item or not item['fanart']:
-        item.update({'fanart': GLOBO_FANART})
+    if not art.get('fanart', None):
+        art['fanart'] = live_program['fanart']
 
-    # if 'poster' not in item or not item['poster']:
-    #     item.update({'poster': live_program['poster']})
+    # if not art.get('poster', None):
+    #     art['poster'] = live_program['poster']
 
-    if 'thumb' not in item or not item['thumb']:
-        item.update({'thumb': live_program['poster']})
+    art['clearlogo'] = GLOBO_LOGO
+    art['icon'] = GLOBO_LOGO
 
     return item
 
@@ -169,7 +137,8 @@ def __get_live_program(affiliate='RJ'):
     headers = {'Accept-Encoding': 'gzip'}
     url = 'https://api.globoplay.com.br/v1/live/%s?api_key=%s' % (affiliate, GLOBOPLAY_APIKEY)
 
-    response = client.request(url, headers=headers)
+    # response = client.request(url, headers=headers)
+    response = requests.get(url, headers=headers).json()
 
     if not response or 'live' not in response:
         return None
@@ -177,6 +146,7 @@ def __get_live_program(affiliate='RJ'):
     live = response['live']
 
     return {
+        'id': live['id_dvr'],
         'poster': live['poster'],
         'thumb': live['poster_safe_area'],
         'fanart': live['background_image'],
@@ -249,7 +219,8 @@ def __get_full_day_schedule(today, affiliate='RJ'):
     url = "https://api.globoplay.com.br/v1/epg/%s/praca/%s?api_key=%s" % (today, affiliate, GLOBOPLAY_APIKEY)
     headers = {'Accept-Encoding': 'gzip'}
 
-    slots = client.request(url, headers=headers)['gradeProgramacao']['slots']
+    # slots = client.request(url, headers=headers)['gradeProgramacao']['slots']
+    slots = requests.get(url, headers=headers).json()['gradeProgramacao']['slots']
 
     result = []
 
@@ -290,43 +261,40 @@ def __get_full_day_schedule(today, affiliate='RJ'):
 
         item = {
             "tagline": slot['chamada'] if 'chamada' in slot else slot['nome_programa'],
-            "closed_caption": slot['closed_caption'] if 'closed_caption' in slot else None,
-            "facebook": slot['facebook'] if 'facebook' in slot else None,
-            "twitter": slot['twitter'] if 'twitter' in slot else None,
-            "hd": slot['hd'] if 'hd' in slot else True,
-            "id": slot['id_programa'],
+            # "closed_caption": slot['closed_caption'] if 'closed_caption' in slot else None,
+            # "facebook": slot['facebook'] if 'facebook' in slot else None,
+            # "twitter": slot['twitter'] if 'twitter' in slot else None,
+            # "hd": slot['hd'] if 'hd' in slot else True,
+            # "id": slot['id_programa'],
             "id_programa": slot['id_programa'],
             "id_webmedia": slot['id_webmedia'],
-            # "fanart": 'https://s02.video.glbimg.com/x720/%s.jpg' % get_globo_live_id(),
-            "thumb": slot['imagem'],
-            "logo": slot['logo'] if 'logo' in slot else None,
-            "clearlogo": slot['logo'] if 'logo' in slot else None,
-            "poster": slot['poster'] if 'poster' in slot else None,
             "subtitle": slot['resumo'] if slot['nome_programa'] == 'Futebol' else None,
             "title": title,
+            'tvshowtitle': showtitle,
             "plot": slot['resumo'] if 'resumo' in slot else showtitle, #program_local_date_string + ' - ' + (slot['resumo'] if 'resumo' in slot else showtitle.replace(' - ', '\n') if showtitle and len(showtitle) > 0 else slot['nome_programa']),
             "plotoutline": datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M'),
-            "mediatype": 'episode' if showtitle and len(showtitle) > 0 else 'video',
             "genre": slot['tipo_programa'],
             "datetimeutc": program_datetime_utc,
             "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
             # 'StartTime': datetime.datetime.strftime(program_datetime, '%H:%M:%S'),
             # 'EndTime': datetime.datetime.strftime(next_start, '%H:%M:%S'),
-            'duration': util.get_total_seconds(next_start - program_datetime)
+            'duration': util.get_total_seconds(next_start - program_datetime),
+            'art': {
+                # "fanart": 'https://s02.video.glbimg.com/x720/%s.jpg' % get_globo_live_id(),
+                "thumb": slot['imagem'],
+                # "icon": slot['logo'] if 'logo' in slot else None,
+                "clearlogo": slot['logo'] if 'logo' in slot else None,
+                "poster": slot['poster'] if 'poster' in slot else None,
+            },
         }
 
-        # if showtitle and len(showtitle) > 0:
-        item.update({
-            'tvshowtitle': showtitle
-        })
-
-        if slot["tipo_programa"] == "confronto":
-            item.update({
-                'logo': slot['confronto']['participantes'][0]['imagem'],
-                'logo2': slot['confronto']['participantes'][1]['imagem'],
-                'initials1': slot['confronto']['participantes'][0]['nome'][:3].upper(),
-                'initials2': slot['confronto']['participantes'][1]['nome'][:3].upper()
-            })
+        # if slot["tipo_programa"] == "confronto":
+        #     item.update({
+        #         'logo': slot['confronto']['participantes'][0]['imagem'],
+        #         'logo2': slot['confronto']['participantes'][1]['imagem'],
+        #         'initials1': slot['confronto']['participantes'][0]['nome'][:3].upper(),
+        #         'initials2': slot['confronto']['participantes'][1]['nome'][:3].upper()
+        #     })
 
         if slot['tipo_programa'] == 'filme':
             item.update({
@@ -349,44 +317,12 @@ def __get_full_day_schedule(today, affiliate='RJ'):
     return result
 
 
-def get_multicam(program_id):
-
-    headers = {'Accept-Encoding': 'gzip'}
-    url = 'https://api.globoplay.com.br/v1/programs/%s/live?api_key=%s' % (program_id, GLOBOPLAY_APIKEY)
-    response = client.request(url, headers=headers)
-
-    if not response or 'erro' in response:
-        if response:
-            control.log("Multicam Error: %s" % response['erro'])
-        return []
-
-    return [{
-        'plot': None,
-        'duration': None,
-        'brplayprovider': 'globoplay',
-        'logo': LOGO_BBB,
-        'slug': 'multicam_' + channel['description'].replace(' ','_').lower(),
-        'name': '[B]' + channel['description'] + '[/B]',
-        'title': channel['description'],
-        'tvshowtitle': response['title'] if not control.isFTV else '',
-        'sorttitle': "%02d" % (i,),
-        'clearlogo': LOGO_BBB,
-        'studio': response['title'] if control.isFTV else 'Rede Globo',
-        'playable': 'true',
-        'id': channel['id'],
-        'channel_id': 196,
-        'live': True,
-        'livefeed': 'false',  #force vod hash
-        'fanart': FANART_BBB,
-        'thumb': channel['thumb'] + '?v=' + str(int(time.time()))
-    } for i, channel in enumerate(response['channels'])]
-
-
 def get_affiliate_by_coordinates(latitude, longitude):
 
     url = 'https://api.globoplay.com.br/v1/affiliates/{lat},{long}?api_key={apikey}'.format(lat=latitude, long=longitude, apikey=GLOBOPLAY_APIKEY)
 
-    result = client.request(url)
+    # result = client.request(url)
+    result = cache.get(requests.get, 1, url, table='globoplay').json()
 
     # {
     #     "channelNumber": 29,
@@ -417,17 +353,18 @@ def get_globo_americas():
         'x-client-version': '0.4.3'
     }
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=control.get_current_brasilia_utc_offset())
     date = now.strftime('%Y-%m-%d')
     variables = urllib.quote_plus('{{"date":"{}"}}'.format(date))
     query = 'query%20getEpgBroadcastList%28%24date%3A%20Date%21%29%20%7B%0A%20%20broadcasts%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20mediaId%0A%20%20media%20%7B%0A%20%20%20%20serviceId%0A%20%20%20%20headline%0A%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20availableFor%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20transmissionId%0A%20%20geofencing%0A%20%20geoblocked%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20color%0A%20%20%20%20name%0A%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%7D%0A%20%20epgByDate%28date%3A%20%24date%29%20%7B%0A%20%20%20%20entries%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20alternativeTime%0A%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20landscape%0A%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20directors%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cast%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20genres%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
     url = 'https://jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=variables)
-    response = client.request(url, headers=headers)
+    response = cache.get(requests.get, 24, url, headers=headers, table='globoplay').json()
+    control.log(response)
     broadcasts = response['data']['broadcasts']
 
     items = []
 
-    utc_now = control.to_timestamp(datetime.datetime.now())
+    utc_now = int(control.to_timestamp(datetime.datetime.utcnow()))
 
     for broadcast in broadcasts:
         media_id = str(broadcast.get('mediaId', 0))
@@ -435,7 +372,9 @@ def get_globo_americas():
         if is_globosat_available and media_id != str(GLOBO_AMERICAS_ID):
             continue
 
-        epg = next((epg for epg in broadcast['epgByDate']['entries'] if epg['startTime'] <= utc_now < epg['endTime']), {})
+        epg = next((epg for epg in broadcast['epgByDate']['entries'] if int(epg['startTime']) <= utc_now < int(epg['endTime'])), {})
+
+        control.log('EPG: %s' % epg)
 
         channel = broadcast.get('channel', {}) or {}
 
@@ -472,7 +411,16 @@ def get_globo_americas():
             description = '%s | %s' % (title, plotoutline) if title else plotoutline
 
         item = {
-            'name': name,
+            'handler': PLAYER_HANDLER,
+            'method': 'play_stream',
+            'IsPlayable': True,
+            'id': media_id,
+            'channel_id': channel_id,
+            'service_id': service_id,
+            'slug': channel_slug,
+            'live': epg.get('liveBroadcast', False) or False,
+            'livefeed': False,  # force vod player for us channels
+            'label': name,
             'title': title,
             'tvshowtitle': title,
             'plot': description,
@@ -480,28 +428,23 @@ def get_globo_americas():
             "tagline": description,
             'duration': duration,
             "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
-            'brplayprovider': 'globoplay',
-            'logo': logo,
-            'clearlogo': logo,
-            'thumb': fanart,
-            'poster': None,
-            'fanart': fanart,
-            'slug': channel_slug,
             'sorttitle': channel_name,
             'studio': channel_name,
-            'playable': 'true',
-            'id': media_id,
-            'channel_id': channel_id,
-            'service_id': service_id,
-            'live': epg.get('liveBroadcast', False) or False,
             'year': year,
             'country': country,
             'genre': genres,
             'cast': cast,
             'director': director,
             'mpaa': rating,
-            'livefeed': 'false',  # force vod player for us channels
-            "mediatype": 'video'  # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+            "mediatype": 'video',  # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+            'overlay': 6,
+            'playcount': 0,
+            "art": {
+                'icon': logo,
+                'clearlogo': logo,
+                'thumb': fanart,
+                'fanart': fanart,
+            }
         }
 
         items.append(item)

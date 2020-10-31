@@ -3,6 +3,7 @@
 import json
 import sys
 from urlparse import urlparse
+import urllib
 import resources.lib.modules.control as control
 from resources.lib.modules import hlshelper
 import requests
@@ -33,6 +34,8 @@ class Player(xbmc.Player):
 
     def playlive(self, id, meta, encrypted=False):
 
+        meta = meta or {}
+
         control.log("TNT Play - play_stream: id=%s | meta=%s" % (id, meta))
 
         if id is None: return
@@ -49,17 +52,6 @@ class Player(xbmc.Player):
             return
 
         control.log("live media url: %s" % url)
-
-        try:
-            meta = json.loads(meta)
-        except:
-            meta = {
-                "playcount": 0,
-                "overlay": 6,
-            }
-
-        poster = meta['poster'] if 'poster' in meta else None
-        thumb = meta['thumb'] if 'thumb' in meta else None
 
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
 
@@ -84,7 +76,7 @@ class Player(xbmc.Player):
         control.log("Parsed URL: %s" % repr(parsed_url))
 
         item = control.item(path=self.url)
-        item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster})
+        item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))
 
@@ -129,9 +121,20 @@ class Player(xbmc.Player):
                     control.infoDialog(drm_response.get('message', u'DRM ERROR'), icon='ERROR')
                     return
 
-            key_headers = 'x-isp-token=%s&Origin=https://www.tntgo.tv' % token
-            license_key = '%s|%s|R{SSM}|' % (licence_url, key_headers)
+            headers = {
+                'user-agent': 'Tnt/2.2.13.1908061505 CFNetwork/1107.1 Darwin/19.0.0',
+                'x-isp-token': token,
+                'Origin': 'https://www.tntgo.tv',
+                'content-type': 'application/octet-stream'
+            }
+
+            license_key = '%s|%s|R{SSM}|' % (licence_url, urllib.urlencode(headers))
             item.setProperty('inputstream.adaptive.license_key', license_key)
+            stream_headers = {
+                'user-agent': 'Tnt/2.2.13.1908061505 CFNetwork/1107.1 Darwin/19.0.0',
+                'Origin': 'https://www.tntgo.tv'
+            }
+            item.setProperty('inputstream.adaptive.stream_headers', urllib.urlencode(stream_headers))
         else:
             item.setProperty('inputstream.adaptive.manifest_type', 'hls')
             # mime_type = 'application/vnd.apple.mpegurl'

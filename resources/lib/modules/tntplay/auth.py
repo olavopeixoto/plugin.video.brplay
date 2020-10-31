@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import requests
-from resources.lib.beatifulsoup import BeautifulSoup
 import urlparse
+import re
+from resources.lib.beatifulsoup import BeautifulSoup
 import resources.lib.modules.control as control
-
-REFRESH_CODE_URL = 'https://apac.ti-platform.com/AGL/1.0/R/ENG/IPHONE/TNTGO_LATAM_BR/USER/REFRESH?deviceId=%s&filter_brand=space%2Ctnts%2Ctnt'
 
 TNT_PROVIDERS = [
     {
@@ -136,10 +135,13 @@ def refresh_token(token):
         'User-Agent': 'Tnt/2.2.13.1908061505 CFNetwork/1107.1 Darwin/19.0.0'
     }
 
-    control.log('TNT PLAY GET %s' % REFRESH_CODE_URL)
+    device_id = get_device_id()
+    url = 'https://apac.ti-platform.com/AGL/1.0/R/ENG/IPHONE/TNTGO_LATAM_BR/USER/REFRESH?deviceId={device_id}&filter_brand=space%2Ctnts%2Ctnt'.format(device_id=device_id)
+
+    control.log('TNT PLAY GET %s' % url)
     control.log(headers)
 
-    response = requests.get(REFRESH_CODE_URL, headers=headers, proxies=proxy)
+    response = requests.get(url, headers=headers, proxies=proxy)
 
     response.raise_for_status()
 
@@ -230,6 +232,8 @@ def oitv_login(session, response, username, password):
     form_data = dict((field.get('name'), field.get('value')) for field in fields)
     post_url = urlparse.urljoin(response.url, form['action'])
 
+    control.log('[TNT] - POST %s' % post_url)
+
     response = session.post(post_url, data=form_data, proxies=proxy)
 
     response.raise_for_status()
@@ -252,22 +256,32 @@ def oitv_login(session, response, username, password):
 
     post_url = form['action']
 
+    control.log('[TNT] - POST %s' % post_url)
+
     response = session.post(post_url, data=form_data, proxies=proxy)
 
     response.raise_for_status()
 
-    if post_url == response.url:
-        html = BeautifulSoup(response.content)
-        error = html.find("div", {"class": "data-invalid-text"})
-        msg = error.text.encode('utf8') if error else u'Dados inválidos. Tente novamente.'.encode('utf8')
-        raise Exception(msg)
+    url = re.findall(r"window.location.href='([^']+)';", response.content)[0]
+
+    control.log('[TNT] - GET %s' % url)
+
+    response = session.get(url)
 
     html = BeautifulSoup(response.content)
+
+    error = html.find("div", {"class": "data-invalid-text"})
+    if error:
+        control.log(response.content)
+        msg = error.text.encode('utf8')
+        raise Exception(msg)
 
     form = html.find('form')
     fields = form.findAll('input')
     form_data = dict((field.get('name'), field.get('value')) for field in fields)
     post_url = form['action']
+
+    control.log('[TNT] - POST %s' % post_url)
 
     response = session.post(post_url, data=form_data, proxies=proxy)
 

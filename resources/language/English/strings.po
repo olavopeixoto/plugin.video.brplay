@@ -504,3 +504,43 @@ msgstr ""
 msgctxt "#34130"
 msgid "Enable Now Online"
 msgstr ""
+
+msgctxt "#34131"
+msgid "Enable Telecine Play"
+msgstr ""
+
+msgctxt "#34132"
+msgid "Highlights"
+msgstr ""
+
+msgctxt "#34133"
+msgid "Coming Soon"
+msgstr ""
+
+msgctxt "#34134"
+msgid "History"
+msgstr ""
+
+msgctxt "#34135"
+msgid "Home"
+msgstr ""
+
+msgctxt "#34136"
+msgid "See More"
+msgstr ""
+
+msgctxt "#34137"
+msgid "Season"
+msgstr ""
+
+msgctxt "#34138"
+msgid "Advanced"
+msgstr ""
+
+msgctxt "#34139"
+msgid "Default Profile"
+msgstr ""
+
+msgctxt "#34140"
+msgid "Invalid credentials. Try again"
+msgstr ""

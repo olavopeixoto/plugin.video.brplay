@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, json, threading, time
+import os, json, threading, time, sys, urllib
 
 import xbmc, xbmcaddon, xbmcplugin, xbmcgui, xbmcvfs
 
@@ -184,13 +184,15 @@ ignore_channel_authorization = xbmcaddon.Addon().getSetting('ignore_channel_auth
 
 is_4k_enabled =  xbmcaddon.Addon().getSetting('enable_4k') == 'true'
 
-is_4k_images_enabled =  xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true'
+is_4k_images_enabled = xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true'
 
 log_enabled = setting('enable_log') == 'true'
 
 disable_inputstream_adaptive = setting("disable_inputstream_adaptive") == 'true'
 
 prefer_dash = setting('prefer_dash') == 'true'
+
+sysaddon = sys.argv[0]
 
 
 def get_current_brasilia_utc_offset():
@@ -257,6 +259,22 @@ def is_inputstream_available():
     return __inputstream_addon_available
 
 
+def is_live_available():
+    return is_globosat_available() \
+           or is_globoplay_available() \
+           or is_oiplay_available() \
+           or is_tntplay_available() \
+           or is_nowonline_available()
+
+
+def is_vod_available():
+    return is_globosat_available() \
+           or is_globoplay_available() \
+           or is_tntplay_available() \
+           or is_nowonline_available() \
+           or is_telecine_available()
+
+
 def is_globosat_available():
 
     if setting('globosat_available') != 'true':
@@ -297,6 +315,13 @@ def is_nowonline_available():
     password = setting('nowonline_password')
 
     return setting('nowonline_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_telecine_available():
+    username = setting('telecine_account')
+    password = setting('telecine_password')
+
+    return setting('telecine_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
 
 
 def getKodiVersion():
@@ -431,28 +456,6 @@ def version():
     return int(num)
 
 
-def cdnImport(uri, name):
-    import imp
-    from resources.lib.modules import client
-
-    path = os.path.join(dataPath, 'py' + name)
-    path = path.decode('utf-8')
-
-    deleteDir(os.path.join(path, ''), force=True)
-    makeFile(dataPath)
-    makeFile(path)
-
-    r = client.request(uri)
-    p = os.path.join(path, name + '.py')
-    f = openFile(p, 'w')
-    f.write(r)
-    f.close()
-    m = imp.load_source(name, p)
-
-    deleteDir(os.path.join(path, ''), force=True)
-    return m
-
-
 def openSettings(query=None, id=addonInfo('id')):
     try:
         idle()
@@ -484,6 +487,7 @@ def clear_credentials():
     setSetting("tntplay_token", u'')
     setSetting("oiplay_access_token_response", u'')
     setSetting("nowonline_credentials", u'')
+    setSetting("telecine_credentials", u'')
 
 
 def clear_globosat_credentials():
@@ -676,3 +680,8 @@ def filter_info_labels(info_labels):
 
 def to_timestamp(date):
     return int((time.mktime(date.timetuple()) + date.microsecond / 1000000.0))
+
+
+def run_plugin_url(params):
+
+    return 'RunPlugin(%s?%s)' % (sysaddon, urllib.urlencode(params))

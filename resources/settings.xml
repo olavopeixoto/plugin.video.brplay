@@ -13,6 +13,8 @@
 		<setting id="show_pfc_games" type="bool" label="33405" default="true" visible="false" subsetting="true" />
 		<!-- 33401 = Show Adult Content -->
 		<setting id="show_adult" type="bool" label="33401" default="true" visible="eq(-7,true)" subsetting="true" />
+		<setting id="globosat_credentials" type="text"  default="" visible="false" />
+
 		<!-- 31100 = Globo Play -->
 		<!-- 31110 = User -->
 		<!-- 31109 = Password -->
@@ -60,6 +62,9 @@
 		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)+eq(-5,true)" subsetting="true" />
 		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-6,true)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
 		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-7,true)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
+		<setting id="globoplay_enable_plus" type="bool"  default="falsee" visible="false" />
+		<setting id="globoplay_credentials" type="text"  default="" visible="false" />
+		<setting id="globoplay_user_data" type="text"  default="" visible="false" />
 
 		<setting type="sep" />
 
@@ -67,6 +72,10 @@
 		<setting id="oiplay_available" type="bool" label="34113" default="false" />
 		<setting id="oiplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="oiplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
+		<setting id="oiplay_default_profile" type="text" label="34139"  default="" visible="eq(-3,true)" enable="false" subsetting="true" />
+		<setting id="oiplay_access_token_response" type="text"  default="" visible="false" />
+		<setting id="oiplay_device_id" type="text"  default="" visible="false" />
+		<setting id="oiplay_liveOTTChannelMap" type="text"  default="" visible="false" />
 
 		<setting type="sep" />
 
@@ -85,8 +94,18 @@
 		<setting id="nowonline_available" type="bool" label="34130" default="false" />
 		<setting id="nowonline_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="nowonline_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
-		<setting id="nowonline_credentials" type="text"  default="" visible="false" subsetting="true" />
-		<setting id="nowonline_device_id" type="text"  default="" visible="false" subsetting="true" />
+		<setting id="nowonline_device_id" type="text" label="Device ID" default="" visible="eq(-3,true)" enable="false" subsetting="true" />
+		<setting id="nowonline_credentials" type="text"  default="" visible="false" enable="false" subsetting="true" />
+
+		<setting type="sep" />
+
+		<setting type="lsep" label="Telecine Play"/>
+		<setting id="telecine_available" type="bool" label="34131" default="false" />
+		<setting id="telecine_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
+		<setting id="telecine_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
+		<setting id="telecine_provider" type="select" label="34124" default="Oi" values="Oi|Claro Net Tv|Sky Brasil|Vivo Banda Larga ou TV|Vivo Celular|Claro tv|Algar Telecom|Multiplay Telecom|TCM Telecom|TVN|Amigo TV|TV Alphaville|NET Angra|Cabonnet|VerTv||Conecta|Net Foz do Iguaçu|Super Cabo|Conectcor|Life|Valenet|Oopstv|Desktop|Megabit|NGT|Vero|Diatel|Tv cabo" visible="eq(-3,true)" subsetting="true" />
+		<setting id="telecine_device_id" type="text"  label="Device ID" default="" visible="eq(-4,true)" enable="false" subsetting="true" />
+		<setting id="telecine_credentials" type="text"  default="" visible="false" subsetting="true" />
 
 		<setting type="sep" />
 	</category>
@@ -116,9 +135,9 @@
 
 		<setting id="enable_4k" type="bool" label="34114" default="true" />
 		<setting id="enable_hdr" type="bool" label="34115" default="true" visible="eq(-1,true)" enable="eq(-1,true)"/>
-		<setting id="enable_4k_fanart" type="bool" label="34116" default="false" visible="eq(-2,true)" enable="eq(-2,true)"/>
+		<setting id="enable_4k_fanart" type="bool" label="34116" default="false" visible="false" enable="eq(-2,true)"/>
 
-		<setting type="lsep" label="Advanced" visible="System.HasAddon(inputstream.adaptive)"/>
+		<setting type="lsep" label="34138" visible="System.HasAddon(inputstream.adaptive)"/>
 
 		<setting id="disable_inputstream_adaptive" type="bool" label="34117" default="true" visible="System.HasAddon(inputstream.adaptive)"/>
 		<setting id="prefer_smoothstreaming" type="bool" label="34118" default="false" visible="false" />
@@ -130,16 +149,9 @@
 	<!-- 32310 = General -->
 	<category label="32310">
 
-		<setting type="lsep" label="Globo Play"/>
+		<setting type="lsep" label="Telecine Play"/>
 
-		<!-- 33301 = Show Full Videos Only -->
-		<setting id="globo_play_full_videos" type="bool" label="33301" default="true" />
-		<setting id="play_children" type="bool" label="34121" default="true" />
-		<setting type="sep" />
-
-		<setting type="lsep" label="Globosat Play"/>
-
-		<setting id="ignore_channel_authorization" type="bool" label="33403" default="false"/>
+		<setting id="telecine_use_pagination" type="bool" label="33402" default="true"/>
 		<setting type="sep" />
 
 		<!-- 33501 = Clear Cache -->

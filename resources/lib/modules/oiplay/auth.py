@@ -40,10 +40,13 @@ def get_account_details(account, deviceid, token):
         'Authorization': 'Bearer ' + token
     }
     url = PROFILES_URL.format(account=account, deviceid=deviceid)
-    response = requests.get(url, headers=headers).json()
+    response_full = requests.get(url, headers=headers)
 
-    if 'upmProfiles' not in response:
-        control.log(response)
+    response = response_full.json() or {}
+
+    if not response.get('upmProfiles', None):
+        control.log(response_full.status_code)
+        control.log(response_full.content)
         return details
 
     profiles = sorted(response['upmProfiles'], key=lambda k: k['upmProfileType']['id'])

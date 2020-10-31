@@ -60,7 +60,9 @@ def validate_login(credentials, do_request=True):
     control.log('Login Validation:')
     control.log(response.content)
 
-    return response.status_code == 200
+    # {"resultCode":"KO","errorDescription":"ACN_3000","message":"400 - \"{\\\"error\\\": \\\"invalid_grant\\\", \\\"error_description\\\": \\\"Refresh token doesn't exist or it's expired\\\"}\"","resultObj":"","systemTime":1603476452213}
+
+    return response.status_code == 200 and str(response.json().get('resultCode', '')) == 'OK'
 
 
 def login(validate=True):

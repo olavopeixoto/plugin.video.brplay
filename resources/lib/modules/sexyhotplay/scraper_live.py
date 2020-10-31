@@ -3,16 +3,19 @@
 from resources.lib.modules import control
 import os
 import time
-from resources.lib.modules import client
-from resources.lib.modules import util
+import requests
 import datetime
+from resources.lib.modules.globosat import player
 
 SEXYHOT_LOGO = os.path.join(control.artPath(), 'logo_sexyhot.png')
 SEXYHOT_FANART = os.path.join(control.artPath(), 'fanart_sexyhot.png')
 
-FANART_URL = 'http://s01.video.glbimg.com/x720/{media_id}.jpg'
+FANART_URL = 'http://s01.video.glbimg.com/x1080/{media_id}.jpg'
 # THUMB_URL = 'https://s04.video.glbimg.com/x720/{media_id}.jpg'
 THUMB_URL = 'https://live-thumbs.video.globo.com/sexy24ha/snapshot/'
+
+
+PLAYER_HANDLER = player.__name__
 
 
 def get_broadcast():
@@ -25,7 +28,7 @@ def get_broadcast():
         'x-client-version': '0.4.3',
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
     }
-    response = client.request(url, headers=headers)
+    response = requests.get(url, headers=headers).json()
 
     channels = []
 
@@ -47,29 +50,33 @@ def get_broadcast():
     duration = (endTime - program_date).total_seconds()
 
     item = {
-        'slug': broadcast['channel']['slug'],
+        'handler': PLAYER_HANDLER,
+        'method': 'playlive',
+        'id': broadcast['mediaId'],
+        'IsPlayable': True,
+        'channel_id': 2065,
+        'livefeed': False,
+        'live': program['liveBroadcast'],
         'studio': broadcast['channel']['name'],
-        'name': name,
+        'label': name,
         'title': program_name,
         'tvshowtitle': program['name'] if program_name else None,
         'sorttitle': broadcast['channel']['name'],
-        'logo': broadcast['channel']['logo'],
-        'fanart': fanart,
-        'thumb': thumb,
-        'live': program['liveBroadcast'],
-        'playable': 'true',
         'plot': program['description'] or '' if not control.isFTV else ' ',
-        'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + datetime.datetime.strftime(
-            program_date + datetime.timedelta(seconds=duration), '%H:%M'),
-        'id': broadcast['mediaId'],
-        'channel_id': 2065,
+        'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + datetime.datetime.strftime(program_date + datetime.timedelta(seconds=duration), '%H:%M'),
         'duration': int(duration),
         'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
-        'brplayprovider': 'globosat',
-        'livefeed': 'true',
-        'clearlogo': broadcast['channel']['logo'],
-        'clearart': None,
-        'banner': None,
+        'adult': True,
+        'overlay': 6,
+        'playcount': 0,
+        'art': {
+            'logo': broadcast['channel']['logo'],
+            'fanart': fanart,
+            'thumb': thumb,
+            'clearlogo': broadcast['channel']['logo'],
+            'clearart': None,
+            'banner': None,
+        }
     }
 
     channels.append(item)

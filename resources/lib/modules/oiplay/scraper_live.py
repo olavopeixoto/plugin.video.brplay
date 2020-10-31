@@ -1,12 +1,16 @@
-from resources.lib.modules import client
+import requests
 from resources.lib.modules import workers
 from resources.lib.modules import util
+from resources.lib.modules import cache
 import datetime
+import player
+
+PLAYER_HANDLER = player.__name__
 
 
 def get_live_channels():
     url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/lists/651acd5c-236d-47d1-9e57-584a233ab76a?limit=200&orderby=titleAsc&page=1&useragent=androidtv'
-    response = client.request(url)
+    response = requests.get(url).json()
 
     channels = []
 
@@ -24,7 +28,7 @@ def __merge_channel_data(channel, result):
 
 def get_channel_epg_now(channel):
     url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/epg/{channel}/beforenowandnext?beforeCount=0&nextCount=0&includeCurrentProgram=true'.format(channel=channel)
-    response = client.request(url)
+    response = requests.get(url).json()
 
     now = response['schedules'][0]
     program = now['program']
@@ -48,24 +52,17 @@ def get_channel_epg_now(channel):
     date = util.strptime(now['startTimeUtc'], '%Y-%m-%dT%H:%M:%SZ') + util.get_utc_delta()
 
     return {
-        'slug': response['callLetter'],
-        'name': u"[B]" + studio + u"[/B][I] - " + title + (u': ' + episode_title if episode_title else u'') + u"[/I]",
+        'handler': PLAYER_HANDLER,
+        'method': 'playlive',
+        'id': response['prgSvcId'],
+        'IsPlayable': True,
+        'livefeed': True,
+        'label': u"[B]" + studio + u"[/B][I] - " + title + (u': ' + episode_title if episode_title else u'') + u"[/I]",
         'studio': studio,
         'title': episode_title,
         'tvshowtitle': title,
         'sorttitle': studio,
-        'thumb': thumb,
-        'logo': logo,
-        'clearlogo': logo,
-        'clearart': logo,
-        'banner': None,
-        'color': None,
-        'fanart': fanart,
-        'id': response['prgSvcId'],
         'channel_id': response['prgSvcId'],
-        'brplayprovider': 'oiplay',
-        'playable': 'true',
-        'livefeed': 'true',
         'dateadded': datetime.datetime.strftime(date, '%Y-%m-%d %H:%M:%S'),
         'plot': program['synopsis'],
         'duration': now['durationSeconds'],
@@ -77,7 +74,18 @@ def get_channel_epg_now(channel):
         'year': program['releaseYear'],
         'episode': program['episodeNumber'] if program['episodeNumber'] else None,
         'season': program['seasonNumber'] if program['seasonNumber'] else None,
-        "mediatype": 'episode' if program['episodeNumber'] else 'video'
+        "mediatype": 'episode' if program['episodeNumber'] else 'video',
+        'overlay': 6,
+        'playcount': 0,
+        'art': {
+            'thumb': thumb,
+            'logo': logo,
+            'clearlogo': logo,
+            'clearart': logo,
+            'banner': None,
+            'color': None,
+            'fanart': fanart
+        }
     }
 
 
@@ -85,5 +93,5 @@ def get_epg(start, end, channel_map):
     start_time = datetime.datetime.strftime(start, '%Y-%m-%dT%H:%M:%SZ')
     end_time = datetime.datetime.strftime(end, '%Y-%m-%dT%H:%M:%SZ')
     url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/epg?starttime={starttime}&endtime={endtime}&liveSubscriberGroup={channelmap}'.format(starttime=start_time, endtime=end_time, channelmap=channel_map)
-    epg = client.request(url)
+    epg = cache.get(requests.get, 20, url, table='oiplay').json()
     return epg

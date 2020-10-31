@@ -19,9 +19,12 @@ except ImportError:
     OrderedDict = None
 
 
-def get(function, timeout, *args, **kargs):
+def get(function, timeout_hour, *args, **kargs):
     # try:
     response = None
+
+    force_refresh = kargs['force_refresh'] if 'force_refresh' in kargs else False
+    kargs.pop('force_refresh', None)
 
     f = repr(function)
     f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
@@ -45,24 +48,25 @@ def get(function, timeout, *args, **kargs):
         control.makeFile(control.dataPath)
         dbcon = database.connect(control.cacheFile)
         dbcur = dbcon.cursor()
-        dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-        match = dbcur.fetchone()
-        if match and len(match) > 3:
-            response = pickle.loads(str(match[2]))
 
-            t1 = int(match[3])
-            t2 = int(time.time())
-            update = timeout and (abs(t2 - t1) / 3600) >= int(timeout)
-            if update is False:
-                control.log('RESULT FROM CACHE')
-                return response
-            control.log('CACHE EXPIRED')
-        else:
-            control.log('NO CACHE FOUND')
+        if not force_refresh:
+            dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
+            match = dbcur.fetchone()
+            if match and len(match) > 3:
+                response = pickle.loads(str(match[2]))
+
+                t1 = int(match[3])
+                t2 = int(time.time())
+                update = timeout_hour and (abs(t2 - t1) / 3600) >= int(timeout_hour)
+                if update is False:
+                    control.log('RESULT FROM CACHE')
+                    return response
+                control.log('CACHE EXPIRED')
+            else:
+                control.log('NO CACHE FOUND')
     except Exception:
         control.log(traceback.format_exc(), control.LOGERROR)
         control.log('NO CACHE FOUND')
-        pass
 
     # try:
     if kargs:
@@ -76,6 +80,8 @@ def get(function, timeout, *args, **kargs):
         return r
     # except:
     #     return
+
+    control.log('CACHING RESULTS')
 
     # try:
     # r = repr(r)
@@ -98,8 +104,6 @@ def get(function, timeout, *args, **kargs):
 
 def timeout(function, *args, **table):
     try:
-        response = None
-
         f = repr(function)
         f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
 
@@ -143,6 +147,6 @@ def clear(table=None):
                 dbcur.execute("VACUUM")
                 dbcon.commit()
             except:
-                pass
+                control.log(traceback.format_exc(), control.LOGERROR)
     except:
-        pass
+        control.log(traceback.format_exc(), control.LOGERROR)
