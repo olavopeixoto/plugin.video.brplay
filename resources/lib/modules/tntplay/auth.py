@@ -123,7 +123,7 @@ def login():
     country = control.setting('tntplay_country') or 'BR'
     idp_id = control.setting('tntplay_provider')
 
-    identity_provider = next((idp.get('slug', None) for idp in TNT_PROVIDERS if idp['description'] == idp_id), None)
+    identity_provider = next((idp.get('slug') for idp in TNT_PROVIDERS if idp['description'] == idp_id), None)
 
     return tnt_login(username, password, identity_provider, country)
 

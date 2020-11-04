@@ -41,8 +41,8 @@ def get_channel_epg_now(channel):
     thumb = None
     fanart = None
     if 'programImages' in program and len(program['programImages']) > 0:
-        thumb = next(image['url'] for image in program['programImages'] if image['type'] == 'Thumbnail')
-        fanart = next(image['url'] for image in program['programImages'] if image['type'] == 'Backdrop') or thumb
+        thumb = next((image['url'] for image in program['programImages'] if image['type'] == 'Thumbnail'), None)
+        fanart = next((image['url'] for image in program['programImages'] if image['type'] == 'Backdrop'), thumb) or thumb
         thumb = thumb or fanart
 
     logo = response['positiveLogoUrl']
@@ -50,18 +50,18 @@ def get_channel_epg_now(channel):
     cast = [c['name'] for c in program['castMembers']]
 
     date = util.strptime(now['startTimeUtc'], '%Y-%m-%dT%H:%M:%SZ') + util.get_utc_delta()
-
+    program_name = title + (u': ' + episode_title if episode_title else u'')
     return {
         'handler': PLAYER_HANDLER,
         'method': 'playlive',
         'id': response['prgSvcId'],
         'IsPlayable': True,
         'livefeed': True,
-        'label': u"[B]" + studio + u"[/B][I] - " + title + (u': ' + episode_title if episode_title else u'') + u"[/I]",
-        'studio': studio,
-        'title': episode_title,
-        'tvshowtitle': title,
-        'sorttitle': studio,
+        'label': u"[B]" + studio + u"[/B][I] - " + program_name + u"[/I]",
+        'studio': 'Oi Play',
+        # 'title': episode_title,
+        # 'tvshowtitle': title,
+        'sorttitle': program_name,
         'channel_id': response['prgSvcId'],
         'dateadded': datetime.datetime.strftime(date, '%Y-%m-%d %H:%M:%S'),
         'plot': program['synopsis'],
@@ -74,16 +74,11 @@ def get_channel_epg_now(channel):
         'year': program['releaseYear'],
         'episode': program['episodeNumber'] if program['episodeNumber'] else None,
         'season': program['seasonNumber'] if program['seasonNumber'] else None,
-        "mediatype": 'episode' if program['episodeNumber'] else 'video',
-        'overlay': 6,
-        'playcount': 0,
         'art': {
+            'icon': logo,
             'thumb': thumb,
-            'logo': logo,
+            'tvshow.poster': thumb,
             'clearlogo': logo,
-            'clearart': logo,
-            'banner': None,
-            'color': None,
             'fanart': fanart
         }
     }

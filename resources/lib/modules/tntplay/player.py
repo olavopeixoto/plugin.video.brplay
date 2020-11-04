@@ -185,4 +185,4 @@ class Player(xbmc.Player):
             logout()
             raise Exception('%s: %s' % (result.get('message', u'STREAM URL ERROR'), result.get('errorDescription', u'UNKNOWN')))
 
-        return result.get('resultObj', {}).get('src', None)
+        return result.get('resultObj', {}).get('src')

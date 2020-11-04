@@ -6,6 +6,7 @@ import resources.lib.modules.control as control
 from resources.lib.modules import cache
 from resources.lib.modules import workers
 import player
+import os
 
 PLAYER_HANDLER = player.__name__
 
@@ -45,6 +46,7 @@ CATEGORIES_HIDE = [
     'tv_channels'  # TODO
 ]
 
+LOGO = os.path.join(control.artPath(), 'logo_now.png')
 FANART = 'https://t2.tudocdn.net/391136'
 THUMB = 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcScaBeflBdP6AdV246I7YtH6j9r997X39OeHg&usqp=CAU'
 
@@ -56,7 +58,9 @@ def get_channels():
         "label": 'Now Online',
         "adult": False,
         'art': {
-            'thumb': THUMB,
+            'icon': LOGO,
+            'clearlogo': LOGO,
+            'thumb': LOGO,
             'fanart': FANART
         }
     }]
@@ -81,7 +85,7 @@ def get_channel_categories():
             'category': category,
             'label': category,
             'art': {
-                'thumb': THUMB,
+                'thumb': LOGO,
                 'fanart': FANART
             }
         }
@@ -90,7 +94,7 @@ def get_channel_categories():
 def _get_page(category, validate=False):
     url = None
 
-    slug = CATEGORY_SLUG.get(category, None)
+    slug = CATEGORY_SLUG.get(category)
     if slug:
         url = 'https://www.nowonline.com.br/avsclient/usercontent/categories/{slug}?channel={platform}'.format(platform=PLATFORM, slug=slug)
 
@@ -122,7 +126,7 @@ def get_page(category):
                 'subcategory': item.get('title', '').encode('utf-8'),
                 'label': item.get('title', '').encode('utf-8'),
                 'art': {
-                    'thumb': THUMB,
+                    'thumb': LOGO,
                     'fanart': FANART
                 }
             }
@@ -135,7 +139,7 @@ def get_content(category, subcategory):
     item = next((item for item in response.get('response', {}).get('categories', []) if item.get('title', '') == subcategory), {})
 
     if not item.get('contents', []):
-        if item.get('type', None) == 'continue_watching':
+        if item.get('type') == 'continue_watching':
             url = 'https://www.nowonline.com.br/AGL/1.0/R/ENG/{platform}/ALL/NET/USER/BOOKMARKS'.format(platform=PLATFORM)
             response = request_logged_in(url, False)
             contents = [result.get('content', {}) for result in response.get('resultObj', []) if result.get('content', {})]
@@ -173,26 +177,28 @@ def _hydrate_content(content):
                 'label': content.get('title', ''),
                 'title': content.get('title', ''),
                 'mediatype': 'movie' if content.get('type', '') == 'movie' else 'episode' if content.get('type', '') == "episode" else 'tvshow',
-                'plot': content.get('description', None),
-                'plotoutline': content.get('description', None),
+                'plot': content.get('description'),
+                'plotoutline': content.get('description'),
                 'genre': content.get('genres', []),
-                'year': content.get('releaseYear', None),
-                'country': content.get('country', None),
+                'year': content.get('releaseYear'),
+                'country': content.get('country'),
                 'director': content.get('directors', []),
                 'cast': content.get('actors', []),
-                'episode': content.get('episodeNumber', None),
-                'season': content.get('seasonNumber', None),
-                'duration': content.get('duration', None),
-                'rating': content.get('averageRating', None),
-                'userrating': content.get('userRating', None),
-                'mpaa': content.get('ageRating', None),
+                'episode': content.get('episodeNumber'),
+                'season': content.get('seasonNumber'),
+                'duration': content.get('duration'),
+                'rating': content.get('averageRating'),
+                'userrating': content.get('userRating'),
+                'mpaa': content.get('ageRating'),
                 'encrypted': True,
-                'trailer': content.get('trailerUri', None),
+                'trailer': content.get('trailerUri'),
                 'art': {
-                    'thumb': content.get('images', {}).get('banner', None) if content.get('type', '') != "episode" else content.get('images', {}).get('coverLandscape', None),
-                    'poster': content.get('images', {}).get('coverPortrait', None) if content.get('type', '') == 'movie' else None,
-                    'fanart': content.get('images', {}).get('banner', None),
-                    'clearlogo': content.get('tvChannel', {}).get('logo', None)
+                    'thumb': content.get('images', {}).get('banner') if content.get('type', '') != "episode" else content.get('images', {}).get('coverLandscape'),
+                    'poster': content.get('images', {}).get('coverPortrait') if content.get('type', '') == 'movie' else None,
+                    'tvshow.poster': content.get('images', {}).get('coverPortrait') if content.get('type', '') != 'movie' else None,
+                    'fanart': content.get('images', {}).get('banner'),
+                    'clearlogo': content.get('tvChannel', {}).get('logo', LOGO),
+                    'icon': LOGO
                 }
             }
 
@@ -210,7 +216,7 @@ def get_seasons(id):
     seasons = content.get('seasons', [])
 
     for season in seasons:
-        poster = content.get('images', {}).get('coverPortrait', None) if content.get('type', '') == 'movie' else content.get('images', {}).get('banner', None)
+        poster = content.get('images', {}).get('coverPortrait') if content.get('type', '') == 'movie' else content.get('images', {}).get('banner')
 
         yield {
             'handler': __name__,
@@ -220,21 +226,22 @@ def get_seasons(id):
             'label': 'Temporada %s' % season.get('seasonNumber', 0),
             'title': 'Temporada %s' % season.get('seasonNumber', 0),
             'tvshowtitle': content.get('title', ''),
-            'plot': content.get('description', None),
-            'plotoutline': content.get('description', None),
+            'plot': content.get('description'),
+            'plotoutline': content.get('description'),
             'genre': content.get('genres', []),
-            'year': content.get('releaseYear', None),
-            'country': content.get('country', None),
+            'year': content.get('releaseYear'),
+            'country': content.get('country'),
             'director': content.get('directors', []),
             'cast': content.get('actors', []),
-            'episode': content.get('episodeNumber', None),
-            'season': content.get('seasonNumber', None),
-            'mpaa': content.get('ageRating', None),
+            'episode': content.get('episodeNumber'),
+            'season': content.get('seasonNumber'),
+            'mpaa': content.get('ageRating'),
             'mediatype': 'season',
             'content': 'seasons',
             'art': {
                 'poster': poster,
-                'fanart': content.get('images', {}).get('banner', None)
+                'tvshow.poster': poster,
+                'fanart': content.get('images', {}).get('banner', FANART)
             }
         }
 
@@ -260,16 +267,21 @@ def get_episodes(id, season_number=None):
         yield _hydrate_content(next((next(iter(t['thread'].get_result().get('response', [])), {}) for t in threads if t['id'] == eps.get('id', -1)), eps))
 
 
-def request_logged_in(url, use_cache=True, validate=False):
+def request_logged_in(url, use_cache=True, validate=False, force_refresh=False, retry=1):
     headers, cookies = get_request_data(validate)
 
     control.log('GET %s' % url)
     if use_cache:
-        response = cache.get(requests.get, 1, url, headers=headers, cookies=cookies, table="netnow")
-        if response.status_code >= 400:
-            cache.clear(table="netnow")
+        response = cache.get(requests.get, 1, url, headers=headers, cookies=cookies, force_refresh=force_refresh, table="netnow")
     else:
         response = requests.get(url, headers=headers, cookies=cookies)
+
+    if response.status_code >= 400 and retry > 0:
+        control.log('ERROR FOR URL: %s' % url)
+        control.log(response.status_code)
+        control.log(response.content)
+        control.log('Retrying... (%s)' % retry)
+        return request_logged_in(url, use_cache, validate=True, force_refresh=True, retry=retry-1)
 
     response.raise_for_status()
 

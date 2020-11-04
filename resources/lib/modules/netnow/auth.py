@@ -22,7 +22,7 @@ def validate_login(credentials, do_request=True):
     if not credentials:
         return False
 
-    current_platform = credentials.get('platform', None)
+    current_platform = credentials.get('platform')
     if not current_platform or current_platform != PLATFORM:
         return False
 

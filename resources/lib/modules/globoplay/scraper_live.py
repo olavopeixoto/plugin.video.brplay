@@ -40,25 +40,17 @@ def get_live_channels():
 
     if len(affiliates) == 1 and not show_globo_internacional:
         affiliate = __get_affiliate_live_channels(affiliates[0])
-        live.append(affiliate)
+        live.extend(affiliate)
     else:
-        threads = [workers.Thread(__append_result, __get_affiliate_live_channels, live, affiliate) for affiliate in affiliates]
+        threads = [workers.Thread(__get_affiliate_live_channels, affiliate) for affiliate in affiliates]
         if show_globo_internacional:
-            threads.append(workers.Thread(__append_result, get_globo_americas, live))
+            threads.append(workers.Thread(get_globo_americas))
         [i.start() for i in threads]
         [i.join() for i in threads]
+        [live.extend(i.get_result()) for i in threads]
 
     seen = []
     return filter(lambda x: seen.append(x['affiliate_code'] if 'affiliate_code' in x else '$FOO$') is None if 'affiliate_code' not in x or x['affiliate_code'] not in seen else False, live)
-
-
-def __append_result(fn, item_list, *args):
-    item = fn(*args)
-    if item:
-        if isinstance(item, list):
-            item_list.extend(item)
-        else:
-            item_list.append(item)
 
 
 def __get_affiliate_live_channels(affiliate):
@@ -71,12 +63,12 @@ def __get_affiliate_live_channels(affiliate):
         code = result['code'] if result and 'code' in result else None
 
     if code is None:
-        return None
+        return []
 
     live_program = __get_live_program(code)
 
     if not live_program:
-        return None
+        return []
 
     program_description = get_program_description(live_program['program_id_epg'], live_program['program_id'], code)
 
@@ -94,15 +86,11 @@ def __get_affiliate_live_channels(affiliate):
         'live': True,
         'livefeed': True,
         'mediatype': 'tvshow',
-        'content': 'tvshows',
-        # 'sort': [control.SORT_METHOD_DATEADDED, control.SORT_METHOD_VIDEO_SORT_TITLE, control.SORT_METHOD_LABEL_IGNORE_FOLDERS],
-        'overlay': 6,
-        'playcount': 0
     }
 
     item.update(program_description)
 
-    item.pop('datetimeutc', None)
+    item.pop('datetimeutc')
 
     title = program_description['title'] if 'title' in program_description else live_program['title']
     safe_tvshowtitle = program_description['tvshowtitle'] if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else ''
@@ -110,27 +98,29 @@ def __get_affiliate_live_channels(affiliate):
     subtitle_txt = (" / " if safe_tvshowtitle and safe_subtitle else '') + safe_subtitle
     tvshowtitle = " (" + safe_tvshowtitle + subtitle_txt + ")" if safe_tvshowtitle or subtitle_txt else ''
 
+    program_name = '%s%s' % (title, tvshowtitle)
     item.update({
-        'label': '[B]Globo %s[/B][I] - %s%s[/I]' % (re.sub(r'\d+', '', code), title, tvshowtitle),
-        'title': title,
-        'sorttitle': 'Globo ' + re.sub(r'\d+', '', code),
-        'studio': 'Rede Globo - ' + affiliate
+        'label': '[B]Globo %s[/B][I] - %s[/I]' % (re.sub(r'\d+', '', code), program_name),
+        'title': None,
+        'tvshowtitle': None,
+        'sorttitle': program_name,
+        'studio': 'Globoplay'
     })
 
     art = item.get('art', {})
-    if not art.get('thumb', None):
+    if not art.get('thumb'):
         art['thumb'] = live_program['thumb']
 
-    if not art.get('fanart', None):
+    if not art.get('fanart'):
         art['fanart'] = live_program['fanart']
 
-    # if not art.get('poster', None):
-    #     art['poster'] = live_program['poster']
+    if not art.get('poster'):
+        art['tvshow.poster'] = live_program['poster']
 
     art['clearlogo'] = GLOBO_LOGO
     art['icon'] = GLOBO_LOGO
 
-    return item
+    return [item]
 
 
 def __get_live_program(affiliate='RJ'):
@@ -254,7 +244,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
         if "tipo_programa" in slot and slot["tipo_programa"] == "confronto":
             showtitle = slot['confronto']['titulo_confronto'] + ' - ' + slot['confronto']['participantes'][0]['nome'] + ' X ' + slot['confronto']['participantes'][1]['nome']
         else:
-            showtitle = slot['nome_programa'] if 'nome_programa' in slot and control.isFTV else None
+            showtitle = None
 
         next_start = slots[index+1]['data_exibicao_e_horario'] if index+1 < len(slots) else None
         next_start = (util.strptime_workaround(next_start) + datetime.timedelta(hours=(-utc_timezone)) + util.get_utc_delta()) if next_start else datetime.datetime.now()
@@ -272,7 +262,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             "title": title,
             'tvshowtitle': showtitle,
             "plot": slot['resumo'] if 'resumo' in slot else showtitle, #program_local_date_string + ' - ' + (slot['resumo'] if 'resumo' in slot else showtitle.replace(' - ', '\n') if showtitle and len(showtitle) > 0 else slot['nome_programa']),
-            "plotoutline": datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M'),
+            # "plotoutline": datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M'),
             "genre": slot['tipo_programa'],
             "datetimeutc": program_datetime_utc,
             "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
@@ -285,7 +275,7 @@ def __get_full_day_schedule(today, affiliate='RJ'):
                 # "icon": slot['logo'] if 'logo' in slot else None,
                 "clearlogo": slot['logo'] if 'logo' in slot else None,
                 "poster": slot['poster'] if 'poster' in slot else None,
-            },
+            }
         }
 
         # if slot["tipo_programa"] == "confronto":
@@ -356,16 +346,15 @@ def get_globo_americas():
     now = datetime.datetime.utcnow() + datetime.timedelta(hours=control.get_current_brasilia_utc_offset())
     date = now.strftime('%Y-%m-%d')
     variables = urllib.quote_plus('{{"date":"{}"}}'.format(date))
-    query = 'query%20getEpgBroadcastList%28%24date%3A%20Date%21%29%20%7B%0A%20%20broadcasts%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20mediaId%0A%20%20media%20%7B%0A%20%20%20%20serviceId%0A%20%20%20%20headline%0A%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20availableFor%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20transmissionId%0A%20%20geofencing%0A%20%20geoblocked%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20color%0A%20%20%20%20name%0A%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%7D%0A%20%20epgByDate%28date%3A%20%24date%29%20%7B%0A%20%20%20%20entries%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20alternativeTime%0A%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20landscape%0A%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20directors%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cast%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20genres%20%7B%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
+    query = 'query%20getEpgBroadcastList%28%24date%3A%20Date%21%29%20%7B%0A%20%20broadcasts%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20mediaId%0A%20%20media%20%7B%0A%20%20%20%20serviceId%0A%20%20%20%20headline%0A%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20availableFor%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20transmissionId%0A%20%20geofencing%0A%20%20geoblocked%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20color%0A%20%20%20%20name%0A%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%7D%0A%20%20epgByDate%28date%3A%20%24date%29%20%7B%0A%20%20%20%20entries%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20alternativeTime%0A%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
     url = 'https://jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=variables)
     response = cache.get(requests.get, 24, url, headers=headers, table='globoplay').json()
     control.log(response)
     broadcasts = response['data']['broadcasts']
 
-    items = []
-
     utc_now = int(control.to_timestamp(datetime.datetime.utcnow()))
 
+    result = []
     for broadcast in broadcasts:
         media_id = str(broadcast.get('mediaId', 0))
 
@@ -378,29 +367,23 @@ def get_globo_americas():
 
         channel = broadcast.get('channel', {}) or {}
 
-        logo = channel.get('logo', None)
-        channel_name = broadcast.get('media', {}).get('headline', '')
-        fanart = broadcast.get('imageOnAir', None)
+        logo = channel.get('logo')
+        channel_name = channel.get('name', '').replace('TV Globo', 'Globo') + ' USA'  # broadcast.get('media', {}).get('headline', '')
+        fanart = broadcast.get('imageOnAir')
         channel_id = channel.get('id', 0)
         service_id = broadcast.get('media', {}).get('serviceId', 0)
-        channel_slug = '%s-americas' % channel.get('name', '').lower().replace(' ', '')
+        # channel_slug = '%s-americas' % channel.get('name', '').lower().replace(' ', '')
 
         duration = epg.get('durationInMinutes', 0) * 60
 
         title_obj = epg.get('title', {}) or {}
 
         title = epg.get('name', '')
-        description = title_obj.get('description', None) or epg.get('description', '')
+        description = title_obj.get('description') or epg.get('description', '')
         fanart = title_obj.get('cover', {}).get('landscape', fanart) or fanart
+        poster = title_obj.get('poster', {}).get('web')
 
-        year = title_obj.get('releaseYear', None)
-        country = [c.get('name') for c in title_obj.get('countries', []) or [] if 'name' in c and c['name']]
-        genres = [c.get('name') for c in title_obj.get('genres', []) or [] if 'name' in c and c['name']]
-        cast = [c.get('name') for c in title_obj.get('cast', []) or [] if 'name' in c and c['name']]
-        director = [c.get('name') for c in title_obj.get('directors', []) or [] if 'name' in c and c['name']]
-        rating = epg.get('contentRating', '')
-
-        name = ('[B]' if not control.isFTV else '') + channel_name + ('[/B]' if not control.isFTV else '') + ('[I] - ' + title + '[/I]' if title else '')
+        label = '[B]' + channel_name + '[/B]' + ('[I] - ' + title + '[/I]' if title else '')
 
         program_datetime = datetime.datetime.utcfromtimestamp(epg.get('startTime', 0)) + util.get_utc_delta()
         next_start = datetime.datetime.utcfromtimestamp(epg.get('endTime', 0)) + util.get_utc_delta()
@@ -410,43 +393,41 @@ def get_globo_americas():
         if not description or len(description) < 3:
             description = '%s | %s' % (title, plotoutline) if title else plotoutline
 
-        item = {
+        result.append({
             'handler': PLAYER_HANDLER,
             'method': 'play_stream',
             'IsPlayable': True,
             'id': media_id,
             'channel_id': channel_id,
             'service_id': service_id,
-            'slug': channel_slug,
             'live': epg.get('liveBroadcast', False) or False,
             'livefeed': False,  # force vod player for us channels
-            'label': name,
-            'title': title,
-            'tvshowtitle': title,
+            'router': False,
+            'label': label,
+            # 'title': title,
+            # 'tvshowtitle': title,
             'plot': description,
-            'plotoutline': plotoutline,
-            "tagline": description,
+            # 'plotoutline': plotoutline,
+            # "tagline": description,
             'duration': duration,
             "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
-            'sorttitle': channel_name,
-            'studio': channel_name,
-            'year': year,
-            'country': country,
-            'genre': genres,
-            'cast': cast,
-            'director': director,
-            'mpaa': rating,
-            "mediatype": 'video',  # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
-            'overlay': 6,
-            'playcount': 0,
+            'sorttitle': title,
+            'studio': 'Globoplay Americas',
+            'year': title_obj.get('releaseYear'),
+            'country': title_obj.get('countries', []),
+            'genre': title_obj.get('genresNames', []),
+            'cast': title_obj.get('castNames', []),
+            'director': title_obj.get('directorsNames', []),
+            'writer': title_obj.get('screenwritersNames', []),
+            'credits': title_obj.get('artDirectorsNames', []),
+            'mpaa': epg.get('contentRating'),
             "art": {
                 'icon': logo,
                 'clearlogo': logo,
                 'thumb': fanart,
                 'fanart': fanart,
+                'tvshow.poster': poster
             }
-        }
+        })
 
-        items.append(item)
-
-    return items
+    return result

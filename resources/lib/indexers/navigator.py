@@ -26,27 +26,22 @@ def root():
         method = 'open_settings'
         yield add_directory_item(handler, method, 32005, 'tools.png')
 
+    if control.is_globosat_available() or control.is_globoplay_available() or control.is_telecine_available():
+        handler = __name__
+        method = 'search'
+        yield add_directory_item(handler, method, 32010, 'search.png')
+
 
 def open_settings():
     control.openSettings('globoplay_username')
     control.refresh()
 
 
-def search_menu():
+def search(query=None, page=1):
+    if not query:
+        query = control.dialog.input(control.lang2(24121).encode('utf-8'))
 
-    t = control.lang(32010).encode('utf-8')
-    k = control.keyboard('', t)
-    k.doModal()
-    q = k.getText()
-
-    if not k.isConfirmed():
-        return
-
-    search(q)
-
-
-def search(query, page=1):
-    vod.search(query, page)
+    return vod.search(query, page)
 
 
 def clear_cache():
@@ -81,6 +76,7 @@ def add_directory_item(handler, method, lang, thumb_file_name):
         'handler': handler,
         'method': method,
         'label': control.lang(lang).encode('utf-8'),
+        'sort': control.SORT_METHOD_LABEL,
         'art': {
             'thumb': os.path.join(artPath, thumb_file_name) if artPath else None,
             'fanart': addonFanart

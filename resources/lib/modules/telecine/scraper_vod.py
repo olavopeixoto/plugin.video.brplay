@@ -3,6 +3,7 @@
 from resources.lib.modules import control
 from resources.lib.modules.telecine import get_cached
 import player
+import urllib
 import os
 
 HANDLER = __name__
@@ -11,7 +12,7 @@ PLAYER_HANDLER = player.__name__
 BASE_URL = 'https://bff.telecinecloud.com/api/v1'
 
 FANART = 'https://t2.tudocdn.net/235304?w=1200'
-NEXT_ICON = os.path.join(control.artPath(), 'next.png')
+LOGO = os.path.join(control.artPath(), 'logo_telecine.png')
 
 
 def get_channels():
@@ -22,7 +23,7 @@ def get_channels():
         'label': 'Telecine',
         'id': 1966,
         'art': {
-            'thumb': FANART,
+            'thumb': LOGO,
             'fanart': FANART,
         }
     }]
@@ -45,9 +46,8 @@ def get_channel_categories():
             'method': 'get_page',
             'label': control.lang(34135).encode('utf-8'),
             'path': '/',
-            'content': 'files',
             'art': {
-                'thumb': FANART,
+                'thumb': LOGO,
                 'fanart': FANART,
             }
         }
@@ -57,9 +57,8 @@ def get_channel_categories():
         'method': 'get_page',
         'label': control.lang(34134).encode('utf-8'),
         'path': '/account/profile/watched/list',
-        'content': 'files',
         'art': {
-            'thumb': FANART,
+            'thumb': LOGO,
             'fanart': FANART,
         }
     }
@@ -72,9 +71,8 @@ def get_channel_categories():
                 'method': 'get_channel_sub_category',
                 'label': item.get('name'),
                 'path': item.get('path'),
-                'content': 'files',
                 'art': {
-                    'thumb': FANART,
+                    'thumb': LOGO,
                     'fanart': FANART,
                 }
             }
@@ -84,9 +82,8 @@ def get_channel_categories():
                 'method': 'get_page',
                 'label': item.get('name'),
                 'path': item.get('path'),
-                'content': 'files',
                 'art': {
-                    'thumb': FANART,
+                    'thumb': LOGO,
                     'fanart': FANART,
                 }
             }
@@ -98,7 +95,7 @@ def get_channel_sub_category(label):
 
     response = _get_navigation()
 
-    children = next((child.get('children', []) for child in response.get('menu', []) if child.get('name', None) == label), {})
+    children = next((child.get('children', []) for child in response.get('menu', []) if child.get('name') == label), {})
 
     for child in children:
         yield {
@@ -106,9 +103,8 @@ def get_channel_sub_category(label):
                 'method': 'get_page',
                 'label': child.get('name'),
                 'path': child.get('path'),
-                'content': 'files',
                 'art': {
-                    'thumb': FANART,
+                    'thumb': LOGO,
                     'fanart': FANART,
                 }
             }
@@ -135,18 +131,18 @@ def get_page(path, absolute=False):
 
         response = get_cached(BASE_URL + url)
 
-        template = response.get('template', None)
+        template = response.get('template')
 
         control.log('template: %s' % template)
 
         if not template or template == 'Cinelist':
 
             entry = next(iter(response.get('entries', [])), response)
-            list = entry.get('list', response)
+            list_obj = entry.get('list', response)
 
             # image_size = 'poster' if 'poster' in entry.get('template', 'poster').lower() else 'thumb'
 
-            for item in list.get('items', []):
+            for item in list_obj.get('items', []):
 
                 category = item.get('category', '').split('/')
                 has_category = category and len(category) == 3
@@ -160,15 +156,14 @@ def get_page(path, absolute=False):
                     'id': item.get('id'),
                     'path': item.get('path'),
                     'label': item.get('name'),
-                    'plot': item.get('mouseOverDescription', response.get('description', None)),
+                    'plot': item.get('mouseOverDescription', response.get('description')),
                     'genre': [genre, subgenre],
                     'year': year,
                     'overlay': 5 if item.get('percentWatched', 0) > 0.9 else 4,
-                    'mediatype': 'movie' if item.get('originalImageUrl', None) else None,
-                    'content': 'files' if not item.get('originalImageUrl', None) else None,
+                    'mediatype': 'movie' if item.get('originalImageUrl') else None,
                     'art': {
                         'poster': item.get('originalImageUrl', FANART),
-                        'thumb': FANART if not item.get('originalImageUrl', None) else None,
+                        'thumb': FANART if not item.get('originalImageUrl') else None,
                         'fanart': FANART
                     },
                     'properties': {
@@ -176,17 +171,17 @@ def get_page(path, absolute=False):
                     }
                 }
 
-            url = list.get('paging', {}).get('next', None)
+            url = list_obj.get('paging', {}).get('next')
 
             if url and use_pagination:
                 yield {
                     'handler': HANDLER,
                     'method': 'get_page',
                     'absolute': True,
-                    'path': list.get('paging', {}).get('next', None),
+                    'path': list_obj.get('paging', {}).get('next'),
                     'label': control.lang(34136).encode('utf-8'),
                     'art': {
-                        'poster': NEXT_ICON,
+                        'poster': control.addonNext(),
                         'fanart': FANART
                     },
                     'properties': {
@@ -197,9 +192,9 @@ def get_page(path, absolute=False):
 
         else:
             fanart = FANART
-            for item in response.get('entries', []):
+            for index, item in enumerate(response.get('entries', [])):
 
-                list_type = item.get('type', None)
+                list_type = item.get('type')
 
                 if list_type in ['TextEntry', 'ImageEntry']:
                     fanart = item.get('originalImageUrl', FANART)
@@ -208,17 +203,18 @@ def get_page(path, absolute=False):
                 image_size = 'poster' if 'poster' in item.get('template', 'poster') else 'thumb'
 
                 if list_type == 'UserEntry':
-                    path = item.get('list', {}).get('paging', {}).get('next', None)
+                    path = item.get('list', {}).get('paging', {}).get('next')
                 else:
-                    path = item.get('list', {}).get('path', None)
+                    path = item.get('list', {}).get('path')
 
                 yield {
                     'handler': HANDLER,
                     'method': 'get_page',
                     'path': path,
                     'label': item.get('title', item.get('text', '')) or control.lang(34132).encode('utf-8'),
-                    'plot': response.get('description', None),
-                    'content': 'files',
+                    'plot': response.get('description'),
+                    'sorttitle': "%04d" % (index,),
+                    'sort': [control.SORT_METHOD_VIDEO_SORT_TITLE, control.SORT_METHOD_LABEL],
                     'art': {
                         image_size: item.get('originalImageUrl', FANART),
                         'fanart': item.get('originalImageUrl', fanart)
@@ -245,21 +241,21 @@ def get_film(path, overlay=4):
         'title': item.get('title', ''),
         'plot': item.get('description', ''),
         'genre': [g.get('name') for g in item.get('genres', [])],
-        'year': item.get('releaseYear', None),
+        'year': item.get('releaseYear'),
         'userrating': float(item.get('averageUserRating', 0)) * 2,
         'votes': item.get('totalUserRatings', 0),
         'country': item.get('countries', '').split(', '),
         'cast': [c.get('name') for c in item.get('cast', [])],
-        'director': item.get('director', {}).get('name', None),
+        'director': item.get('director', {}).get('name'),
         'mpaa': item.get('classificationCode', '').replace('CLASSIND-', '').replace('LI', 'L'),
         'tag': item.get('advisoryText', '').split(', '),
-        'tagline': item.get('classificationTitle', None),
+        'tagline': item.get('classificationTitle'),
         'duration': int(item.get('length', '0').replace('minutos', '').strip()) * 60,
         'IsPlayable': playable,
         'overlay': overlay or 4,
         'mediatype': 'movie',
         'art': {
-                'poster': item.get('posterOriginalImageUrl', None),
+                'poster': item.get('posterOriginalImageUrl'),
                 'fanart': item.get('headerOriginalImageUrl', FANART)
             }
     }
@@ -325,7 +321,7 @@ def get_film_extra(path, label):
                     })
 
                     data['art'] = {
-                        'poster': item.get('originalImageUrl', None),
+                        'poster': item.get('originalImageUrl'),
                         'fanart': result.get('headerOriginalImageUrl', FANART)
                     }
 
@@ -336,8 +332,74 @@ def get_film_extra(path, label):
                         'IsPlayable': True
                     })
                     data['art'] = {
-                        'thumb': item.get('originalImageUrl', None),
+                        'thumb': item.get('originalImageUrl'),
                         'fanart': result.get('headerOriginalImageUrl', FANART)
                     }
 
                 yield data
+
+
+def search(term, page=1):
+    if page > 1:
+        return
+
+    url = '/search?term=%s' % urllib.quote_plus(term)
+
+    response = get_cached(BASE_URL + url) or {}
+
+    for entry in response.get('entries', []):
+        items = entry.get('list', {}).get('items', [])
+        for item in items:
+
+            if item.get('comingSoon', False):
+                continue
+
+            if entry.get('template', '').lower() != 'cast':
+
+                category = item.get('category', '').split('/')
+                has_category = category and len(category) == 3
+                genre = category[0] if has_category else None
+                subgenre = category[1] if has_category else None
+                year = category[2] if has_category else None
+
+                yield {
+                    'handler': HANDLER,
+                    'method': 'get_film' if item.get('path').startswith('/filme/') else 'get_page',
+                    'path': item.get('path'),
+                    'label': item.get('name'),
+                    'title': item.get('name'),
+                    'plot': item.get('mouseOverDescription', response.get('description')),
+                    'genre': [genre, subgenre],
+                    'studio': u'Telecine',
+                    'year': item.get('releaseYear', year),
+                    'overlay': 5 if item.get('percentWatched', 0) > 0.9 else 4,
+                    'mediatype': 'movie',
+                    'art': {
+                        'poster': item.get('originalImageUrl', FANART),
+                        'thumb': FANART if not item.get('originalImageUrl') else None,
+                        'fanart': FANART
+                    },
+                    'properties': {
+                        'playcount': 1 if item.get('percentWatched', 0) > 0.9 else 0
+                    }
+                }
+
+            else:
+
+                yield {
+                    'handler': HANDLER,
+                    'method': 'get_page',
+                    'path': item.get('path'),
+                    'label': item.get('name'),
+                    'title': item.get('name'),
+                    'genre': 'ATORES E DIRETORES',
+                    'studio': u'Telecine',
+                    'art': {
+                        'thumb': 'https://www.icwukltd.co.uk/wp-content/uploads/2016/12/avatar-placeholder.png',
+                        'poster': 'https://www.icwukltd.co.uk/wp-content/uploads/2016/12/avatar-placeholder.png',
+                        'fanart': FANART
+                    },
+                    # 'properties': {
+                    #     'SpecialSort': 'bottom'
+                    # }
+                }

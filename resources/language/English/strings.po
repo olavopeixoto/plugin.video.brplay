@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 
 msgctxt "#31200"
-msgid "Globosat Play"
+msgid "Canais Globo"
 msgstr ""
 
 msgctxt "#31110"
@@ -413,11 +413,11 @@ msgid "4K - HDR"
 msgstr ""
 
 msgctxt "#34108"
-msgid "Enable Globosat Play"
+msgid "Enable Canais Globo"
 msgstr ""
 
 msgctxt "#34109"
-msgid "Use Globoplay Credentials for Globosat Play"
+msgid "Use Globoplay Credentials for Canais Globo"
 msgstr ""
 
 msgctxt "#34110"
@@ -449,7 +449,7 @@ msgid "Enable high resolution images when available"
 msgstr ""
 
 msgctxt "#34117"
-msgid "Disable InputStream.Adaptive"
+msgid "Enable InputStream.Adaptive"
 msgstr ""
 
 msgctxt "#34118"
@@ -543,4 +543,8 @@ msgstr ""
 
 msgctxt "#34140"
 msgid "Invalid credentials. Try again"
+msgstr ""
+
+msgctxt "#34141"
+msgid "No Search Results"
 msgstr ""

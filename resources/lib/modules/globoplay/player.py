@@ -65,8 +65,8 @@ class Player(xbmc.Player):
             control.log("PLAY LIVE!")
             self.isLive = True
 
-            latitude = meta.get('lat', None)
-            longitude = meta.get('long', None)
+            latitude = meta.get('lat')
+            longitude = meta.get('long')
 
             if not latitude or not longitude:
                 code, latitude, longitude = control.get_coordinates(control.get_affiliates_by_id(-1))
@@ -79,8 +79,13 @@ class Player(xbmc.Player):
             item, self.url, stop_event = self.__get_list_item(meta, info)
 
         else:
-            # info = resourceshelper.get_video_info(id, children_id)
-            info = resourceshelper.get_video_router(id)
+            if not meta.get('router', True):
+                info = resourceshelper.get_video_info(id, children_id)
+            else:
+                info = resourceshelper.get_video_router(id)
+                if not info:
+                    info = resourceshelper.get_video_info(id, children_id)
+
             if info is None:
                 return
 
@@ -113,7 +118,7 @@ class Player(xbmc.Player):
         self.stop_playing_event = threading.Event()
         self.stop_playing_event.clear()
 
-        self.program_id = info['program_id'] if 'program_id' in info else meta.get('program_id', None)
+        self.program_id = info['program_id'] if 'program_id' in info else meta.get('program_id')
         self.video_id = id
 
         syshandle = int(sys.argv[1])
@@ -154,8 +159,8 @@ class Player(xbmc.Player):
         query_string = query_string % {
             'hash': hash_token,
             'key': 'app',
-            'openClosed': 'F' if info['subscriber_only'] else 'A',
-            'user': user if info['subscriber_only'] else '',
+            'openClosed': 'F' if info['subscriber_only'] and user else 'A',
+            'user': user if info['subscriber_only'] and user else '',
             'token': hash_token
         }
 
@@ -201,7 +206,7 @@ class Player(xbmc.Player):
 
         if parsed_url.path.endswith(".mpd"):
             mime_type = 'application/dash+xml'
-            if not control.disable_inputstream_adaptive:
+            if control.enable_inputstream_adaptive:
                 control.log("Using inputstream.adaptive MPD")
                 item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
                 item.setProperty('inputstream.adaptive.stream_headers', user_agent)
@@ -211,7 +216,7 @@ class Player(xbmc.Player):
             item.setMimeType(mime_type)
         elif not cookies:
             item.setMimeType('application/vnd.apple.mpegurl')
-            if not control.disable_inputstream_adaptive:
+            if control.enable_inputstream_adaptive:
                 control.log("Using inputstream.adaptive HLS")
                 item.setProperty('inputstream.adaptive.manifest_type', 'hls')
                 item.setProperty('inputstream.adaptive.stream_headers', user_agent)
@@ -323,14 +328,14 @@ class Player(xbmc.Player):
         hash_json = response.json()
 
         if not hash_json or 'hash' not in hash_json:
-            message = (hash_json or {}).get('message', None) or control.lang(34101).encode('utf-8')
+            message = (hash_json or {}).get('message') or control.lang(34101).encode('utf-8')
             control.infoDialog(message=message, sound=True, icon='ERROR')
             control.idle()
             sys.exit()
 
         hash_token = get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
 
-        return hash_token, hash_json['user'] if 'user' in hash_json else None, credentials
+        return hash_token, hash_json.get('user'), credentials
 
     def save_video_progress(self, credentials, program_id, video_id, milliseconds_watched, fully_watched=False):
 

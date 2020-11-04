@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="1.0.0" name="BR play" provider-name="brplayer">
+<addon id="plugin.video.brplay" version="1.0.1" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -23,11 +23,10 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>1.0.0
-			- Support for Telecine
-			- New Globo Play, Globosat and Sexyhot GraphQL API
-			- New Logo and fanart
-			- Removed legacy codebase
+		<news>1.0.1
+			- Restored search function
+			- Sort methods for some views
+			- Bug fixes
         </news>
 	</extension>
 </addon>

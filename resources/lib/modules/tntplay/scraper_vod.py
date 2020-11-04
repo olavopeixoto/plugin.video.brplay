@@ -182,14 +182,14 @@ def get_content(category, genre):
                     'label': metadata.get('title', ''),
                     'plot': metadata.get('longDescription', ''),
                     'plotoutline': metadata.get('shortDescription', ''),
-                    'genre': metadata.get('genres', None),
-                    'year': metadata.get('year', None),
-                    'country': metadata.get('country', None),
+                    'genre': metadata.get('genres'),
+                    'year': metadata.get('year'),
+                    'country': metadata.get('country'),
                     'director': metadata.get('directors', []),
                     'cast': metadata.get('actors', []),
-                    'episode': metadata.get('episodeNumber', None),
-                    'season': metadata.get('season', None),
-                    'encrypted': metadata.get('isEncrypted', True),
+                    'episode': metadata.get('episodeNumber'),
+                    'season': metadata.get('season'),
+                    'encrypted': metadata.get('isEncrypted'),
                     'mediatype': 'movie' if metadata.get('contentSubtype', '') == 'MOVIE' else 'tvshow',
                     # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
                     'art': {
@@ -235,7 +235,7 @@ def _get_seasons_internal(seasons, tvshow_name, show_poster, show_fanart):
     for obj in seasons:
 
         obj_meta = obj.get('metadata', {}) or {}
-        # picture_url = obj_meta.get('pictureUrl', None) or None
+        # picture_url = obj_meta.get('pictureUrl') or None
         # poster = IMAGE_URL.format(pictureUrl=picture_url, imageType='POSTER') if picture_url else show_poster
 
         yield {
@@ -248,14 +248,14 @@ def _get_seasons_internal(seasons, tvshow_name, show_poster, show_fanart):
             'tvshowtitle': tvshow_name,
             'plot': obj_meta.get('longDescription', ''),
             'plotoutline': obj_meta.get('shortDescription', ''),
-            'genre': obj_meta.get('genres', None),
-            'year': obj_meta.get('year', None),
-            'country': obj_meta.get('country', None),
+            'genre': obj_meta.get('genres'),
+            'year': obj_meta.get('year'),
+            'country': obj_meta.get('country'),
             'director': obj_meta.get('directors', []),
             'cast': obj_meta.get('actors', []),
-            'episode': obj_meta.get('episodeNumber', None),
-            'season': obj_meta.get('season', None),
-            'mpaa': obj_meta.get('pcVodLabel', None),
+            'episode': obj_meta.get('episodeNumber'),
+            'season': obj_meta.get('season'),
+            'mpaa': obj_meta.get('pcVodLabel'),
             'art': {
                 'poster': show_poster,
                 'fanart': show_fanart
@@ -288,7 +288,7 @@ def get_episodes(id):
     for obj in episodes:
 
         obj_meta = obj.get('metadata', {}) or {}
-        picture_url = obj_meta.get('pictureUrl', None) or None
+        picture_url = obj_meta.get('pictureUrl') or None
         thumb = IMAGE_URL.format(pictureUrl=picture_url, imageType='VIDSCREENSHOT') if picture_url else show_poster
 
         poster_url = '%s_%s' % (picture_url.split('_')[0], obj_meta.get('emfAttributes', {}).get('TopLevelEntityId', ''))
@@ -306,15 +306,15 @@ def get_episodes(id):
             'tvshowtitle': tvshow_name,
             'plot': obj_meta.get('longDescription', ''),
             'plotoutline': obj_meta.get('shortDescription', ''),
-            'genre': obj_meta.get('genres', None),
-            'year': obj_meta.get('year', None),
-            'country': obj_meta.get('country', None),
+            'genre': obj_meta.get('genres'),
+            'year': obj_meta.get('year'),
+            'country': obj_meta.get('country'),
             'director': obj_meta.get('directors', []),
             'cast': obj_meta.get('actors', []),
-            'episode': obj_meta.get('episodeNumber', None),
-            'season': obj_meta.get('season', None),
-            'mpaa': obj_meta.get('pcVodLabel', None),
-            'duration': obj_meta.get('duration', None),
+            'episode': obj_meta.get('episodeNumber'),
+            'season': obj_meta.get('season'),
+            'mpaa': obj_meta.get('pcVodLabel'),
+            'duration': obj_meta.get('duration'),
             'sort': control.SORT_METHOD_EPISODE,
             'art': {
                 'thumb': thumb,

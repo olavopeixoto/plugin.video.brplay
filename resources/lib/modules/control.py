@@ -35,6 +35,7 @@ monitor = xbmc.Monitor()
 addSortMethod = xbmcplugin.addSortMethod
 SORT_METHOD_NONE = xbmcplugin.SORT_METHOD_NONE
 SORT_METHOD_UNSORTED = xbmcplugin.SORT_METHOD_UNSORTED
+SORT_METHOD_VIDEO_RATING = xbmcplugin.SORT_METHOD_VIDEO_RATING
 SORT_METHOD_TRACKNUM = xbmcplugin.SORT_METHOD_TRACKNUM
 SORT_METHOD_FILE = xbmcplugin.SORT_METHOD_FILE
 SORT_METHOD_TITLE = xbmcplugin.SORT_METHOD_TITLE
@@ -52,6 +53,9 @@ SORT_METHOD_DATE = xbmcplugin.SORT_METHOD_DATE
 SORT_METHOD_DATEADDED = xbmcplugin.SORT_METHOD_DATEADDED
 SORT_METHOD_PLAYLIST_ORDER = xbmcplugin.SORT_METHOD_PLAYLIST_ORDER
 SORT_METHOD_EPISODE = xbmcplugin.SORT_METHOD_EPISODE
+SORT_METHOD_STUDIO = xbmcplugin.SORT_METHOD_STUDIO
+SORT_METHOD_STUDIO_IGNORE_THE = xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE
+SORT_METHOD_MPAA_RATING = xbmcplugin.SORT_METHOD_MPAA_RATING
 
 #
 # SORT_METHOD_ALBUM = 13
@@ -188,7 +192,7 @@ is_4k_images_enabled = xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true
 
 log_enabled = setting('enable_log') == 'true'
 
-disable_inputstream_adaptive = setting("disable_inputstream_adaptive") == 'true'
+enable_inputstream_adaptive = setting("enable_inputstream_adaptive") == 'true'
 
 prefer_dash = setting('prefer_dash') == 'true'
 
@@ -235,9 +239,9 @@ def get_inputstream_addon():
 
 
 def is_inputstream_available():
-    global disable_inputstream_adaptive
+    global enable_inputstream_adaptive
 
-    if disable_inputstream_adaptive:
+    if not enable_inputstream_adaptive:
         return False
 
     global __inputstream_addon_available
@@ -682,6 +686,10 @@ def to_timestamp(date):
     return int((time.mktime(date.timetuple()) + date.microsecond / 1000000.0))
 
 
-def run_plugin_url(params):
+def run_plugin_url(params=None):
+
+    if params is None:
+        params = {}
 
     return 'RunPlugin(%s?%s)' % (sysaddon, urllib.urlencode(params))
+

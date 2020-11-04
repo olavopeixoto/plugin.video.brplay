@@ -2,11 +2,17 @@ from resources.lib.modules import cache
 from resources.lib.modules import control
 import requests
 import urllib
+import auth_helper
 
 
-def request_query(query, variables, tenant='globosat-play'):
+def request_query(query, variables, force_refresh=False, retry=3):
+    tenant = 'globosat-play'
+
+    token = auth_helper.get_globosat_token()
+
     url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=urllib.quote_plus(variables))
     headers = {
+        'authorization': token,
         'x-tenant-id': tenant,
         'x-platform-id': 'web',
         'x-device-id': 'desktop',
@@ -16,7 +22,10 @@ def request_query(query, variables, tenant='globosat-play'):
 
     control.log('{} - GET {}'.format(tenant, url))
 
-    response = cache.get(requests.get, 1, url, headers=headers, table='globosat')
+    response = cache.get(requests.get, 1, url, headers=headers, force_refresh=force_refresh, table='globosat')
+
+    if response.status_code >= 500 and retry > 0:
+        return request_query(query, variables, True, retry - 1)
 
     response.raise_for_status()
 

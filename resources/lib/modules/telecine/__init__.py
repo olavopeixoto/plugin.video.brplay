@@ -18,9 +18,12 @@ def get_headers():
 def get_cached(url, proxies=None, force_refresh=False, retry=3):
     control.log('[Telecine] - GET %s' % url)
 
-    response = cache.get(requests.get, 1, url, headers=get_headers(), proxies=proxies, force_refresh=force_refresh, table="telecine")
+    headers = get_headers()
+
+    response = cache.get(requests.get, 1, url, headers=headers, proxies=proxies, force_refresh=force_refresh, table="telecine")
 
     if response.status_code >= 500 and retry > 0:
+        control.log('ERROR %s | headers: %s' % (response.status_code, headers))
         return get_cached(url, proxies, True, retry-1)
 
     response.raise_for_status()

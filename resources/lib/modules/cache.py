@@ -40,7 +40,7 @@ def get(function, timeout_hour, *args, **kargs):
 
     try:
         table = kargs['table']
-        kargs.pop('table', None)
+        kargs.pop('table')
     except:
         table = 'rel_list'
 
@@ -59,7 +59,7 @@ def get(function, timeout_hour, *args, **kargs):
                 t2 = int(time.time())
                 update = timeout_hour and (abs(t2 - t1) / 3600) >= int(timeout_hour)
                 if update is False:
-                    control.log('RESULT FROM CACHE')
+                    control.log('RESULT FROM CACHE: %s' % table)
                     return response
                 control.log('CACHE EXPIRED')
             else:
@@ -81,7 +81,7 @@ def get(function, timeout_hour, *args, **kargs):
     # except:
     #     return
 
-    control.log('CACHING RESULTS')
+    control.log('CACHING RESULTS TO %s' % table)
 
     # try:
     # r = repr(r)

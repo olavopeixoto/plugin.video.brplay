@@ -39,7 +39,12 @@ class Player(xbmc.Player):
 
         if id is None: return
 
-        info = resourceshelper.get_video_info(id)
+        if not meta.get('router', True):
+            info = resourceshelper.get_video_info(id)
+        else:
+            info = resourceshelper.get_video_router(id)
+            if not info:
+                info = resourceshelper.get_video_info(id)
 
         control.log("INFO: %s" % repr(info))
 

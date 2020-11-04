@@ -16,6 +16,9 @@ class RouteError(Exception):
 
 MODULES_CACHE = {}
 
+sysaddon = sys.argv[0]
+syshandle = int(sys.argv[1])
+
 
 def handle_route(data):
     handler = data.get('handler', None)
@@ -28,15 +31,23 @@ def handle_route(data):
     is_playable = data.get('IsPlayable', False)
 
     if is_playable:
+        control.log('Playing item...')
         return _play_item(handler, method, data)
 
+    control.log('Discovering directory...')
     result = _run_handler(handler, method, data)
 
-    if result:
+    if result and not isinstance(result, str):
         control.log('Iterating items...')
         create_directory(result, data)
     else:
-        control.log('No result to display')
+        if isinstance(result, str):
+            control.log('Executing command: %s' % result)
+            control.execute(result)
+        else:
+            control.log('No result to display')
+
+        control.directory(syshandle)
 
 
 def _run_handler(handler, method, kwargs):
@@ -76,9 +87,6 @@ def create_directory(items, current=None):
     if current is None:
         current = {}
 
-    sysaddon = sys.argv[0]
-    syshandle = int(sys.argv[1])
-
     succeeded = True
     custom_title = None
 
@@ -89,8 +97,9 @@ def create_directory(items, current=None):
 
         for data in items:
             label = data.get('label', '')
+            label2 = data.get('label2', None)
 
-            item = control.item(label=label)
+            item = control.item(label=label, label2=label2)
 
             art = data.get('art', {}) or {}
             item.setArt(art)
@@ -112,10 +121,12 @@ def create_directory(items, current=None):
             url = '%s?action=generic&meta=%s' % (sysaddon, meta_string)
 
             is_playable = data.get('IsPlayable', False)
-            is_folder = not is_playable
+            is_folder = data.get('IsFolder', not is_playable)
 
             if is_playable:
                 item.setProperty('IsPlayable', 'true')
+            else:
+                item.setProperty('IsPlayable', 'false')
 
             media_type = data.get('mediatype', 'None') or 'None'
             if media_type not in media_types:
@@ -143,9 +154,14 @@ def create_directory(items, current=None):
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=is_folder)
 
         for sort in sort_methods:
-            control.addSortMethod(syshandle, sort)
+            if isinstance(sort, tuple):
+                control.addSortMethod(syshandle, sort[0], sort[1])
+            else:
+                control.addSortMethod(syshandle, sort)
 
-        control.category(handle=syshandle, category=custom_title or current.get('label', control.lang(32002).encode('utf-8')))
+        category = custom_title or current.get('label', None)
+        if category:
+            control.category(handle=syshandle, category=category)
 
         # content: files, songs, artists, albums, movies, tvshows, episodes, musicvideos
         if not content and media_types:
@@ -166,11 +182,11 @@ def create_directory(items, current=None):
             elif media_type == 'musicvideo':
                 content = 'musicvideos'
 
-        if content:
+        if content and content != 'default':
             control.content(syshandle, content)
 
-    except Exception:
+    except:
         control.log(traceback.format_exc(), control.LOGERROR)
         succeeded = False
     finally:
-        control.directory(syshandle, succeeded=succeeded, updateListing=False, cacheToDisc=False)
+        control.directory(syshandle, succeeded=succeeded, updateListing=False, cacheToDisc=True)

@@ -2,6 +2,7 @@
 
 import json
 import traceback
+import sys
 
 
 def run(params):
@@ -25,7 +26,9 @@ def run(params):
     # Actions
     if not action:
         from resources.lib.indexers import navigator, indexer
+        syshandle = int(sys.argv[1])
         indexer.create_directory(navigator.root())
+        control.category(handle=syshandle, category=control.addonInfo('name'))
 
     elif action == 'settings':
         from resources.lib.indexers import navigator
@@ -39,20 +42,9 @@ def run(params):
         from resources.lib.indexers import navigator
         navigator.clear_credentials()
 
-    elif action == 'login':
-        from resources.lib.indexers import navigator
-        navigator.cache_auth()
-
     elif action == 'refresh':
         from resources.lib.modules import control
         control.refresh()
-
-    elif action == 'searchMenu':
-        from resources.lib.indexers import navigator
-        navigator.search_menu()
-
-    elif action == 'image':
-        return 'https://globosatplay.globo.com/_next/static/images/canaisglobo-e3e629829ab01851d983aeaec3377807.png'
 
     # Generic Tree
 

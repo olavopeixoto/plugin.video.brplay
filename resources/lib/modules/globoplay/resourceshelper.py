@@ -26,7 +26,9 @@ def get_video_router(video_id):
         if enable_hdr:
             players_preference.extend([
                 'tvos_4k',
-                'androidtv_hdr'
+                'androidtv_hdr',
+                'roku_4k_hdr',
+                'webos_4k_hdr'
             ])
         else:
             players_preference.extend([
@@ -36,10 +38,13 @@ def get_video_router(video_id):
     players_preference.extend([
         'androidtv',
         'android',
-        'android_native'
+        'android_native',
+
     ])
 
     container = '.mpd' if prefer_dash else None  # '.m3u8'
+
+    selected_player = None
 
     response = None
     for player in players_preference:
@@ -50,6 +55,7 @@ def get_video_router(video_id):
         control.log(response)
         if response and 'resource' in response:
             if container is None or any(container in source["url"] for source in response['resource']['sources']):
+                selected_player = player
                 break
 
     if not response:
@@ -88,7 +94,7 @@ def get_video_router(video_id):
         "category": None,
         "subscriber_only": True,
         "exhibited_at": None,
-        "player": player,
+        "player": selected_player,
         "version": version,
         "url": source["url"],
         "query_string_template": source['auth_param_templates']["query_string"],
@@ -110,7 +116,7 @@ def get_video_info(video_id, children_id=None):
     playlist_json = requests.get(playlist_url % video_id, headers={"Accept-Encoding": "gzip"}).json()
 
     if not playlist_json or playlist_json is None or 'videos' not in playlist_json or len(playlist_json['videos']) == 0:
-        message = (playlist_json or {}).get('message', None) or control.lang(34101).encode('utf-8')
+        message = (playlist_json or {}).get('message') or control.lang(34101).encode('utf-8')
         control.infoDialog(message=message, sound=True, icon='ERROR')
         return None
 

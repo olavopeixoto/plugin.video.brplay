@@ -22,10 +22,16 @@ def get_credentials():
 
 
 def get_token():
-    return get_credentials().get('GLBID', None)
+    return get_credentials().get('GLBID')
 
 
 def get_user_id():
     credentials, user_data = _authenticate()
 
     return user_data.get('globoId', '')
+
+
+def get_token_and_user_id():
+    credentials, user_data = _authenticate()
+
+    return credentials.get('GLBID'), user_data.get('globoId', '')

@@ -2,7 +2,6 @@
 
 from resources.lib.modules import control
 import requests
-import json
 
 try:
     import cPickle as pickle
@@ -13,10 +12,8 @@ except:
 class auth:
 
     GLOBO_AUTH_URL = 'https://login.globo.com/api/authentication'
-    GLOBOSAT_AUTH_URL = 'https://globosatplay.globo.com/-/auth/gplay/'
     GLOBOSAT_CREDENTIALS = 'globosat_credentials'
 
-    GLOBOSATPLAY_TOKEN_ID = 'GST'
     GLOBOPLAY_TOKEN_ID = 'GLBID'
 
     def __init__(self):
@@ -41,14 +38,14 @@ class auth:
                 control.log('successfully authenticated')
                 self._save_credentials()
             else:
-                control.log('wrong username or password')
+                control.log('wrong username or password', control.LOGERROR)
                 message = '[%s] %s' % (self.__class__.__name__, control.lang(32003))
                 control.infoDialog(message, icon='ERROR')
                 return None
         elif self.is_authenticated():
-            control.log('already authenticated')
+            control.log('[GLOBOSAT] - already authenticated')
         else:
-            control.log_warning('no username set to authenticate')
+            control.log('no username set to authenticate', control.LOGWARNING)
             message = 'Missing user credentials'
             control.infoDialog(message, icon='ERROR')
             control.openSettings()
@@ -71,14 +68,15 @@ class auth:
             }
         }
 
-        response = requests.get(self.GLOBO_AUTH_URL, json=payload, headers={
-                                                                    'content-type': 'application/json; charset=UTF-8',
-                                                                    'accept': 'application/json, text/javascript',
-                                                                    'Accept-Encoding': 'gzip'})
+        response = requests.post(self.GLOBO_AUTH_URL, json=payload, headers={'content-type': 'application/json; charset=UTF-8',
+                                          'accept': 'application/json, text/javascript',
+                                          'Accept-Encoding': 'gzip',
+                                          'referer': 'https://login.globo.com/login/4654?url=https://globoplay.globo.com/&tam=WIDGET',
+                                          'origin': 'https://login.globo.com'})
 
         response.raise_for_status()
-        credentials = response.cookies.get(self.GLOBOPLAY_TOKEN_ID, None)
+        credentials = response.cookies.get(self.GLOBOPLAY_TOKEN_ID)
 
         control.log("GLOBOSAT CREDENTIALS: %s" % credentials)
 
-        return credentials
+        return {'GLBID': credentials}

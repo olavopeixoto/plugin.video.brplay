@@ -69,7 +69,9 @@ def get_live_channels():
 
         poster_url = POSTER_URL.format(titleId=details.get('titleId', ''), lang=poster_lang)
 
-        logo = LOGO_MAP.get(channel.get('callLetter'), None)
+        logo = LOGO_MAP.get(channel.get('callLetter'))
+
+        program_name = title + (u': ' + subtitle if subtitle else u'')
 
         results.append({
             'handler': PLAYER_HANDLER,
@@ -77,12 +79,12 @@ def get_live_channels():
             'id': channel.get('channelId', ''),
             'IsPlayable': True,
             'livefeed': True,
-            'label': u"[B]" + channel_name + u"[/B][I] - " + title + (u': ' + subtitle if subtitle else u'') + u"[/I]",
-            'studio': channel_name,
-            'title': subtitle,
-            'originaltitle': details.get('originalTitle', None) or None,
-            'tvshowtitle': title,
-            'sorttitle': channel_name,
+            'label': u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]",
+            'studio': 'TNT Play',
+            # 'title': subtitle,
+            # 'originaltitle': details.get('originalTitle'),
+            # 'tvshowtitle': title,
+            'sorttitle': program_name,
             'channel_id': channel.get('channelId', ''),
             'dateadded': datetime.datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S'),
             'plot': plot,
@@ -91,18 +93,16 @@ def get_live_channels():
             'adult': False,
             'cast': details.get('actorList', []).split(','),
             'director': details.get('directorList', []).split(','),
-            'genre': details.get('genreList', None),
-            'rating': details.get('rate', None),
-            'year': details.get('releaseYear', None),
-            'country': details.get('country', None),
-            'episode': details.get('episode', None),
-            'season': details.get('season', None),
-            "mediatype": 'tvshow',
-            'content': 'tvshows',
+            'genre': details.get('genreList'),
+            'rating': details.get('rate'),
+            'year': details.get('releaseYear'),
+            'country': details.get('country'),
+            'episode': details.get('episode'),
+            'season': details.get('season'),
             'art': {
                 'thumb': poster_url,
+                'tvshow.poster': poster_url,
                 'clearlogo': logo,
-                'clearart': logo,
                 'fanart': FANART,
             }
         })

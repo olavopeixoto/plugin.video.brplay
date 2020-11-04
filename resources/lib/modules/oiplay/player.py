@@ -50,7 +50,7 @@ class Player(xbmc.Player):
 
         info = data['token']['cmsChannelItem']
 
-        title = info['title']
+        # title = info['title']
 
         control.log("live media url: %s" % url)
 

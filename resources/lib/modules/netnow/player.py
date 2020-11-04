@@ -35,7 +35,7 @@ class Player:
         self.isLive = meta.get('livefeed', False)
 
         try:
-            url, avs_cookie, login_info, xsrf, device_id, sc_id = self.get_cdn(id, self.isLive)
+            url, avs_cookie, login_info, xsrf, device_id, sc_id, cdn_token = self.get_cdn(id, self.isLive)
         except Exception as ex:
             control.log(traceback.format_exc(), control.LOGERROR)
             control.okDialog(u'Now Online', ex.message)
@@ -103,7 +103,7 @@ class Player:
 
             if PLATFORM == 'PCTV':
                 account_device_id = '|accountDeviceId=1234567' if not self.isLive else ''
-                key_headers['privateData'] = 'cookie={avs_cookie}|avs_id={id}|platform={platform}|videoType={videoType}|x-xsrf-token={xsrf}{account_device_id}'.format(avs_cookie=avs_cookie, id=cp_id, xsrf=xsrf, platform=PLATFORM, videoType=video_type, account_device_id=account_device_id)
+                key_headers['privateData'] = 'cookie={avs_cookie}|avs_id={id}|platform={platform}|videoType={videoType}|session={cdn_token}|x-xsrf-token={xsrf}{account_device_id}'.format(avs_cookie=avs_cookie, id=cp_id, xsrf=xsrf, platform=PLATFORM, videoType=video_type, account_device_id=account_device_id, cdn_token=cdn_token)
                 user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.80 Safari/537.36'
             else:
                 key_headers['privateData'] = 'cookie={avs_cookie}|avs_id={id}|platform={platform}|videoType={videoType}|accountDeviceId={deviceId}||isDownload=Y'.format(avs_cookie=avs_cookie, id=cp_id, deviceId=device_id, platform=PLATFORM, videoType=video_type)
@@ -164,8 +164,9 @@ class Player:
 
         control.log(response)
 
-        src = (response.get('response', {}) or {}).get('src', None) or None
-        sc_id = (response.get('response', {}) or {}).get('scId', None) or None
+        src = (response.get('response', {}) or {}).get('src') or None
+        sc_id = (response.get('response', {}) or {}).get('scId') or None
+        cdn_token = (response.get('response', {}) or {}).get('token') or None
 
         if not src:
             status = response.get('status', 'Error') or 'Error'
@@ -175,7 +176,7 @@ class Player:
         if PLATFORM == 'PCTV':
             device_id = self.get_device_id(id, avs_cookie, login_info, xsrf)
 
-        return src, avs_cookie, login_info, xsrf, device_id, sc_id
+        return src, avs_cookie, login_info, xsrf, device_id, sc_id, cdn_token
 
     def get_device_id(self, id, avs_cookie, login_info, xsrf):
         url = 'https://www.nowonline.com.br/avsclient/usercontent/epg/livechannels?channel={platform}&channelIds={id}&numberOfSchedules=1'.format(id=id, platform=PLATFORM)

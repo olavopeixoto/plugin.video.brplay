@@ -15,23 +15,23 @@ def get_live_channels():
         epg = channel.get('schedules')[0]
 
         id = channel.get('id')
-        channel_name = channel.get('name', None)
-        title = epg.get('title', None)
-        description = epg.get('description', None)
+        channel_name = channel.get('name')
+        title = epg.get('title')
+        description = epg.get('description')
         duration = epg.get('duration', 0)
-        season = epg.get('seasonNumber', None) or None
-        episode = epg.get('episodeNumber', None) or None
+        season = epg.get('seasonNumber')
+        episode = epg.get('episodeNumber')
         date = datetime.datetime.utcfromtimestamp(epg.get('startTime', 0))
-        genre = channel.get('type', None)
-        rating = epg.get('ageRating', None)
+        genre = channel.get('type')
+        rating = epg.get('ageRating')
 
-        logo = channel.get('logo', None)
+        logo = channel.get('logo')
 
-        # thumb = epg.get('images', {}).get('coverLandscape', None)
-        # fanart = epg.get('images', {}).get('coverLandscape', None)
-        # poster = epg.get('images', {}).get('coverPortrait', None)
-        # banner = epg.get('images', {}).get('banner', None)
-        thumb = epg.get('images', {}).get('banner', None)
+        # thumb = epg.get('images', {}).get('coverLandscape')
+        # fanart = epg.get('images', {}).get('coverLandscape')
+        poster = epg.get('images', {}).get('coverPortrait')
+        # banner = epg.get('images', {}).get('banner')
+        thumb = epg.get('images', {}).get('banner')
         fanart = thumb
 
         name_title = u'%s: T%s E%s' % (title, season, episode) if season else title
@@ -43,10 +43,10 @@ def get_live_channels():
             'IsPlayable': True,
             'livefeed': True,
             'label': u"[B]" + channel_name + u"[/B][I] - " + name_title + u"[/I]",
-            'studio': channel_name,
-            'title': title,
-            'tvshowtitle': title,
-            'sorttitle': channel_name,
+            'studio': 'Now Online',
+            # 'title': title,
+            # 'tvshowtitle': title,
+            'sorttitle': name_title,
             'channel_id': id,
             'dateadded': datetime.datetime.strftime(date, '%Y-%m-%d %H:%M:%S'),
             'plot': description,
@@ -56,11 +56,10 @@ def get_live_channels():
             'rating': rating,
             'episode': episode,
             'season': season,
-            "mediatype": 'tvshow',
             'art': {
                 'thumb': thumb,
                 'clearlogo': logo,
-                # 'poster': poster,
+                'tvshow.poster': poster or thumb,
                 'fanart': fanart
             }
         }

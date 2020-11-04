@@ -1,8 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-import json
 import requests
-
 from resources.lib.modules import control
 
 try:
@@ -57,15 +55,15 @@ class auth:
                 control.log('wrong username or password')
                 message = '[%s] %s' % (self.__class__.__name__, control.lang(32003))
                 control.infoDialog(message, icon='ERROR')
-                return None
+                return None, None
         elif self.is_authenticated():
-            control.log('already authenticated')
+            control.log('[GLOBO AUTH] - already authenticated')
         else:
             control.log_warning('no username set to authenticate')
             message = 'Missing user credentials'
             control.infoDialog(message, icon='ERROR')
             control.openSettings()
-            return None
+            return None, None
 
         control.log(repr(self.credentials))
 
@@ -84,7 +82,7 @@ class auth:
             }
         }
         response = requests.post(self.ENDPOINT_URL,
-                                 data=json.dumps(payload),
+                                 json=payload,
                                  headers={'content-type': 'application/json; charset=UTF-8',
                                           'accept': 'application/json, text/javascript',
                                           'Accept-Encoding': 'gzip',

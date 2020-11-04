@@ -121,9 +121,9 @@ def get_provider_by_name(name):
                         'x-device': 'Mobile-iOS'
                     }).json()
 
-    idp = next((idp for idp in result if idp.get('description', None) == name), {})
+    idp = next((idp for idp in result if idp.get('description') == name), {})
 
-    return idp.get('idpShortName', None)
+    return idp.get('idpShortName')
 
 
 def _login_internal(user, password, idp):

@@ -36,7 +36,7 @@ def get_account_details(account, deviceid, token):
     headers = {
         'Accept': 'application/json',
         'X-Forwarded-For': '189.1.125.97',
-        'User-Agent': 'OiPlay-Store/5.1.1 (iPhone; iOS 13.3.1; Scale/3.00)' if format == 'm3u8' else 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36',
+        'User-Agent': 'OiPlay-Store/5.1.1 (iPhone; iOS 13.3.1; Scale/3.00)',  # if format == 'm3u8' else 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36',
         'Authorization': 'Bearer ' + token
     }
     url = PROFILES_URL.format(account=account, deviceid=deviceid)
@@ -44,7 +44,7 @@ def get_account_details(account, deviceid, token):
 
     response = response_full.json() or {}
 
-    if not response.get('upmProfiles', None):
+    if not response.get('upmProfiles'):
         control.log(response_full.status_code)
         control.log(response_full.content)
         return details

@@ -90,7 +90,8 @@ class Player(xbmc.Player):
 
         control.log("Done playing. Quitting...")
 
-    def get_stream(self, path):
+    def get_stream(self, path, retry=3):
+
         device_id = get_device_id()
 
         url = 'https://bff.telecinecloud.com/api/v1/videos?deviceId={device_id}&path={path}'.format(device_id=device_id, path=path)
@@ -98,10 +99,13 @@ class Player(xbmc.Player):
         control.log('[Telecine player] - GET %s' % url)
         result = requests.get(url, headers=get_headers())
 
+        if result.status_code == 504 and retry > 0:  # handles server timeout
+            return self.get_stream(path, retry - 1)
+
         result.raise_for_status()
 
         result = result.json()
 
         control.log('[Telecine player] - %s' % result)
 
-        return result.get('videoSourceMpegDash', None), result.get('widevineLicenseUrl', None)
+        return result.get('videoSourceMpegDash'), result.get('widevineLicenseUrl')
