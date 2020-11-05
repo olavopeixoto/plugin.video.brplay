@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="1.0.2" name="BR play" provider-name="brplayer">
+	<addon id="plugin.video.brplay" version="1.0.3" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -23,8 +23,8 @@
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>1.0.2
-			- Fix Oi Play login using email addresses
+		<news>1.0.3
+			- Implemented Oi Play VOD (including search)
         </news>
 	</extension>
 </addon>

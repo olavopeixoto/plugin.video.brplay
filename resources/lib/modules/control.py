@@ -276,7 +276,8 @@ def is_vod_available():
            or is_globoplay_available() \
            or is_tntplay_available() \
            or is_nowonline_available() \
-           or is_telecine_available()
+           or is_telecine_available() \
+           or is_oiplay_available()
 
 
 def is_globosat_available():

@@ -6,8 +6,6 @@ from urlparse import urlparse
 import threading
 from auth import gettoken
 from auth import get_default_profile
-from private_data import get_user
-from private_data import get_password
 from private_data import get_device_id
 import resources.lib.modules.control as control
 from resources.lib.modules import hlshelper
@@ -32,10 +30,14 @@ class Player(xbmc.Player):
 
         if id is None: return
 
-        data = self.individualize(id)
+        provider = meta.get('provider')
+        self.isLive = meta.get('livefeed', False)
 
-        if not data:
-            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+        data = self.individualize(self.isLive, id, provider)
+
+        if not data or 'individualization' not in data:
+            error_message = '%s: %s' % (data.get('reason'), data.get('detail')) if data and data.get('reason') else control.lang(34100).encode('utf-8')
+            control.infoDialog(error_message, icon='ERROR')
             return
 
         encrypted = 'drm' in data and 'licenseUrl' in data['drm']
@@ -46,20 +48,11 @@ class Player(xbmc.Player):
 
         url = data['individualization']['url']
 
-        url = url.replace('https://', 'http://')  # hack
-
-        info = data['token']['cmsChannelItem']
-
-        # title = info['title']
+        # info = data.get('token', {}).get('cmsChannelItem') or data.get('token', {}).get('cmsContentItem')
 
         control.log("live media url: %s" % url)
 
-        # poster = meta['poster'] if 'poster' in meta else control.addonPoster()
-        thumb = meta['thumb'] if 'thumb' in meta else info['positiveLogoUrl']
-
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
-
-        self.isLive = info['isLive']
 
         parsed_url = urlparse(url)
         if ".m3u8" in parsed_url.path:
@@ -79,7 +72,7 @@ class Player(xbmc.Player):
         control.log("Parsed URL: %s" % repr(parsed_url))
 
         item = control.item(path=self.url)
-        item.setArt({'icon': thumb, 'thumb': thumb})
+        item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))
 
@@ -96,7 +89,11 @@ class Player(xbmc.Player):
 
         if encrypted:
             control.log("DRM: com.widevine.alpha")
-            licence_url = data['drm']['licenseUrl'] + '&token=' + data['drm']['jwtToken']
+            # licence_url = data['drm']['licenseUrl'] + '&token=' + data['drm']['jwtToken']
+            if data.get('drm', {}).get('jwtToken'):
+                licence_url = '%s&token=%s' % (data.get('drm', {}).get('licenseUrl'), data.get('drm', {}).get('jwtToken'))
+            else:
+                licence_url = data.get('drm', {}).get('licenseUrl')
             item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
             item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
 
@@ -156,16 +153,18 @@ class Player(xbmc.Player):
         if self.stopPlayingEvent:
             self.stopPlayingEvent.set()
 
-    def individualize(self, channel, format='mpd'):
+    def individualize(self, is_live, content_id, provider, format='mpd'):
 
-        username = get_user()
-        password = get_password()
-        token, account = gettoken(username, password)
-
+        token, account = gettoken()
         device_id = get_device_id()
         profile = get_default_profile(account, device_id, token)
 
-        url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/individualize?deviceId=%s&tablet=false&useragent=%s' % (account, profile, channel, device_id, 'ios' if format == 'm3u8' else 'web')
+        useragent = 'ios' if format == 'm3u8' else 'web'
+
+        if is_live:
+            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/individualize?deviceId=%s&tablet=false&useragent=%s' % (account, profile, content_id, device_id, 'ios' if format == 'm3u8' else 'web')
+        else:
+            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/{account}/profiles/{profile}/content/{content}/{provider}/individualize?deviceId={deviceId}&tablet=false&useragent={useragent}'.format(account=account, profile=profile, content=content_id, provider=provider.encode('utf-8'), deviceId=device_id, useragent=useragent)
 
         headers = {
             'Accept': 'application/json',
@@ -182,14 +181,14 @@ class Player(xbmc.Player):
 
             control.log(individualize)
 
-            control.log(individualize['individualization']['url'])
+            control.log(individualize.get('individualization', {}).get('url'))
 
             return individualize
         except:
 
             control.log('RETRYING...')
 
-            token, account_id = gettoken(account, password, force_new=True)
+            token, account_id = gettoken(force_new=True)
 
             headers['Authorization'] = 'Bearer ' + token
 

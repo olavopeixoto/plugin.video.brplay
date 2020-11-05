@@ -548,3 +548,23 @@ msgstr "Dados inválidos. Tente novamente."
 msgctxt "#34141"
 msgid "No Search Results"
 msgstr "Nenhum resultado para a pesquisa"
+
+msgctxt "#34142"
+msgid "You may like..."
+msgstr "Você pode gostar..."
+
+msgctxt "#34143"
+msgid "Like"
+msgstr "Curtir"
+
+msgctxt "#34144"
+msgid "Dislike"
+msgstr "Desgostar"
+
+msgctxt "#34145"
+msgid "Remove Like"
+msgstr "Remover curtida"
+
+msgctxt "#34146"
+msgid "Remove Dislike"
+msgstr "Remover desgostar"

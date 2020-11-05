@@ -8,6 +8,7 @@ import operator
 from allowkwargs import allow_kwargs
 from resources.lib.modules import control
 import traceback
+import types
 
 
 class RouteError(Exception):
@@ -37,15 +38,19 @@ def handle_route(data):
     control.log('Discovering directory...')
     result = _run_handler(handler, method, data)
 
-    if result and not isinstance(result, str):
+    if result and is_iterable(result):
         control.log('Iterating items...')
         create_directory(result, data)
     else:
         if isinstance(result, str):
             control.log('Executing command: %s' % result)
             control.execute(result)
-        else:
+        elif is_iterable(result):
             control.log('No result to display')
+        else:
+            control.log('Refreshing container')
+            control.refresh()
+            return
 
         control.directory(syshandle)
 
@@ -53,6 +58,29 @@ def handle_route(data):
 def _run_handler(handler, method, kwargs):
     module = _get_module(handler)
     return _run_method(module, method, kwargs)
+
+
+def is_iterable(item):
+    if isinstance(item, str):
+        return False
+
+    if isinstance(item, bool):
+        return False
+
+    if isinstance(item, int):
+        return False
+
+    if isinstance(item, dict):
+        return False
+
+    if isinstance(item, types.GeneratorType):
+        return True
+
+    try:
+        iter(item)
+        return True
+    except TypeError:
+        return False
 
 
 def _run_method(module, method, kwargs):

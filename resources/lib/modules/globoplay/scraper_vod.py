@@ -696,7 +696,7 @@ def search(term, page=1):
                 'IsPlayable': playable,
                 'label': title.get('headline', ''),
                 'title': title.get('headline', ''),
-                'studio': title.get('channel', {}).get('name', provider),
+                'studio': provider, #title.get('channel', {}).get('name', provider),
                 'year': title.get('releaseYear', ''),
                 'originaltitle': title.get('originalHeadline', ''),
                 'country': title.get('countries', []),

@@ -548,3 +548,23 @@ msgstr ""
 msgctxt "#34141"
 msgid "No Search Results"
 msgstr ""
+
+msgctxt "#34142"
+msgid "You may like..."
+msgstr ""
+
+msgctxt "#34143"
+msgid "Like"
+msgstr ""
+
+msgctxt "#34144"
+msgid "Dislike"
+msgstr ""
+
+msgctxt "#34145"
+msgid "Remove Like"
+msgstr ""
+
+msgctxt "#34146"
+msgid "Remove Dislike"
+msgstr ""

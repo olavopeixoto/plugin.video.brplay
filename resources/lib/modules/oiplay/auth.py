@@ -8,6 +8,7 @@ from json import JSONEncoder
 import pickle
 import resources.lib.modules.control as control
 import base64
+from private_data import get_user, get_password
 
 
 ACCESS_TOKEN_URL = 'https://apim.oi.net.br/connect/oauth2/token_endpoint/access_token'
@@ -70,7 +71,10 @@ def get_account_details(account, deviceid, token):
     return response
 
 
-def gettoken(user, password, force_new=False):
+def gettoken(force_new=False):
+
+    user = get_user()
+    password = get_password()
 
     if force_new:
         response = __login(user, password)
