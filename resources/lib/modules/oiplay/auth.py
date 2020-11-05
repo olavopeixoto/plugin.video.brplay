@@ -7,6 +7,7 @@ import urlparse
 from json import JSONEncoder
 import pickle
 import resources.lib.modules.control as control
+import base64
 
 
 ACCESS_TOKEN_URL = 'https://apim.oi.net.br/connect/oauth2/token_endpoint/access_token'
@@ -40,7 +41,11 @@ def get_account_details(account, deviceid, token):
         'Authorization': 'Bearer ' + token
     }
     url = PROFILES_URL.format(account=account, deviceid=deviceid)
+
+    control.log('GET %s' % url)
     response_full = requests.get(url, headers=headers)
+
+    control.log(response_full.content)
 
     response = response_full.json() or {}
 
@@ -78,7 +83,8 @@ def gettoken(user, password, force_new=False):
 
             if auth_json['date'] + datetime.timedelta(seconds=auth_json['expires_in']) > datetime.datetime.utcnow():
                 control.log('ACCESS TOKEN FROM FILE: ' + auth_json['access_token'])
-                return auth_json['access_token']
+                id_token = auth_json.get('id_token')
+                return auth_json['access_token'], get_account_id(id_token)
 
         if not refresh_token:
             response = __login(user, password)
@@ -94,7 +100,18 @@ def gettoken(user, password, force_new=False):
 
     control.setSetting('oiplay_access_token_response', json.dumps(response, cls=PythonObjectEncoder))
 
-    return response['access_token']
+    id_token = response.get('id_token')
+
+    return response['access_token'], get_account_id(id_token)
+
+
+def get_account_id(id_token):
+    jwt = id_token.split('.')
+    jwt_base64_string = jwt[1] + '====='
+    jwt_json_string = base64.decodestring(jwt_base64_string)
+    account_id = json.loads(jwt_json_string).get('cpfcnpj')
+
+    return account_id
 
 
 def __refresh_token(refresh_token):

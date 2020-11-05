@@ -158,15 +158,14 @@ class Player(xbmc.Player):
 
     def individualize(self, channel, format='mpd'):
 
-        account = get_user()
+        username = get_user()
         password = get_password()
-        token = gettoken(account, password)
+        token, account = gettoken(username, password)
 
         device_id = get_device_id()
         profile = get_default_profile(account, device_id, token)
 
-        url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/individualize?deviceId=%s&tablet=false&useragent=%s' % (
-        account, profile, channel, device_id, 'ios' if format == 'm3u8' else 'web')
+        url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/individualize?deviceId=%s&tablet=false&useragent=%s' % (account, profile, channel, device_id, 'ios' if format == 'm3u8' else 'web')
 
         headers = {
             'Accept': 'application/json',
@@ -190,7 +189,9 @@ class Player(xbmc.Player):
 
             control.log('RETRYING...')
 
-            headers['Authorization'] = 'Bearer ' + gettoken(account, password, force_new=True)
+            token, account_id = gettoken(account, password, force_new=True)
+
+            headers['Authorization'] = 'Bearer ' + token
 
             control.log('OIPLAY GET ' + url)
             control.log(headers)
