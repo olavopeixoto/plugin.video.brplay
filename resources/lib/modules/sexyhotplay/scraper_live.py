@@ -60,6 +60,7 @@ def get_broadcast():
         'live': program['liveBroadcast'],
         'studio': 'Sexyhot Play',
         'label': label,
+        'title': label,
         # 'title': program.get('metadata', program.get('name', '')),
         # 'tvshowtitle': program['name'] if program_name else None,
         'sorttitle': program_name,

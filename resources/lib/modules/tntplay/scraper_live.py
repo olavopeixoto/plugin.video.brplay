@@ -80,6 +80,7 @@ def get_live_channels():
             'IsPlayable': True,
             'livefeed': True,
             'label': u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]",
+            'title': u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]",
             'studio': 'TNT Play',
             # 'title': subtitle,
             # 'originaltitle': details.get('originalTitle'),

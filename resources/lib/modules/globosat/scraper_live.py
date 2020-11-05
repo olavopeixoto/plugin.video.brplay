@@ -89,7 +89,7 @@ def get_live_channels():
             'program_id': title.get('originProgramId'),
             'studio': 'Canais Globo',
             'label': label,
-            'label2': program_name,
+            'title': label,
             'year': title.get('releaseYear'),
             'country': title.get('countries', []),
             'genre': title.get('genresNames', []),

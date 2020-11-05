@@ -11,7 +11,7 @@
 		<provides>video</provides>
 	</extension>
 	<extension point="xbmc.addon.metadata">
-		<summary>Globo Play, Globosat Play, Telecine and Premium Channels on Kodi</summary>
+		<summary>Globo Play, Canais Globo, Telecine, Oi Play, Now Online, TNT Play and premium channels on Kodi</summary>
 		<description>Brazilian video streaming services for subscribers</description>
 		<platform>all</platform>
 		<license>GPL3</license>

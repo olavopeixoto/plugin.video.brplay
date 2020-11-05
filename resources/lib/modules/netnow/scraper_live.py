@@ -43,6 +43,7 @@ def get_live_channels():
             'IsPlayable': True,
             'livefeed': True,
             'label': u"[B]" + channel_name + u"[/B][I] - " + name_title + u"[/I]",
+            'title': u"[B]" + channel_name + u"[/B][I] - " + name_title + u"[/I]",
             'studio': 'Now Online',
             # 'title': title,
             # 'tvshowtitle': title,

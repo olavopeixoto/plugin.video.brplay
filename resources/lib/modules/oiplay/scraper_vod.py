@@ -10,7 +10,7 @@ import player
 import json
 import traceback
 
-FANART = 'https://lh3.googleusercontent.com/proxy/k0LZuzBb7ATQ1b6PR28J11bOiriS6XyqIkGVFaNU1oXEOQAXW5KW7QWWt-gmfU_Yi6r_Bu0b8s17PQbJu7M8wwJlD8LJ9LRBcg'
+FANART = os.path.join(control.artPath(), 'fanart_oi.jpg')
 LOGO = os.path.join(control.artPath(), 'logo_oiplay.png')
 FAVORITES = os.path.join(control.artPath(), 'favorites.png')
 

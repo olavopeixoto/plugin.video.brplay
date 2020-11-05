@@ -101,7 +101,7 @@ def __get_affiliate_live_channels(affiliate):
     program_name = '%s%s' % (title, tvshowtitle)
     item.update({
         'label': '[B]Globo %s[/B][I] - %s[/I]' % (re.sub(r'\d+', '', code), program_name),
-        'title': None,
+        'title': '[B]Globo %s[/B][I] - %s[/I]' % (re.sub(r'\d+', '', code), program_name),
         'tvshowtitle': None,
         'sorttitle': program_name,
         'studio': 'Globoplay'
@@ -404,6 +404,7 @@ def get_globo_americas():
             'livefeed': False,  # force vod player for us channels
             'router': False,
             'label': label,
+            'title': label,
             # 'title': title,
             # 'tvshowtitle': title,
             'plot': description,

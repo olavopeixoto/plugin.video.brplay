@@ -58,6 +58,7 @@ def get_channel_epg_now(channel):
         'IsPlayable': True,
         'livefeed': True,
         'label': u"[B]" + studio + u"[/B][I] - " + program_name + u"[/I]",
+        'title': u"[B]" + studio + u"[/B][I] - " + program_name + u"[/I]",
         'studio': 'Oi Play',
         # 'title': episode_title,
         # 'tvshowtitle': title,
