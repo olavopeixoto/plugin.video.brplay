@@ -5,8 +5,10 @@ import requests
 import resources.lib.modules.control as control
 from resources.lib.modules import cache
 from resources.lib.modules import workers
+import scraper_live
 import player
 import os
+import urllib
 
 PLAYER_HANDLER = player.__name__
 
@@ -265,6 +267,61 @@ def get_episodes(id, season_number=None):
 
     for eps in episodes:
         yield _hydrate_content(next((next(iter(t['thread'].get_result().get('response', [])), {}) for t in threads if t['id'] == eps.get('id', -1)), eps))
+
+
+def search(term, page=1, limit=20):
+    params = {
+        'query': urllib.quote_plus(term),
+        'limit': limit,
+        'offset': (page-1) * limit,
+        'onlyMyPackages': 'Y',
+        'onlyTvVas': 'N',
+        'order': '',
+        'type': ['live:tv', 'tv_channels:tv_single_row', 'moviesvod:movies', 'series:tv'],
+        # 'type': ['series:tv', 'moviesvod:movies'],
+        'channel': PLATFORM
+    }
+
+    url = 'https://www.nowonline.com.br/avsclient/contents/search?{qs}'.format(qs=urllib.urlencode(params, True))
+    response = request_logged_in(url).get('response', []) or []
+
+    has_more_pages = False
+    for section in response:
+
+        if not has_more_pages and int(section.get('total', 0)) > (int(section.get('startIndex', 0)) + int(section.get('maxResult', 0))):
+            has_more_pages = True
+
+        live_tv = section.get('category') in ['tv_channels', 'live']
+
+        for item in section.get('results', []) or []:
+
+            if live_tv:
+                result = scraper_live.hydrate_channel(item)
+            else:
+                result = _hydrate_content(item)
+
+            result.update({
+                'studio': 'Now Online'
+            })
+
+            yield result
+
+    if has_more_pages:
+        yield {
+            'handler': __name__,
+            'method': 'search',
+            'term': term,
+            'page': page + 1,
+            'limit': limit,
+            'label': control.lang(34136).encode('utf-8'),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
 
 
 def request_logged_in(url, use_cache=True, validate=False, force_refresh=False, retry=1):

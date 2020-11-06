@@ -68,6 +68,9 @@ def search(query, page=1):
     if control.is_oiplay_available():
         threads.append(workers.Thread(convert_to_list, oiplay.search, query, page))
 
+    if control.is_nowonline_available():
+        threads.append(workers.Thread(convert_to_list, netnow.search, query, page))
+
     [i.start() for i in threads]
     [i.join() for i in threads]
 
@@ -94,7 +97,7 @@ def search(query, page=1):
             continue
 
         result.update({
-            'sort': [(control.SORT_METHOD_NONE, '%U')],
+            'sort': [(control.SORT_METHOD_UNSORTED, '%U'), control.SORT_METHOD_STUDIO],
             # 'sort': [(control.SORT_METHOD_TRACKNUM, '%U'), control.SORT_METHOD_STUDIO, (control.SORT_METHOD_LABEL_IGNORE_FOLDERS, '%U')],
             'tracknumber': rank,
             'sorttitle': '%04d' % (rank,),
