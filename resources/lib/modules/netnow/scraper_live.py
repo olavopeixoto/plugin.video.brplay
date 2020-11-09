@@ -25,6 +25,7 @@ def hydrate_channel(channel):
     season = epg.get('seasonNumber')
     episode = epg.get('episodeNumber')
     date = datetime.datetime.utcfromtimestamp(epg.get('startTime', 0))
+    end_time = datetime.datetime.utcfromtimestamp(epg.get('endTime', 0))
     genre = channel.get('type')
     rating = epg.get('ageRating')
 
@@ -41,6 +42,12 @@ def hydrate_channel(channel):
 
     label = u"[B]%s[/B][I] - %s[/I]" % (channel_name, name_title)
 
+    program_time_desc = datetime.datetime.strftime(date, '%H:%M') + ' - ' + datetime.datetime.strftime(end_time, '%H:%M')
+
+    tags = [program_time_desc]
+
+    description = '%s | %s' % (program_time_desc, description)
+
     return {
         'handler': PLAYER_HANDLER,
         'method': 'playlive',
@@ -50,8 +57,9 @@ def hydrate_channel(channel):
         'label': label,
         'title': label,
         'studio': 'Now Online',
+        'tag': tags,
         # 'title': title,
-        # 'tvshowtitle': title,
+        'tvshowtitle': title,
         'sorttitle': name_title,
         'channel_id': id,
         'dateadded': datetime.datetime.strftime(date, '%Y-%m-%d %H:%M:%S'),

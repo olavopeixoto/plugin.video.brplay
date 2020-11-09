@@ -51,6 +51,14 @@ def get_channel_epg_now(channel):
 
     date = util.strptime(now['startTimeUtc'], '%Y-%m-%dT%H:%M:%SZ') + util.get_utc_delta()
     program_name = title + (u': ' + episode_title if episode_title else u'')
+
+    stop_time = date + datetime.timedelta(seconds=int(now.get('durationSeconds', 0)))
+
+    program_time_desc = datetime.datetime.strftime(date, '%H:%M') + ' - ' + datetime.datetime.strftime(stop_time, '%H:%M')
+    tags = [program_time_desc]
+
+    description = '%s | %s' % (program_time_desc, program['synopsis'])
+
     return {
         'handler': PLAYER_HANDLER,
         'method': 'playlive',
@@ -61,11 +69,12 @@ def get_channel_epg_now(channel):
         'title': u"[B]" + studio + u"[/B][I] - " + program_name + u"[/I]",
         'studio': 'Oi Play',
         # 'title': episode_title,
-        # 'tvshowtitle': title,
+        'tvshowtitle': title,
         'sorttitle': program_name,
         'channel_id': response['prgSvcId'],
         'dateadded': datetime.datetime.strftime(date, '%Y-%m-%d %H:%M:%S'),
-        'plot': program['synopsis'],
+        'plot': description,
+        'tag': tags,
         'duration': now['durationSeconds'],
         'adult': program['isAdult'],
         'cast': cast,

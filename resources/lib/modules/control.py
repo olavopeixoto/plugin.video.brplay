@@ -511,7 +511,7 @@ LOGWARNING = 3
 
 def log(msg, level=LOGNOTICE):
     if log_enabled:
-        xbmc.log('[plugin.video.brplay] - ' + str(msg), level)  # xbmc.LOGDEBUG
+        xbmc.log('[plugin.video.brplay] - %s' % msg, level)  # xbmc.LOGDEBUG
 
 
 def get_coordinates(affiliate):

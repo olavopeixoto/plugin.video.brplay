@@ -7,6 +7,7 @@ import resources.lib.modules.control as control
 import re
 import datetime
 import json
+import traceback
 
 
 def log(msg):
@@ -46,8 +47,10 @@ def login():
             log('Cached credentials expired: %s' % user_account_token_expiry)
             token = next((token.get('value') for token in credentials if token.get('type') == 'AuthorizationJWT'), None)
             try:
+                log('trying to refresh...')
                 credentials = refresh_token(token)
             except:
+                log(traceback.format_exc())
                 credentials = None
 
     if not credentials:
@@ -57,7 +60,12 @@ def login():
 
         idp = get_provider_by_name(idp_description)
 
-        credentials = _login_internal(user, password, idp)
+        try:
+            credentials = _login_internal(user, password, idp)
+        except Exception as ex:
+            control.log(traceback.format_exc(), control.LOGERROR)
+            control.infoDialog(ex.message, icon='ERROR')
+            return []
 
     control.setSetting('telecine_credentials', json.dumps(credentials))
 
@@ -74,7 +82,9 @@ def refresh_token(token):
         'x-device': 'Mobile-iOS'
     }
 
-    result = requests.get(url, headers=headers)
+    log('POST %s' % url)
+
+    result = requests.post(url, headers=headers)
 
     result.raise_for_status()
 
@@ -140,6 +150,7 @@ def _login_internal(user, password, idp):
 
     session = requests.session()
 
+    #            https://sp.tbxnet.com/v2/auth/telecine/login.html?idp=oitv&return=https%3A%2F%2Fwww.telecineplay.com.br%2Fauthentication%3Fcallback_url%3D%2F&country=BR
     login_url = 'https://sp.tbxnet.com/v2/auth/telecine/login.html?return=https%3A%2F%2Fwww.telecineplay.com.br%2Ftoolbox%2Fcallback%3Fselected_idp%3D{idp}&country=BR&idp={idp}'.format(idp=idp)
 
     log('POST %s' % login_url)
@@ -159,8 +170,8 @@ def _login_internal(user, password, idp):
 
     auth_token = qs['toolbox_user_token'][0]
 
-    print('auth_token:')
-    print(auth_token)
+    log('auth_token:')
+    log(auth_token)
 
     #################################################################
 
@@ -222,9 +233,12 @@ def oitv_login(session, response, username, password):
 
         post[ipt['name']] = value
 
-    log('POST %s' % url)
+    log('POST (AUTH) %s' % url)
 
     response = session.post(url, data=post)
+
+    log(response.status_code)
+    log(response.content)
 
     response.raise_for_status()
 
@@ -246,8 +260,12 @@ def oitv_login(session, response, username, password):
         post[ipt['name']] = ipt['value']
 
     log('POST %s' % url)
+    log(post)
 
     response = session.post(url, data=post)
+
+    log(response.status_code)
+    log(response.content)
 
     response.raise_for_status()
 

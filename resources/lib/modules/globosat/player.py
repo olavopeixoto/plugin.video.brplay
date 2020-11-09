@@ -39,10 +39,12 @@ class Player(xbmc.Player):
 
         if id is None: return
 
+        self.isLive = meta.get('livefeed', False)
+
         if not meta.get('router', True):
             info = resourceshelper.get_video_info(id)
         else:
-            info = resourceshelper.get_video_router(id)
+            info = resourceshelper.get_video_router(id, self.isLive)
             if not info:
                 info = resourceshelper.get_video_info(id)
 
@@ -69,23 +71,15 @@ class Player(xbmc.Player):
         query_string = query_string % {
             'hash': hash_token,
             'key': 'app',
-            'openClosed': 'F' if info['subscriber_only'] else 'A',
-            'user': user if info['subscriber_only'] else ''
+            'openClosed': 'F' if info['subscriber_only'] and user else 'A',
+            'user': user if info['subscriber_only'] and user else ''
         }
 
         url = '?'.join([info['url'], query_string])
 
         control.log("live media url: %s" % url)
 
-        meta.update({
-            "genre": info["category"],
-            "plot": info["title"],
-            "plotoutline": info["title"]
-        })
-
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
-
-        self.isLive = meta.get('livefeed', False)
 
         parsed_url = urlparse(url)
         if parsed_url.path.endswith(".m3u8"):

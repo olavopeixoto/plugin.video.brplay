@@ -39,18 +39,19 @@ def get_channels():
 
     control.log(live)
 
-    # live = sorted(live, key=lambda k: k.get('label'))
-
-    # live = sorted(live, key=lambda k: k.get('sorttitle', None))
-    # live = sorted(live, key=lambda k: k.get('dateadded', None), reverse=True)
-
     for channel in live:
         channel.update({
             'sort': [control.SORT_METHOD_DATEADDED, (control.SORT_METHOD_LABEL_IGNORE_FOLDERS, '%U'), (control.SORT_METHOD_VIDEO_SORT_TITLE, '%U'), (control.SORT_METHOD_STUDIO, '%L')],
             'overlay': 4,
             'playcount': 0,
-            'content': 'tvshows',     # 'content': 'tvshows',  # content: files, songs, artists, albums, movies, tvshows, episodes, musicvideos
-            'mediatype': 'episode'  # 'mediatype': "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+            'content': 'tvshows',    # 'content': 'tvshows',  # content: files, songs, artists, albums, movies, tvshows, episodes, musicvideos
+            'mediatype': 'episode',  # 'mediatype': "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+        })
+        properties = channel.get('properties', {})
+        if not properties:
+            channel['properties'] = properties
+        properties.update({
+            'ResumeTime': 0.0
         })
 
     return live

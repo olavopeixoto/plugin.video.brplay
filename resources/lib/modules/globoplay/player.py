@@ -58,12 +58,11 @@ class Player(xbmc.Player):
         if id is None:
             return
 
-        self.isLive = False
+        self.isLive = meta.get('livefeed', False)
         stop_event = None
 
-        if meta.get('livefeed', False):
+        if self.isLive and meta.get('lat') and meta.get('long'):
             control.log("PLAY LIVE!")
-            self.isLive = True
 
             latitude = meta.get('lat')
             longitude = meta.get('long')
@@ -82,7 +81,7 @@ class Player(xbmc.Player):
             if not meta.get('router', True):
                 info = resourceshelper.get_video_info(id, children_id)
             else:
-                info = resourceshelper.get_video_router(id)
+                info = resourceshelper.get_video_router(id, self.isLive)
                 if not info:
                     info = resourceshelper.get_video_info(id, children_id)
 

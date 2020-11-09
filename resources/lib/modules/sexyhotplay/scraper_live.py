@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from resources.lib.modules import control
+from resources.lib.modules.globosat import player, get_authorized_services
 import os
 import time
 import requests
 import datetime
-from resources.lib.modules.globosat import player
 
 SEXYHOT_LOGO = os.path.join(control.artPath(), 'logo_sexyhot.png')
 SEXYHOT_FANART = os.path.join(control.artPath(), 'fanart_sexyhot.png')
@@ -30,8 +30,6 @@ def get_broadcast():
     }
     response = requests.get(url, headers=headers).json()
 
-    channels = []
-
     broadcast = response['data']['broadcast']
 
     program = broadcast['epgCurrentSlots'][0]
@@ -45,10 +43,22 @@ def get_broadcast():
     thumb = THUMB_URL + '?v=' + str(int(time.time()))  # THUMB_URL.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
 
     program_date = datetime.datetime.fromtimestamp(program['startTime'])
-    endTime = datetime.datetime.fromtimestamp(program['endTime'])
-    duration = (endTime - program_date).total_seconds()
+    end_time = datetime.datetime.fromtimestamp(program['endTime'])
+    duration = (end_time - program_date).total_seconds()
 
     title = program.get('title', {}) or {}
+
+    service_id = broadcast.get('media', {}).get('serviceId')
+
+    program_time_desc = datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + datetime.datetime.strftime(end_time, '%H:%M')
+    description = '%s | %s' % (program_time_desc, program.get('description'))
+
+    tags = [program_time_desc]
+
+    if program.get('liveBroadcast', False):
+        tags.append(control.lang(32004))
+
+    tags.extend(program.get('tags', []) or [])
 
     item = {
         'handler': PLAYER_HANDLER,
@@ -56,7 +66,8 @@ def get_broadcast():
         'id': broadcast['mediaId'],
         'IsPlayable': True,
         'channel_id': 2065,
-        'livefeed': False,
+        'service_id': service_id,
+        'livefeed': True,
         'live': program['liveBroadcast'],
         'studio': 'Sexyhot Play',
         'label': label,
@@ -64,9 +75,9 @@ def get_broadcast():
         # 'title': program.get('metadata', program.get('name', '')),
         # 'tvshowtitle': program['name'] if program_name else None,
         'sorttitle': program_name,
-        'plot': program['description'] or '' if not control.isFTV else ' ',
+        'plot': description,
         # 'plotoutline': datetime.datetime.strftime(program_date, '%H:%M') + ' - ' + datetime.datetime.strftime(program_date + datetime.timedelta(seconds=duration), '%H:%M'),
-        'tag': program.get('tags', []),
+        'tag': tags,
         'duration': int(duration),
         'dateadded': datetime.datetime.strftime(program_date, '%Y-%m-%d %H:%M:%S'),
         'adult': True,
@@ -86,6 +97,7 @@ def get_broadcast():
         }
     }
 
-    channels.append(item)
+    if service_id not in get_authorized_services([service_id]):
+        return
 
-    return channels
+    yield item

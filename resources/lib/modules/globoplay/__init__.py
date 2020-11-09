@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from resources.lib.modules import cache
-from resources.lib.modules import control
+from resources.lib.modules import control, cache, workers
 import requests
 import urllib
 import auth_helper
@@ -47,3 +46,19 @@ def get_image_scaler():
         return 'X2160'
 
     return 'X1080'
+
+
+def get_authorized_services(service_ids):
+    if not service_ids:
+        return []
+
+    if control.setting('globoplay_ignore_channel_authorization') == 'true':
+        return service_ids
+
+    if len(service_ids) == 1:
+        return [service_id for index, service_id in enumerate(service_ids) if auth_helper.is_service_allowed(service_id)]
+    else:
+        threads = [workers.Thread(auth_helper.is_service_allowed, service_id) for service_id in service_ids]
+        [t.start() for t in threads]
+        [t.join() for t in threads]
+        return [service_id for index, service_id in enumerate(service_ids) if threads[index].get_result()]

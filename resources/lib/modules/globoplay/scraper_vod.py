@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from resources.lib.modules import control
-from resources.lib.modules.globoplay import request_query, get_headers, get_image_scaler
+from resources.lib.modules.globoplay import request_query, get_headers, get_image_scaler, get_authorized_services
+from . import auth_helper
 import player
 import requests
 import os
@@ -22,6 +23,7 @@ def get_globoplay_channels():
         'handler': __name__,
         'method': 'get_categories',
         "id": 196,
+        "service_id": 4654,
         "adult": False,
         'art': {
             'thumb': GLOBO_LOGO_WHITE,
@@ -32,9 +34,13 @@ def get_globoplay_channels():
 
 
 def get_categories(page=1, per_page=PAGE_SIZE):
+    home = 'home-assinante' if auth_helper.is_subscribed() else 'home-free' if auth_helper.is_logged_in() else 'home-anonimo'
+
     yield {
         'handler': __name__,
-        'method': 'get_globoplay_home',
+        'method': 'get_page',
+        'id': home,
+        'type': None,
         'label': control.lang(34135).encode('utf-8'),
         'art': {
             'thumb': GLOBOPLAY_THUMB,
@@ -60,62 +66,88 @@ def get_categories(page=1, per_page=PAGE_SIZE):
 
 
 def get_globoplay_home():
-    query = 'query%20getPage%28%24id%3A%20ID%21%2C%20%24subscriptionType%3A%20SubscriptionType%2C%20%24type%3A%20PageType%29%20%7B%0A%20%20%20%20%20%20page%28id%3A%20%24id%2C%20filter%3A%20%7BsubscriptionType%3A%20%24subscriptionType%2C%20type%3A%20%24type%7D%29%20%7B%0A%20%20%20%20%20%20%20%20...pageCollection%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20fragment%20pageCollection%20on%20Page%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20identifier%0A%20%20%20%20%20%20origemId%0A%20%20%20%20%20%20productId%0A%20%20%20%20%20%20premiumHighlight%20%7B%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20fallbackHeadline%0A%20%20%20%20%20%20%20%20buttonText%0A%20%20%20%20%20%20%20%20callText%0A%20%20%20%20%20%20%20%20highlightId%0A%20%20%20%20%20%20%20%20highlight%20%7B%0A%20%20%20%20%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20fallbackCallText%0A%20%20%20%20%20%20%20%20fallbackHighlightId%0A%20%20%20%20%20%20%20%20fallbackHighlight%20%7B%0A%20%20%20%20%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20offerItems%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20PageOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20title%0A%20%20%20%20%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20%20%20%20%20playlistEnabled%0A%20%20%20%20%20%20%20%20%20%20navigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20...%20on%20URLNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20url%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20...%20on%20CategoriesPageNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20identifier%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20offerId%0A%20%20%20%20%20%20%20%20%20%20genericOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20...%20on%20Offer%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20userBased%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20...%20on%20RecommendedOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20PageHighlight%20%7B%0A%20%20%20%20%20%20%20%20%20%20callText%0A%20%20%20%20%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20highlightId%0A%20%20%20%20%20%20%20%20%20%20fallbackCallText%0A%20%20%20%20%20%20%20%20%20%20fallbackHeadline%0A%20%20%20%20%20%20%20%20%20%20fallbackHighlightId%0A%20%20%20%20%20%20%20%20%20%20leftAligned%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20fragment%20highlightOffer%20on%20Highlight%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20contentId%0A%20%20%20%20%20%20contentItem%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20Video%20%7B%0A%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20kind%0A%20%20%20%20%20%20%20%20%20%20broadcast%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20Title%20%7B%0A%20%20%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20headlineText%0A%20%20%20%20%20%20headlineImage%0A%20%20%20%20%20%20highlightImage%20%7B%0A%20%20%20%20%20%20%20%20mobile%0A%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20offerImage%20%7B%0A%20%20%20%20%20%20%20%20mobile%0A%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D'
-    variables = '{"id": "home-assinante"}'
-    response = request_query(query, variables).get('data', {}).get('page', {})
+    home = 'home-assinante' if auth_helper.is_subscribed() else 'home-free' if auth_helper.is_logged_in() else 'home-anonimo'
 
-    control.log(response)
-
-    items = response.get('offerItems', []) or []
-
-    for item in items:
-        if item.get('componentType') in ['CHANNELSLOGO'] or item.get('title') in ['Assista ao Vivo', 'Categorias'] or item.get('headline') == 'Agora na Globo':
-            continue
-
-        yield {
-            'handler': __name__,
-            'method': 'get_offer',
-            'label': item.get('title', item.get('headline', '')),
-            'plot': item.get('callText'),
-            'id': item.get('offerId', item.get('highlightId')),
-            # 'identifier': (item.get('navigation', {}) or {}).get('identifier'),
-            'component_type': item.get('componentType'),
-            'content': 'files',
-            'art': {
-                'thumb': GLOBOPLAY_THUMB,
-                'fanart': GLOBO_FANART
-            }
-        }
+    return get_page(home, type=None)
 
 
 def get_page(id, art=None, type='CATEGORIES'):
     if art is None:
         art = {}
 
+    type_str = ''
+    if type:
+        type_str = ',"type":"{type}"'.format(type=type)
+
     query = 'query%20getPage%28%24id%3A%20ID%21%2C%20%24subscriptionType%3A%20SubscriptionType%2C%20%24type%3A%20PageType%29%20%7B%0A%20%20page%28id%3A%20%24id%2C%20filter%3A%20%7BsubscriptionType%3A%20%24subscriptionType%2C%20type%3A%20%24type%7D%29%20%7B%0A%20%20%20%20...pageCollection%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0Afragment%20pageCollection%20on%20Page%20%7B%0A%20%20name%0A%20%20identifier%0A%20%20origemId%0A%20%20productId%0A%20%20premiumHighlight%20%7B%0A%20%20%20%20headline%0A%20%20%20%20fallbackHeadline%0A%20%20%20%20buttonText%0A%20%20%20%20callText%0A%20%20%20%20highlightId%0A%20%20%20%20highlight%20%7B%0A%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%7D%0A%20%20%20%20fallbackCallText%0A%20%20%20%20fallbackHighlightId%0A%20%20%20%20fallbackHighlight%20%7B%0A%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20offerItems%20%7B%0A%20%20%20%20...%20on%20PageOffer%20%7B%0A%20%20%20%20%20%20title%0A%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20playlistEnabled%0A%20%20%20%20%20%20navigation%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20URLNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20url%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20CategoriesPageNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20identifier%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20offerId%0A%20%20%20%20%20%20genericOffer%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20Offer%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20userBased%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20RecommendedOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20PageHighlight%20%7B%0A%20%20%20%20%20%20callText%0A%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20highlightId%0A%20%20%20%20%20%20fallbackCallText%0A%20%20%20%20%20%20fallbackHeadline%0A%20%20%20%20%20%20fallbackHighlightId%0A%20%20%20%20%20%20leftAligned%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20highlightOffer%20on%20Highlight%20%7B%0A%20%20id%0A%20%20contentType%0A%20%20contentId%0A%20%20contentItem%20%7B%0A%20%20%20%20...%20on%20Video%20%7B%0A%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20kind%0A%20%20%20%20%20%20broadcast%20%7B%0A%20%20%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20Title%20%7B%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20type%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20headlineText%0A%20%20headlineImage%0A%20%20highlightImage%20%7B%0A%20%20%20%20mobile%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20offerImage%20%7B%0A%20%20%20%20mobile%0A%20%20%20%20web%0A%20%20%7D%0A%7D'
-    variables = '{{"id":"{id}","type":"{type}"}}'.format(id=id, type=type)
+    variables = '{{"id":"{id}"{type}}}'.format(id=id, type=type_str)
     page = request_query(query, variables).get('data', {}).get('page', {})
 
     if not page:
         return
 
     offers = page.get('offerItems', []) or []
+    premium = page.get('premiumHighlight', {}) or {}
+    highlight = premium.get('highlight', {}) or {}
+    content_type = highlight.get('contentType')
 
-    if len(offers) == 1:
+    if len(offers) == 1 and (not premium or content_type in ['BACKGROUND', 'SIMULCAST']):
         item = offers[0]
         return get_offer(item.get('offerId'), item.get('componentType'))
 
-    return [{
-        'handler': __name__,
-        'method': 'get_offer',
-        'label': item.get('title', ''),
-        'id': item.get('offerId'),
-        'component_type': item.get('componentType'),
-        'art': {
-            'thumb': GLOBO_LOGO_WHITE,
-            'fanart': art.get('fanart', GLOBO_FANART)
-        }
-    } for item in offers]
+    return get_page_offers(page, art)
+
+
+def get_page_offers(page, art=None):
+    offers = page.get('offerItems', []) or []
+    premium = page.get('premiumHighlight', {}) or {}
+
+    if premium:
+        highlight = premium.get('highlight', {}) or {}
+        content_type = highlight.get('contentType')
+
+        label = premium.get('headline')
+        plot = premium.get('callText')
+
+        if content_type in ['BACKGROUND', 'SIMULCAST']:
+            highlight = premium.get('fallbackHighlight', {}) or {}
+            content_type = highlight.get('contentType')
+            label = premium.get('fallbackHeadline')
+            plot = premium.get('fallbackCallText')
+
+        if content_type not in ['BACKGROUND', 'SIMULCAST']:
+            # content_type = "VIDEO", "SIMULCAST", "BACKGROUND"
+            title_id = ((highlight.get('contentItem', {}) or {}).get('title', {}) or {}).get('titleId') or (highlight.get('contentItem', {}) or {}).get('titleId')
+            yield {
+                'handler': __name__,
+                'method': 'get_title' if title_id else 'get_offer',
+                'label': label or highlight.get('headlineText'),
+                'id': title_id or highlight.get('contentId'),
+                'availableFor': (highlight.get('contentItem', {}) or {}).get('availableFor'),
+                'plot': plot,
+                'component_type': 'OFFERHIGHLIGHT',  # 'PREMIUMHIGHLIGHT',
+                'art': {
+                    'thumb': highlight.get('headlineImage') or (highlight.get('offerImage', {}) or {}).get('web') or GLOBO_LOGO_WHITE,
+                    'fanart': (highlight.get('highlightImage', {}) or {}).get('web', art.get('fanart', GLOBO_FANART))
+                }
+            }
+
+    for item in offers:
+        if item.get('componentType') in ['CHANNELSLOGO', 'TAKEOVER'] or item.get('title') in ['Assista ao Vivo', 'Categorias'] or item.get('headline') == 'Agora na Globo':
+            continue
+
+        yield {
+                'handler': __name__,
+                'method': 'get_offer',
+                'label': item.get('title', item.get('headline', '')),
+                'plot': item.get('callText'),
+                'id': item.get('offerId'),
+                'component_type': item.get('componentType'),
+                'art': {
+                    'thumb': GLOBO_LOGO_WHITE,
+                    'fanart': art.get('fanart', GLOBO_FANART)
+                }
+            }
 
 
 def get_offer(id, component_type):
@@ -143,7 +175,14 @@ def get_thumb_offer(id, page=1, per_page=PAGE_SIZE):
 
     custom_title = items.get('customTitle')
 
-    for item in filter(__filter_plus, items.get('resources', [])):
+    items = items.get('resources', [])
+
+    if control.setting('globoplay_ignore_channel_authorization') != 'true':
+        service_ids = [item.get('serviceId') for item in items]
+        authorized_ids = get_authorized_services(service_ids)
+        items = [item for item in items if item.get('serviceId') in authorized_ids and auth_helper.is_available_for(item.get('availableFor'))]
+
+    for item in filter(__filter_plus, items):
         yield {
                 'handler': PLAYER_HANDLER,
                 'method': 'play_stream',

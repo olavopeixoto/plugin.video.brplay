@@ -7,7 +7,7 @@ DEVICE_ID = "NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ=="
 DEVICE_ID_KEY = "{{deviceId}}"
 
 
-def get_video_router(video_id):
+def get_video_router(video_id, is_live=False):
     proxy = control.proxy_url
     proxy = None if proxy is None or proxy == '' else {
         'http': proxy,
@@ -49,7 +49,7 @@ def get_video_router(video_id):
     response = None
     for player in players_preference:
         playlist_url = 'https://router.video.globo.com/cdn?video_id={video_id}&player_type={player}&video_type={video_type}&content_protection=widevine&quality=max'
-        final_url = playlist_url.format(video_id=video_id, player=player, video_type='Video')
+        final_url = playlist_url.format(video_id=video_id, player=player, video_type='Live' if is_live else 'Video')
         control.log('[Globoplay Player] - GET %s' % final_url)
         response = requests.get(final_url, headers={"Accept-Encoding": "gzip"}, proxies=proxy).json()
         control.log(response)

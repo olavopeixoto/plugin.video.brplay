@@ -3,8 +3,9 @@
 import requests
 import datetime
 import time
-import player
-from scraper_vod import FANART
+from . import player
+from .scraper_vod import FANART
+from resources.lib.modules import cache
 
 
 POSTER_URL = 'http://i.cdn.turner.com/tntla/images/portal/fixed/cards/{titleId}_424x636{lang}.jpg'
@@ -38,7 +39,7 @@ def get_live_channels():
     end_timestamp = to_timestamp(today + datetime.timedelta(days=1))
     epg_url = 'https://api.tntgo.tv/AGL/1.0/a/{language}/PCTV/TNTGO_LATAM_BR/CHANNEL/EPG?channelId={channels}&startTimeStamp={startTimeStamp}&endTimeStamp={endTimeStamp}&channel=PCTV'.format(language=language, channels=channel_ids, startTimeStamp=start_timestamp, endTimeStamp=end_timestamp)
 
-    channels = requests.get(epg_url).json().get('resultObj', {}).get('channelList', [])
+    channels = cache.get(requests.get, 24, epg_url, table='tntplay').json().get('resultObj', {}).get('channelList', [])
 
     now_timestamp = to_timestamp(datetime.datetime.now())
 
@@ -62,6 +63,7 @@ def get_live_channels():
         plotoutline = programme.get('shortDescription', '')
 
         start_time = datetime.datetime.utcfromtimestamp(programme.get('startTime', 0))
+        end_time = datetime.datetime.utcfromtimestamp(programme.get('endTime', 0))
 
         lang = details.get('lang', '')
 
@@ -73,6 +75,11 @@ def get_live_channels():
 
         program_name = title + (u': ' + subtitle if subtitle else u'')
 
+        program_time_desc = datetime.datetime.strftime(start_time, '%H:%M') + ' - ' + datetime.datetime.strftime(end_time, '%H:%M')
+        plot = '%s | %s' % (program_time_desc, plot)
+
+        tags = [program_time_desc]
+
         results.append({
             'handler': PLAYER_HANDLER,
             'method': 'playlive',
@@ -82,9 +89,10 @@ def get_live_channels():
             'label': u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]",
             'title': u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]",
             'studio': 'TNT Play',
+            'tag': tags,
             # 'title': subtitle,
             # 'originaltitle': details.get('originalTitle'),
-            # 'tvshowtitle': title,
+            'tvshowtitle': title,
             'sorttitle': program_name,
             'channel_id': channel.get('channelId', ''),
             'dateadded': datetime.datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S'),

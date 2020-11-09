@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from resources.lib.modules import control
-from resources.lib.modules import cache
-from resources.lib.modules import util
-from resources.lib.modules import workers
+from resources.lib.modules import control, cache, util, workers
 import requests
 import player
 import datetime
@@ -12,6 +9,7 @@ from sqlite3 import dbapi2 as database
 import time
 import os
 import urllib
+from . import get_authorized_services, request_query
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
 GLOBO_FANART = os.path.join(control.artPath(), 'globo.jpg')
@@ -24,8 +22,14 @@ FANART_BBB = 'http://s01.video.glbimg.com/x1080/244881.jpg'
 PLAYER_HANDLER = player.__name__
 
 
+GLOBO_LIVE_MEDIA_ID = 4452349
+GLOBO_LIVE_SUBSCRIBER_MEDIA_ID = 6120663  # DVR
+GLOBO_US_LIVE_MEDIA_ID = 7832875
+GLOBO_US_LIVE_SUBSCRIBER_MEDIA_ID = 7832875
+
+
 def get_globo_live_id():
-    return 4452349
+    return GLOBO_LIVE_SUBSCRIBER_MEDIA_ID
 
 
 def get_live_channels():
@@ -50,7 +54,14 @@ def get_live_channels():
         [live.extend(i.get_result()) for i in threads]
 
     seen = []
-    return filter(lambda x: seen.append(x['affiliate_code'] if 'affiliate_code' in x else '$FOO$') is None if 'affiliate_code' not in x or x['affiliate_code'] not in seen else False, live)
+    filtered_channels = filter(lambda x: seen.append(x['affiliate_code'] if 'affiliate_code' in x else '$FOO$') is None if 'affiliate_code' not in x or x['affiliate_code'] not in seen else False, live)
+
+    if control.setting('globoplay_ignore_channel_authorization') != 'true':
+        service_ids = [channel.get('service_id') for channel in filtered_channels]
+        authorized_service_ids = get_authorized_services(service_ids)
+        filtered_channels = [channel for channel in filtered_channels if not channel.get('service_id') or (channel.get('service_id') in authorized_service_ids)]
+
+    return filtered_channels
 
 
 def __get_affiliate_live_channels(affiliate):
@@ -74,41 +85,45 @@ def __get_affiliate_live_channels(affiliate):
 
     control.log("globo live (%s) program_description: %s" % (code, repr(program_description)))
 
-    item = {
-        'handler': PLAYER_HANDLER,
-        'method': 'play_stream',
-        'lat': latitude,
-        'long': longitude,
-        'affiliate_code': code,
-        'IsPlayable': 'true',
-        'id': live_globo_id,
-        'channel_id': 196,
-        'live': True,
-        'livefeed': True,
-        'mediatype': 'tvshow',
-    }
+    item = {}
 
     item.update(program_description)
 
-    item.pop('datetimeutc')
+    item.pop('datetimeutc', None)
 
     title = program_description['title'] if 'title' in program_description else live_program['title']
     safe_tvshowtitle = program_description['tvshowtitle'] if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else ''
     safe_subtitle = program_description['subtitle'] if 'subtitle' in program_description and program_description['subtitle'] and not safe_tvshowtitle.startswith(program_description['subtitle']) else ''
     subtitle_txt = (" / " if safe_tvshowtitle and safe_subtitle else '') + safe_subtitle
-    tvshowtitle = " (" + safe_tvshowtitle + subtitle_txt + ")" if safe_tvshowtitle or subtitle_txt else ''
+    tvshowtitle = " - " + safe_tvshowtitle + subtitle_txt if safe_tvshowtitle or subtitle_txt else ''
 
     program_name = '%s%s' % (title, tvshowtitle)
     item.update({
+        'handler': PLAYER_HANDLER,
+        'method': 'play_stream',
+        'lat': latitude,
+        'long': longitude,
+        'affiliate_code': code,
+        'IsPlayable': True,
+        'id': live_globo_id,
+        'program_id': live_program['program_id'],
+        'service_id': 4654,
+        'channel_id': 196,
+        'live': True,
+        'livefeed': True,
         'label': '[B]Globo %s[/B][I] - %s[/I]' % (re.sub(r'\d+', '', code), program_name),
         'title': '[B]Globo %s[/B][I] - %s[/I]' % (re.sub(r'\d+', '', code), program_name),
-        'tvshowtitle': None,
+        'tvshowtitle': safe_tvshowtitle + subtitle_txt,
         'sorttitle': program_name,
-        'studio': 'Globoplay'
+        'studio': 'Globoplay',
     })
 
-    art = item.get('art', {})
+    art = item.get('art', {}) or {}
+    if not art:
+        item['art'] = art
+
     if not art.get('thumb'):
+        # thumb = 'https://live-thumbs.video.globo.com/globo-rj/snapshot/' + str(int(time.time()))
         art['thumb'] = live_program['thumb']
 
     if not art.get('fanart'):
@@ -181,7 +196,6 @@ def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
             return response
     except Exception as ex:
         control.log("CACHE ERROR: %s" % repr(ex))
-        pass
 
     control.log("Fetching FullDaySchedule for %s: %s" % (affiliate, date_str))
 
@@ -204,13 +218,13 @@ def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
 
 def __get_full_day_schedule(today, affiliate='RJ'):
 
-    utc_timezone = control.get_current_brasilia_utc_offset()
+    # utc_timezone = control.get_current_brasilia_utc_offset()
 
     url = "https://api.globoplay.com.br/v1/epg/%s/praca/%s?api_key=%s" % (today, affiliate, GLOBOPLAY_APIKEY)
     headers = {'Accept-Encoding': 'gzip'}
 
     # slots = client.request(url, headers=headers)['gradeProgramacao']['slots']
-    slots = requests.get(url, headers=headers).json()['gradeProgramacao']['slots']
+    slots = (requests.get(url, headers=headers).json() or {}).get('gradeProgramacao', {}).get('slots', [])
 
     result = []
 
@@ -235,8 +249,10 @@ def __get_full_day_schedule(today, affiliate='RJ'):
                 control.log("ERROR POPULATING CAST: %s" % repr(ex))
                 pass
 
-        program_datetime_utc = util.strptime_workaround(slot['data_exibicao_e_horario']) + datetime.timedelta(hours=(-utc_timezone))
-        program_datetime = program_datetime_utc + util.get_utc_delta()
+        # program_datetime_utc = util.strptime_workaround(slot['data_exibicao_e_horario']) + datetime.timedelta(hours=(-utc_timezone))
+        # program_datetime = program_datetime_utc + util.get_utc_delta()
+        program_datetime = datetime.datetime.utcfromtimestamp(slot.get('start_time'))
+        program_datetime_utc = program_datetime
 
         # program_local_date_string = datetime.datetime.strftime(program_datetime, '%d/%m/%Y %H:%M')
 
@@ -246,8 +262,20 @@ def __get_full_day_schedule(today, affiliate='RJ'):
         else:
             showtitle = None
 
-        next_start = slots[index+1]['data_exibicao_e_horario'] if index+1 < len(slots) else None
-        next_start = (util.strptime_workaround(next_start) + datetime.timedelta(hours=(-utc_timezone)) + util.get_utc_delta()) if next_start else datetime.datetime.now()
+        # next_start = slots[index+1]['data_exibicao_e_horario'] if index+1 < len(slots) else None
+        # next_start = (util.strptime_workaround(next_start) + datetime.timedelta(hours=(-utc_timezone)) + util.get_utc_delta()) if next_start else datetime.datetime.now()
+        next_start = datetime.datetime.utcfromtimestamp(slots[index+1].get('start_time')) if index+1 < len(slots) else datetime.datetime.utcnow()
+
+        program_time_desc = datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M')
+        tags = [program_time_desc]
+        if slot.get('closed_caption'):
+            tags.append(slot.get('closed_caption'))
+        if slot.get('facebook'):
+            tags.append(slot.get('facebook'))
+        if slot.get('twitter'):
+            tags.append(slot.get('twitter'))
+
+        description = '%s | %s' % (program_time_desc, slot.get('resumo', showtitle) or showtitle)
 
         item = {
             "tagline": slot['chamada'] if 'chamada' in slot else slot['nome_programa'],
@@ -261,9 +289,10 @@ def __get_full_day_schedule(today, affiliate='RJ'):
             "subtitle": slot['resumo'] if slot['nome_programa'] == 'Futebol' else None,
             "title": title,
             'tvshowtitle': showtitle,
-            "plot": slot['resumo'] if 'resumo' in slot else showtitle, #program_local_date_string + ' - ' + (slot['resumo'] if 'resumo' in slot else showtitle.replace(' - ', '\n') if showtitle and len(showtitle) > 0 else slot['nome_programa']),
+            "plot": description,
             # "plotoutline": datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M'),
             "genre": slot['tipo_programa'],
+            "tag": tags,
             "datetimeutc": program_datetime_utc,
             "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
             # 'StartTime': datetime.datetime.strftime(program_datetime, '%H:%M:%S'),
@@ -277,14 +306,6 @@ def __get_full_day_schedule(today, affiliate='RJ'):
                 "poster": slot['poster'] if 'poster' in slot else None,
             }
         }
-
-        # if slot["tipo_programa"] == "confronto":
-        #     item.update({
-        #         'logo': slot['confronto']['participantes'][0]['imagem'],
-        #         'logo2': slot['confronto']['participantes'][1]['imagem'],
-        #         'initials1': slot['confronto']['participantes'][0]['nome'][:3].upper(),
-        #         'initials2': slot['confronto']['participantes'][1]['nome'][:3].upper()
-        #     })
 
         if slot['tipo_programa'] == 'filme':
             item.update({
@@ -328,9 +349,91 @@ def get_affiliate_by_coordinates(latitude, longitude):
     return result
 
 
-def get_globo_americas():
+def get_globoplay_broadcasts(media_id, latitude, longitude):
 
-    GLOBO_AMERICAS_ID = 7832875
+    variables = urllib.quote_plus('{{"mediaId":"{media_id}","coordinates":{"lat":"{lat}", "long": "{long}"}}}'.format(media_id=media_id, lat=latitude, long=longitude))
+    query = 'query%20Epg%28%24mediaId%3A%20ID%21%2C%20%24coordinates%3A%20CoordinatesData%29%20%7B%0A%20%20broadcast%28mediaId%3A%20%24mediaId%2C%20coordinates%3A%20%24coordinates%29%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20transmissionId%0A%20%20%20%20%20%20logo%0A%20%20%20%20%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20%20%20%20%20withoutDVRMediaId%0A%20%20%20%20%20%20promotionalMediaId%0A%20%20%20%20%20%20salesPageCallToAction%0A%20%20%20%20%20%20promotionalText%0A%20%20%20%20%20%20geofencing%0A%20%20%20%20%20%20geoblocked%0A%20%20%20%20%20%20ignoreAdvertisements%0A%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20color%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%20%20%20%20payTvServiceId%0A%20%20%20%20%20%20%20%20payTvUsersMessage%0A%20%20%20%20%20%20%20%20payTvExternalLink%0A%20%20%20%20%20%20%20%20payTvExternalLinkLabel%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20affiliateSignal%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20dtvChannel%0A%20%20%20%20%20%20dtvHDID%0A%20%20%20%20%20%20dtvID%0A%20%20%20%20%7D%0A%20%20%20%20%20%20epgCurrentSlots%20%7B%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20tags%0A%20%20%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20landscape%0A%20%20%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20%20%20directors%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20cast%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20genres%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20media%20%7B%0A%20%20%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20subscriptionService%20%7B%0A%20%20%20%20%20%20%20%20%20%20faq%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20url%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20salesPage%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20identifier%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D'
+    response = request_query(query, variables)
+    broadcasts = response['data']['broadcasts']
+
+    utc_now = int(control.to_timestamp(datetime.datetime.utcnow()))
+
+    result = []
+    for broadcast in broadcasts:
+        media_id = str(broadcast.get('mediaId', 0))
+
+        epg = next((epg for epg in broadcast['epgByDate']['entries'] if int(epg['startTime']) <= utc_now < int(epg['endTime'])), {})
+
+        control.log('EPG: %s' % epg)
+
+        channel = broadcast.get('channel', {}) or {}
+
+        logo = channel.get('logo')
+        channel_name = channel.get('name', '').replace('TV Globo', 'Globo')  # broadcast.get('media', {}).get('headline', '')
+        fanart = broadcast.get('imageOnAir')
+        channel_id = channel.get('id', 0)
+        service_id = broadcast.get('media', {}).get('serviceId', 0)
+
+        duration = epg.get('durationInMinutes', 0) * 60
+
+        title_obj = epg.get('title', {}) or {}
+
+        title = epg.get('name', '')
+        description = title_obj.get('description') or epg.get('description', '')
+        fanart = title_obj.get('cover', {}).get('landscape', fanart) or fanart
+        poster = title_obj.get('poster', {}).get('web')
+
+        label = '[B]' + channel_name + '[/B]' + ('[I] - ' + title + '[/I]' if title else '')
+
+        program_datetime = datetime.datetime.utcfromtimestamp(epg.get('startTime', 0)) + util.get_utc_delta()
+        next_start = datetime.datetime.utcfromtimestamp(epg.get('endTime', 0)) + util.get_utc_delta()
+
+        plotoutline = datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M')
+
+        if not description or len(description) < 3:
+            description = '%s | %s' % (title, plotoutline) if title else plotoutline
+
+        result.append({
+            'handler': PLAYER_HANDLER,
+            'method': 'play_stream',
+            'IsPlayable': True,
+            'id': media_id,
+            'channel_id': channel_id,
+            'service_id': service_id,
+            'live': epg.get('liveBroadcast', False) or False,
+            'livefeed': True,
+            'label': label,
+            'title': label,
+            # 'title': title,
+            'tvshowtitle': title,
+            'plot': description,
+            # 'plotoutline': plotoutline,
+            "tagline": plotoutline,
+            'duration': duration,
+            "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
+            'sorttitle': title,
+            'studio': 'Globoplay',
+            'year': title_obj.get('releaseYear'),
+            'country': title_obj.get('countries', []),
+            'genre': title_obj.get('genresNames', []),
+            'cast': title_obj.get('castNames', []),
+            'director': title_obj.get('directorsNames', []),
+            'writer': title_obj.get('screenwritersNames', []),
+            'credits': title_obj.get('artDirectorsNames', []),
+            'mpaa': epg.get('contentRating'),
+            "art": {
+                'icon': logo,
+                'clearlogo': logo,
+                'thumb': fanart,
+                'fanart': fanart,
+                'tvshow.poster': poster
+            }
+        })
+
+    return result
+
+
+def get_globo_americas():
 
     is_globosat_available = control.is_globosat_available()
 
@@ -348,17 +451,20 @@ def get_globo_americas():
     variables = urllib.quote_plus('{{"date":"{}"}}'.format(date))
     query = 'query%20getEpgBroadcastList%28%24date%3A%20Date%21%29%20%7B%0A%20%20broadcasts%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20mediaId%0A%20%20media%20%7B%0A%20%20%20%20serviceId%0A%20%20%20%20headline%0A%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20availableFor%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20transmissionId%0A%20%20geofencing%0A%20%20geoblocked%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20color%0A%20%20%20%20name%0A%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%7D%0A%20%20epgByDate%28date%3A%20%24date%29%20%7B%0A%20%20%20%20entries%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20alternativeTime%0A%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
     url = 'https://jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=variables)
+    control.log('GLOBOPLAY US - GET %s' % url)
     response = cache.get(requests.get, 24, url, headers=headers, table='globoplay').json()
     control.log(response)
     broadcasts = response['data']['broadcasts']
 
     utc_now = int(control.to_timestamp(datetime.datetime.utcnow()))
 
+    # thumb_usa = 'https://live-thumbs.video.globo.com/glbeua/snapshot/' + str(int(time.time()))
+
     result = []
     for broadcast in broadcasts:
         media_id = str(broadcast.get('mediaId', 0))
 
-        if is_globosat_available and media_id != str(GLOBO_AMERICAS_ID):
+        if is_globosat_available and media_id != str(GLOBO_US_LIVE_SUBSCRIBER_MEDIA_ID):
             continue
 
         epg = next((epg for epg in broadcast['epgByDate']['entries'] if int(epg['startTime']) <= utc_now < int(epg['endTime'])), {})
@@ -390,8 +496,14 @@ def get_globo_americas():
 
         plotoutline = datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M')
 
-        if not description or len(description) < 3:
-            description = '%s | %s' % (title, plotoutline) if title else plotoutline
+        description = '%s | %s' % (plotoutline, description)
+
+        tags = [plotoutline]
+
+        if epg.get('liveBroadcast', False):
+            tags.append(control.lang(32004))
+
+        tags.extend(epg.get('tags', []) or [])
 
         result.append({
             'handler': PLAYER_HANDLER,
@@ -401,15 +513,15 @@ def get_globo_americas():
             'channel_id': channel_id,
             'service_id': service_id,
             'live': epg.get('liveBroadcast', False) or False,
-            'livefeed': False,  # force vod player for us channels
-            'router': False,
+            'livefeed': True,
             'label': label,
             'title': label,
             # 'title': title,
-            # 'tvshowtitle': title,
+            'tvshowtitle': title,
             'plot': description,
             # 'plotoutline': plotoutline,
-            # "tagline": description,
+            # "tagline": plotoutline,
+            'tag': tags,
             'duration': duration,
             "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
             'sorttitle': title,

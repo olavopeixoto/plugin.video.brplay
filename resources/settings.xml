@@ -9,10 +9,9 @@
 		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-2,true)+eq(-1,false)" subsetting="true" />
 		<setting id="globosat_password" type="text" option="hidden" label="31109" default="" visible="eq(-3,true)+eq(-2,false)" subsetting="true" />
 		<setting id="globosat_geofence" type="select" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" subsetting="true" />
-		<setting id="show_bbb" type="bool" label="33404" default="false" visible="false" subsetting="true" />
-		<setting id="show_pfc_games" type="bool" label="33405" default="true" visible="false" subsetting="true" />
+		<setting id="globosat_ignore_channel_authorization" type="bool" label="33403" default="true" visible="eq(-5,true)" subsetting="true" />
 		<!-- 33401 = Show Adult Content -->
-		<setting id="show_adult" type="bool" label="33401" default="true" visible="eq(-7,true)" subsetting="true" />
+		<setting id="show_adult" type="bool" label="33401" default="true" visible="eq(-6,true)" subsetting="true" />
 		<setting id="globosat_credentials" type="text"  default="" visible="false" />
 
 		<!-- 31100 = Globo Play -->
@@ -62,7 +61,8 @@
 		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)+eq(-5,true)" subsetting="true" />
 		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-6,true)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
 		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-7,true)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
-		<setting id="globoplay_enable_plus" type="bool"  default="falsee" visible="false" />
+		<setting id="globoplay_ignore_channel_authorization" type="bool" label="33403" default="true" visible="eq(-8,true)" subsetting="true" />
+		<setting id="globoplay_enable_plus" type="bool"  default="false" visible="false" />
 		<setting id="globoplay_credentials" type="text"  default="" visible="false" />
 		<setting id="globoplay_user_data" type="text"  default="" visible="false" />
 
