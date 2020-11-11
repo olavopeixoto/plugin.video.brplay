@@ -141,7 +141,7 @@ def get_page_offers(page, art=None):
                 'method': 'get_offer',
                 'label': item.get('title', item.get('headline', '')),
                 'plot': item.get('callText'),
-                'id': item.get('offerId'),
+                'id': item.get('offerId') or item.get('highlightId'),
                 'component_type': item.get('componentType'),
                 'art': {
                     'thumb': GLOBO_LOGO_WHITE,
@@ -175,14 +175,14 @@ def get_thumb_offer(id, page=1, per_page=PAGE_SIZE):
 
     custom_title = items.get('customTitle')
 
-    items = items.get('resources', [])
+    resources = items.get('resources', []) or []
 
     if control.setting('globoplay_ignore_channel_authorization') != 'true':
         service_ids = [item.get('serviceId') for item in items]
         authorized_ids = get_authorized_services(service_ids)
-        items = [item for item in items if item.get('serviceId') in authorized_ids and auth_helper.is_available_for(item.get('availableFor'))]
+        resources = [item for item in items if item.get('serviceId') in authorized_ids and auth_helper.is_available_for(item.get('availableFor'))]
 
-    for item in filter(__filter_plus, items):
+    for item in filter(__filter_plus, resources):
         yield {
                 'handler': PLAYER_HANDLER,
                 'method': 'play_stream',

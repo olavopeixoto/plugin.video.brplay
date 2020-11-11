@@ -3,7 +3,9 @@
 import re
 import hashlib
 import time
+import datetime
 import traceback
+import inspect
 
 try:
     from sqlite3 import dbapi2 as database
@@ -69,15 +71,22 @@ def get(function, timeout_hour, *args, **kargs):
                 control.log('CACHE EXPIRED')
             else:
                 control.log('NO CACHE FOUND')
-    except Exception:
+        else:
+            control.log('BYPASSING CACHE')
+    except:
         control.log(traceback.format_exc(), control.LOGERROR)
         control.log('NO CACHE FOUND')
 
     # try:
+    start_time = time.time()
     if kargs:
         r = function(*args, **kargs)
     else:
         r = function(*args)
+    end_time = time.time()
+
+    if control.log_enabled:
+        control.log('EXECUTED (%s.%s) IN %s' % (inspect.getmodule(function).__name__, f, str(datetime.timedelta(seconds=end_time - start_time))))
 
     if (r is None or r == []) and response is not None:
         return response
@@ -105,33 +114,6 @@ def get(function, timeout_hour, *args, **kargs):
     return r_raw
     # except:
     #     return eval(r)
-
-
-def timeout(function, *args, **table):
-    try:
-        f = repr(function)
-        f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
-
-        a = hashlib.md5()
-        for i in args: a.update(str(i))
-        a = str(a.hexdigest())
-    except:
-        pass
-
-    try:
-        table = table['table']
-    except:
-        table = 'rel_list'
-
-    try:
-        control.makeFile(control.dataPath)
-        dbcon = database.connect(control.cacheFile)
-        dbcur = dbcon.cursor()
-        dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-        match = dbcur.fetchone()
-        return int(match[3])
-    except:
-        return
 
 
 def delete_file():

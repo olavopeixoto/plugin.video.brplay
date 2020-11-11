@@ -142,7 +142,6 @@ def __get_live_program(affiliate='RJ'):
     headers = {'Accept-Encoding': 'gzip'}
     url = 'https://api.globoplay.com.br/v1/live/%s?api_key=%s' % (affiliate, GLOBOPLAY_APIKEY)
 
-    # response = client.request(url, headers=headers)
     response = requests.get(url, headers=headers).json()
 
     if not response or 'live' not in response:
@@ -223,7 +222,6 @@ def __get_full_day_schedule(today, affiliate='RJ'):
     url = "https://api.globoplay.com.br/v1/epg/%s/praca/%s?api_key=%s" % (today, affiliate, GLOBOPLAY_APIKEY)
     headers = {'Accept-Encoding': 'gzip'}
 
-    # slots = client.request(url, headers=headers)['gradeProgramacao']['slots']
     slots = (requests.get(url, headers=headers).json() or {}).get('gradeProgramacao', {}).get('slots', [])
 
     result = []
@@ -332,8 +330,7 @@ def get_affiliate_by_coordinates(latitude, longitude):
 
     url = 'https://api.globoplay.com.br/v1/affiliates/{lat},{long}?api_key={apikey}'.format(lat=latitude, long=longitude, apikey=GLOBOPLAY_APIKEY)
 
-    # result = client.request(url)
-    result = cache.get(requests.get, 1, url, table='globoplay').json()
+    result = cache.get(requests.get, 720, url, table='globoplay').json()
 
     # {
     #     "channelNumber": 29,
@@ -354,7 +351,7 @@ def get_globoplay_broadcasts(media_id, latitude, longitude):
     variables = urllib.quote_plus('{{"mediaId":"{media_id}","coordinates":{"lat":"{lat}", "long": "{long}"}}}'.format(media_id=media_id, lat=latitude, long=longitude))
     query = 'query%20Epg%28%24mediaId%3A%20ID%21%2C%20%24coordinates%3A%20CoordinatesData%29%20%7B%0A%20%20broadcast%28mediaId%3A%20%24mediaId%2C%20coordinates%3A%20%24coordinates%29%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20transmissionId%0A%20%20%20%20%20%20logo%0A%20%20%20%20%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20%20%20%20%20withoutDVRMediaId%0A%20%20%20%20%20%20promotionalMediaId%0A%20%20%20%20%20%20salesPageCallToAction%0A%20%20%20%20%20%20promotionalText%0A%20%20%20%20%20%20geofencing%0A%20%20%20%20%20%20geoblocked%0A%20%20%20%20%20%20ignoreAdvertisements%0A%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20color%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%20%20%20%20payTvServiceId%0A%20%20%20%20%20%20%20%20payTvUsersMessage%0A%20%20%20%20%20%20%20%20payTvExternalLink%0A%20%20%20%20%20%20%20%20payTvExternalLinkLabel%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20affiliateSignal%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20dtvChannel%0A%20%20%20%20%20%20dtvHDID%0A%20%20%20%20%20%20dtvID%0A%20%20%20%20%7D%0A%20%20%20%20%20%20epgCurrentSlots%20%7B%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20tags%0A%20%20%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20landscape%0A%20%20%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20%20%20directors%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20cast%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20genres%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20media%20%7B%0A%20%20%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20subscriptionService%20%7B%0A%20%20%20%20%20%20%20%20%20%20faq%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20url%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20salesPage%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20identifier%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D'
     response = request_query(query, variables)
-    broadcasts = response['data']['broadcasts']
+    broadcasts = (response.get('data', {}) or {}).get('broadcasts', []) or []
 
     utc_now = int(control.to_timestamp(datetime.datetime.utcnow()))
 

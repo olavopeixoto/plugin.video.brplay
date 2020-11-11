@@ -168,7 +168,7 @@ class Auth:
 
         lock = self.get_service_lock(token, service_id)
         with lock:
-            response = cache.get(requests.post, 24, url, headers={
+            response = cache.get(requests.post, 168, url, headers={
                                                         'Origin': 'https://globoplay.globo.com',
                                                         'Cookie': 'GLBID=%s' % token
                                                     }, force_refresh=bypass_cache, table='globoplay')
