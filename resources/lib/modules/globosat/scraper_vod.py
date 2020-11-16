@@ -20,7 +20,7 @@ PLAYER_HANDLER = player.__name__
 
 
 def get_authorized_channels():
-    query = 'query%20getChannelsList(%24page%3A%20Int%2C%20%24perPage%3A%20Int)%20%7B%0A%20%20broadcastChannels(page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20filtersInput%3A%20%7Bfilter%3A%20WITH_PAGES%7D)%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo(format%3A%20PNG)%0A%20%20%20%20%20%20color%0A%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0A'
+    query = 'query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20filtersInput%3A%20%7Bfilter%3A%20WITH_PAGES%7D%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20trimmedLogo%0A%20%20%20%20%20%20color%0A%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A'
     variables = '{"page":1,"perPage":100}'
 
     query_response = request_query(query, variables)
@@ -34,7 +34,7 @@ def get_authorized_channels():
                 "id": broadcast['id'],
                 "adult": broadcast['id'] in [2065, 2006],
                 'art': {
-                    'thumb': broadcast['logo'],
+                    'thumb': broadcast['trimmedLogo'],
                     'fanart': FANART
                 },
                 'slug': broadcast['pageIdentifier'],

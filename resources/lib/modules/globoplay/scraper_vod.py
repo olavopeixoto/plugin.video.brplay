@@ -9,7 +9,7 @@ import os
 from resources.lib.modules.globosat import pfc
 from resources.lib.modules.globosat.pfc import PREMIERE_LOGO, PREMIERE_FANART
 
-GLOBO_LOGO_WHITE = 'https://s2.glbimg.com/1D3_vIjzzFrXkfMVFmEcMqq7gQk=/285x285/https://s2.glbimg.com/nItvOm5LGvf7xhO-zkUsoeFbVMY=/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
+GLOBO_LOGO_WHITE = 'https://s2.glbimg.com/VRae4HM1fvQ-rb9sWWptjeUriro=/fit-in/168x84/https://s2.glbimg.com/9Wy1I7Dz4-R6xhNVpPqTLzd0mME=/trim/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
 GLOBO_FANART = os.path.join(control.artPath(), 'globoplay_bg_fhd.png')
 GLOBOPLAY_THUMB = os.path.join(control.artPath(), 'globoplay.png')
 
@@ -37,7 +37,7 @@ def get_globoplay_channels():
 
     if control.is_globoplay_mais_canais_ao_vivo_available():
         if control.globoplay_ignore_channel_authorization() or auth_helper.is_service_allowed(auth_helper.CADUN_SERVICES.GSAT_CHANNELS):
-            query = 'query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20filtersInput%3A%20%7Bfilter%3A%20WITH_PAGES%7D%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20payTvServiceId%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20color%0A%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A'
+            query = 'query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20filtersInput%3A%20%7Bfilter%3A%20WITH_PAGES%7D%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20payTvServiceId%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20trimmedLogo%0A%20%20%20%20%20%20color%0A%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A'
             variables = '{"page":1, "perPage": 200}'
 
             query_response = request_query(query, variables)
@@ -55,7 +55,7 @@ def get_globoplay_channels():
                         "type": 'CHANNELS',
                         "adult": False,
                         'art': {
-                            'thumb': broadcast['logo'],
+                            'thumb': broadcast['trimmedLogo'],
                             'fanart': GLOBO_FANART
                         },
                         'slug': broadcast['pageIdentifier'],
