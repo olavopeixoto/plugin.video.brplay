@@ -568,3 +568,7 @@ msgstr "Remover curtida"
 msgctxt "#34146"
 msgid "Remove Dislike"
 msgstr "Remover desgostar"
+
+msgctxt "#34147"
+msgid "Enable Globoplay + canais ao vivo"
+msgstr "Habilitar Globoplay + canais ao vivo"

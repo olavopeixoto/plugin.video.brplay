@@ -62,7 +62,7 @@
 		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-6,true)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
 		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-7,true)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
 		<setting id="globoplay_ignore_channel_authorization" type="bool" label="33403" default="true" visible="eq(-8,true)" subsetting="true" />
-		<setting id="globoplay_enable_plus" type="bool"  default="false" visible="false" />
+		<setting id="globoplay_enable_mais_canais" type="bool" label="34147" default="true" visible="eq(-1,true)+eq(-18,false)" subsetting="true" />
 		<setting id="globoplay_credentials" type="text"  default="" visible="false" />
 		<setting id="globoplay_user_data" type="text"  default="" visible="false" />
 

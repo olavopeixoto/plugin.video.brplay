@@ -238,6 +238,9 @@ def get_inputstream_addon():
     return None, None
 
 
+lock = threading.RLock()
+
+
 def is_inputstream_available():
     global enable_inputstream_adaptive
 
@@ -247,13 +250,12 @@ def is_inputstream_available():
     global __inputstream_addon_available
 
     if __inputstream_addon_available is None:
-        lock = threading.RLock()
 
         try:
-            lock.acquire()
-            if __inputstream_addon_available is None:
-                (inputstream_addon, inputstream_enabled) = get_inputstream_addon()
-                __inputstream_addon_available = inputstream_addon is not None and inputstream_enabled
+            if lock.acquire():
+                if __inputstream_addon_available is None:
+                    (inputstream_addon, inputstream_enabled) = get_inputstream_addon()
+                    __inputstream_addon_available = inputstream_addon is not None and inputstream_enabled
         except Exception as ex:
             log("ERROR FINDING INPUTSTREAM ADDON, CONSIDERING MISSING: %s" % repr(ex))
             __inputstream_addon_available = False
@@ -299,6 +301,14 @@ def is_globoplay_available():
     password = setting('globoplay_password')
 
     return setting('globoplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_globoplay_mais_canais_ao_vivo_available():
+    return not is_globosat_available() and (setting('globoplay_enable_mais_canais') == 'true' or not globoplay_ignore_channel_authorization())
+
+
+def globoplay_ignore_channel_authorization():
+    return setting('globoplay_ignore_channel_authorization') == 'true'
 
 
 def is_oiplay_available():

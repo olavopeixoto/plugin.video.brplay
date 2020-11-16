@@ -272,6 +272,7 @@ class Player(xbmc.Player):
 
         # 4452349
         hash_url = 'http://security.video.globo.com/videos/%s/hash' % id
+        control.log('POST %s' % hash_url)
         response = requests.post(hash_url, cookies=credentials, headers={
                                                                 "Accept-Encoding": "gzip",
                                                                 "Content-Type": "application/x-www-form-urlencoded",
@@ -320,6 +321,7 @@ class Player(xbmc.Player):
             credentials = None
 
         hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
+        control.log('GET %s' % hash_url)
         response = requests.get(hash_url, cookies=credentials, headers={"Accept-Encoding": "gzip"}, proxies=proxy)
 
         response.raise_for_status()
@@ -328,6 +330,7 @@ class Player(xbmc.Player):
 
         if not hash_json or 'hash' not in hash_json:
             message = (hash_json or {}).get('message') or control.lang(34101).encode('utf-8')
+            control.log(hash_json or message, control.LOGERROR)
             control.infoDialog(message=message, sound=True, icon='ERROR')
             control.idle()
             sys.exit()
@@ -347,7 +350,7 @@ class Player(xbmc.Player):
             }
 
             control.log("--- SAVE WATCH HISTORY --- %s" % repr(post_data))
-
+            control.log('POST %s' % HISTORY_URL)
             response = requests.post(HISTORY_URL, cookies=credentials, headers={
                                                                 "Accept-Encoding": "gzip",
                                                                 "Content-Type": "application/x-www-form-urlencoded",

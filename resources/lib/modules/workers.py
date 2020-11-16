@@ -8,11 +8,11 @@ from Queue import Queue
 
 class Thread(threading.Thread):
     def __init__(self, target, *args):
+        threading.Thread.__init__(self)
         self._target = target
         self._args = args
         self._result = None
         self.killed = False
-        threading.Thread.__init__(self)
 
     def run(self):
         sys.settrace(self.globaltrace)

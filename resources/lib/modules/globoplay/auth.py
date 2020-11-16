@@ -142,7 +142,7 @@ class Auth:
         control.log('HEAD %s' % url)
         response = requests.head(url, headers={
                                                     'glbid': token,
-                                                    'user-agent': '	Globoplay/1 CFNetwork/1197 Darwin/20.0.0'
+                                                    'user-agent': 'Globoplay/1 CFNetwork/1197 Darwin/20.0.0'
                                                 })
 
         is_authorized = response.status_code == 200
@@ -166,13 +166,17 @@ class Auth:
         url = 'https://cocoon.globo.com/v2/user/logged' + service_str
         control.log('POST %s' % url)
 
+        control.log('Getting lock for service %s' % service_id)
         lock = self.get_service_lock(token, service_id)
+        control.log('About to lock code...')
         with lock:
+            control.log('Requesting locked:')
             response = cache.get(requests.post, 168, url, headers={
                                                         'Origin': 'https://globoplay.globo.com',
                                                         'Cookie': 'GLBID=%s' % token
                                                     }, force_refresh=bypass_cache, table='globoplay')
 
+        control.log('Lock released for service %s' % service_id)
         control.log('GLOBOPLAY SERVICE (%s | %s) CHECK RESPONSE: %s' % (self.tenant, service_id, response.status_code))
         control.log(response.content)
 

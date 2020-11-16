@@ -52,7 +52,7 @@ def get_authorized_services(service_ids):
     if not service_ids:
         return []
 
-    if control.setting('globoplay_ignore_channel_authorization') == 'true':
+    if control.globoplay_ignore_channel_authorization():
         return service_ids
 
     if len(service_ids) == 1:
@@ -61,4 +61,5 @@ def get_authorized_services(service_ids):
         threads = [workers.Thread(auth_helper.is_service_allowed, service_id) for service_id in service_ids]
         [t.start() for t in threads]
         [t.join() for t in threads]
+        [t.kill() for t in threads]
         return [service_id for index, service_id in enumerate(service_ids) if threads[index].get_result()]

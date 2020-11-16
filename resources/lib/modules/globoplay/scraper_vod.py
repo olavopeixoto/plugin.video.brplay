@@ -3,9 +3,11 @@
 from resources.lib.modules import control
 from resources.lib.modules.globoplay import request_query, get_headers, get_image_scaler, get_authorized_services
 from . import auth_helper
-import player
+from . import player
 import requests
 import os
+from resources.lib.modules.globosat import pfc
+from resources.lib.modules.globosat.pfc import PREMIERE_LOGO, PREMIERE_FANART
 
 GLOBO_LOGO_WHITE = 'https://s2.glbimg.com/1D3_vIjzzFrXkfMVFmEcMqq7gQk=/285x285/https://s2.glbimg.com/nItvOm5LGvf7xhO-zkUsoeFbVMY=/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
 GLOBO_FANART = os.path.join(control.artPath(), 'globoplay_bg_fhd.png')
@@ -19,7 +21,8 @@ PAGE_SIZE = 100
 
 
 def get_globoplay_channels():
-    return [{
+
+    yield {
         'handler': __name__,
         'method': 'get_categories',
         "id": 196,
@@ -30,7 +33,47 @@ def get_globoplay_channels():
             'fanart': GLOBO_FANART
         },
         "label": 'Globo'
-    }]
+    }
+
+    if control.is_globoplay_mais_canais_ao_vivo_available():
+        if control.globoplay_ignore_channel_authorization() or auth_helper.is_service_allowed(auth_helper.CADUN_SERVICES.GSAT_CHANNELS):
+            query = 'query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20filtersInput%3A%20%7Bfilter%3A%20WITH_PAGES%7D%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20payTvServiceId%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20color%0A%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A'
+            variables = '{"page":1, "perPage": 200}'
+
+            query_response = request_query(query, variables)
+
+            resources = query_response['data']['broadcastChannels']['resources']
+
+            for broadcast in resources:
+                if str(broadcast.get('id')) in ['196', '1995']:
+                    continue
+
+                yield {
+                        'handler': __name__,
+                        'method': 'get_page',
+                        "id": broadcast.get('pageIdentifier'),
+                        "type": 'CHANNELS',
+                        "adult": False,
+                        'art': {
+                            'thumb': broadcast['logo'],
+                            'fanart': GLOBO_FANART
+                        },
+                        'slug': broadcast['pageIdentifier'],
+                        "label": broadcast['name']
+                    }
+
+        if control.globoplay_ignore_channel_authorization() or auth_helper.is_service_allowed(auth_helper.CADUN_SERVICES.PREMIERE):
+            yield {
+                'handler': pfc.__name__,
+                'method': 'get_premiere_cards',
+                "id": 1995,
+                "adult": False,
+                'art': {
+                    'thumb': PREMIERE_LOGO,
+                    'fanart': PREMIERE_FANART
+                },
+                "label": 'Premiere'
+            }
 
 
 def get_categories(page=1, per_page=PAGE_SIZE):
@@ -86,22 +129,37 @@ def get_page(id, art=None, type='CATEGORIES'):
     if not page:
         return
 
-    offers = page.get('offerItems', []) or []
+    offers = list(filter(lambda x: filter_offers(x), page.get('offerItems', []) or []))
     premium = page.get('premiumHighlight', {}) or {}
-    highlight = premium.get('highlight', {}) or {}
-    content_type = highlight.get('contentType')
 
-    if len(offers) == 1 and (not premium or content_type in ['BACKGROUND', 'SIMULCAST']):
+    valid_premium = is_valid_highlight(premium)
+    is_valid_premium = valid_premium[0]
+
+    if len(offers) == 1 and not is_valid_premium:
         item = offers[0]
         return get_offer(item.get('offerId'), item.get('componentType'))
 
-    return get_page_offers(page, art)
+    return get_page_offers(offers, valid_premium, art, type)
 
 
-def get_page_offers(page, art=None):
-    offers = page.get('offerItems', []) or []
-    premium = page.get('premiumHighlight', {}) or {}
+def filter_offers(item):
+    title = (item.get('title') or '').lower()
+    headline = (item.get('headline') or '').lower()
 
+    if item.get('componentType') in ['CHANNELSLOGO', 'TAKEOVER', 'SIMULCAST'] or title in ['assista ao vivo', 'categorias'] or headline.startswith('agora n') or title.startswith('agora n'):
+        return False
+
+    return True
+
+
+def is_valid_highlight(premium):
+    # content_type = "VIDEO", "SIMULCAST", "BACKGROUND"
+
+    ignored_content_types = ['BACKGROUND', 'SIMULCAST']
+
+    label = None
+    plot = None
+    highlight = {}
     if premium:
         highlight = premium.get('highlight', {}) or {}
         content_type = highlight.get('contentType')
@@ -109,33 +167,40 @@ def get_page_offers(page, art=None):
         label = premium.get('headline')
         plot = premium.get('callText')
 
-        if content_type in ['BACKGROUND', 'SIMULCAST']:
+        if content_type in ignored_content_types:
             highlight = premium.get('fallbackHighlight', {}) or {}
             content_type = highlight.get('contentType')
             label = premium.get('fallbackHeadline')
             plot = premium.get('fallbackCallText')
 
-        if content_type not in ['BACKGROUND', 'SIMULCAST']:
-            # content_type = "VIDEO", "SIMULCAST", "BACKGROUND"
-            title_id = ((highlight.get('contentItem', {}) or {}).get('title', {}) or {}).get('titleId') or (highlight.get('contentItem', {}) or {}).get('titleId')
-            yield {
-                'handler': __name__,
-                'method': 'get_title' if title_id else 'get_offer',
-                'label': label or highlight.get('headlineText'),
-                'id': title_id or highlight.get('contentId'),
-                'availableFor': (highlight.get('contentItem', {}) or {}).get('availableFor'),
-                'plot': plot,
-                'component_type': 'OFFERHIGHLIGHT',  # 'PREMIUMHIGHLIGHT',
-                'art': {
-                    'thumb': highlight.get('headlineImage') or (highlight.get('offerImage', {}) or {}).get('web') or GLOBO_LOGO_WHITE,
-                    'fanart': (highlight.get('highlightImage', {}) or {}).get('web', art.get('fanart', GLOBO_FANART))
-                }
+        if highlight and content_type and content_type not in ignored_content_types:
+            return True, highlight, label, plot
+
+    return False, highlight, label, plot
+
+
+def get_page_offers(offers, premium, art=None, type=None):
+    is_valid_premium, highlight, label, plot = premium
+
+    logo = art.get('thumb', GLOBO_LOGO_WHITE) if type == 'CHANNELS' else GLOBO_LOGO_WHITE
+
+    if is_valid_premium:
+        title_id = ((highlight.get('contentItem', {}) or {}).get('title', {}) or {}).get('titleId') or (highlight.get('contentItem', {}) or {}).get('titleId')
+        yield {
+            'handler': __name__,
+            'method': 'get_title' if title_id else 'get_offer',
+            'label': label or highlight.get('headlineText'),
+            'id': title_id or highlight.get('contentId'),
+            'availableFor': (highlight.get('contentItem', {}) or {}).get('availableFor'),
+            'plot': plot,
+            'component_type': 'OFFERHIGHLIGHT',  # 'PREMIUMHIGHLIGHT',
+            'art': {
+                'thumb': highlight.get('headlineImage') or (highlight.get('offerImage', {}) or {}).get('web') or logo,
+                'fanart': (highlight.get('highlightImage', {}) or {}).get('web', art.get('fanart', GLOBO_FANART))
             }
+        }
 
     for item in offers:
-        if item.get('componentType') in ['CHANNELSLOGO', 'TAKEOVER'] or item.get('title') in ['Assista ao Vivo', 'Categorias'] or item.get('headline') == 'Agora na Globo':
-            continue
-
         yield {
                 'handler': __name__,
                 'method': 'get_offer',
@@ -144,7 +209,7 @@ def get_page_offers(page, art=None):
                 'id': item.get('offerId') or item.get('highlightId'),
                 'component_type': item.get('componentType'),
                 'art': {
-                    'thumb': GLOBO_LOGO_WHITE,
+                    'thumb': logo,
                     'fanart': art.get('fanart', GLOBO_FANART)
                 }
             }
@@ -177,10 +242,10 @@ def get_thumb_offer(id, page=1, per_page=PAGE_SIZE):
 
     resources = items.get('resources', []) or []
 
-    if control.setting('globoplay_ignore_channel_authorization') != 'true':
-        service_ids = [item.get('serviceId') for item in items]
+    if not control.globoplay_ignore_channel_authorization():
+        service_ids = [item.get('serviceId') for item in resources]
         authorized_ids = get_authorized_services(service_ids)
-        resources = [item for item in items if item.get('serviceId') in authorized_ids and auth_helper.is_available_for(item.get('availableFor'))]
+        resources = [item for item in resources if item.get('serviceId') in authorized_ids and auth_helper.is_available_for(item.get('availableFor'))]
 
     for item in filter(__filter_plus, resources):
         yield {
@@ -236,7 +301,7 @@ def __filter_plus(item):
     if not item:
         return False
 
-    if not control.setting('globoplay_enable_plus') == 'true':
+    if not control.is_globoplay_mais_canais_ao_vivo_available() or (not control.globoplay_ignore_channel_authorization() and not auth_helper.is_service_allowed(auth_helper.CADUN_SERVICES.GSAT_CHANNELS)):
         service_id = (item.get('channel', {}) or {}).get('payTvServiceId', '') or item.get('payTvServiceId', '') or ((item.get('broadcast', {}) or {}).get('channel', {}) or {}).get('payTvServiceId', '')
         return not service_id
 

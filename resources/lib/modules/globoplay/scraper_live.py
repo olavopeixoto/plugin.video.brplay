@@ -2,14 +2,17 @@
 
 from resources.lib.modules import control, cache, util, workers
 import requests
-import player
+from . import player
 import datetime
 import re
 from sqlite3 import dbapi2 as database
 import time
 import os
 import urllib
-from . import get_authorized_services, request_query
+import traceback
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+from . import get_authorized_services, request_query, auth_helper
 
 GLOBO_LOGO = 'http://s3.glbimg.com/v1/AUTH_180b9dd048d9434295d27c4b6dadc248/media_kit/42/f3/a1511ca14eeeca2e054c45b56e07.png'
 GLOBO_FANART = os.path.join(control.artPath(), 'globo.jpg')
@@ -27,6 +30,30 @@ GLOBO_LIVE_SUBSCRIBER_MEDIA_ID = 6120663  # DVR
 GLOBO_US_LIVE_MEDIA_ID = 7832875
 GLOBO_US_LIVE_SUBSCRIBER_MEDIA_ID = 7832875
 
+SNAPSHOT_URL = 'https://live-thumbs.video.globo.com/{transmission}/snapshot'
+
+THUMBS = {
+    '1688': 'spo124ha',
+    '1689': 'spo224ha',
+    '1690': 'spo324ha',
+    '1676': 'gnews24ha',
+    '1678': 'gnt24ha',
+    '1679': 'msw24ha',
+    '1675': 'viva24ha',
+    '1683': 'maisgsat24ha',
+    '1681': 'gloob24ha',
+    '1682': 'gloobinho24ha',
+    '1674': 'off24ha',
+    '1680': 'bis24ha',
+    '1684': 'mpix24ha',
+    '1663': 'bra24ha',
+    '1686': 'univ24ha',
+    '1685': 'syfy24ha',
+    '1687': 'stduniv24ha',
+    '3041': 'cbt24ha',
+    '2858': 'pfc124ha',
+}
+
 
 def get_globo_live_id():
     return GLOBO_LIVE_SUBSCRIBER_MEDIA_ID
@@ -42,11 +69,13 @@ def get_live_channels():
 
     show_globo_internacional = control.setting('show_globo_international') == 'true'
 
-    if len(affiliates) == 1 and not show_globo_internacional:
+    if len(affiliates) == 1 and not show_globo_internacional and not is_globoplay_mais_canais_available():
         affiliate = __get_affiliate_live_channels(affiliates[0])
         live.extend(affiliate)
     else:
         threads = [workers.Thread(__get_affiliate_live_channels, affiliate) for affiliate in affiliates]
+        if is_globoplay_mais_canais_available():
+            threads.append(workers.Thread(get_mais_canais))
         if show_globo_internacional:
             threads.append(workers.Thread(get_globo_americas))
         [i.start() for i in threads]
@@ -56,7 +85,7 @@ def get_live_channels():
     seen = []
     filtered_channels = filter(lambda x: seen.append(x['affiliate_code'] if 'affiliate_code' in x else '$FOO$') is None if 'affiliate_code' not in x or x['affiliate_code'] not in seen else False, live)
 
-    if control.setting('globoplay_ignore_channel_authorization') != 'true':
+    if not control.globoplay_ignore_channel_authorization():
         service_ids = [channel.get('service_id') for channel in filtered_channels]
         authorized_service_ids = get_authorized_services(service_ids)
         filtered_channels = [channel for channel in filtered_channels if not channel.get('service_id') or (channel.get('service_id') in authorized_service_ids)]
@@ -142,22 +171,34 @@ def __get_live_program(affiliate='RJ'):
     headers = {'Accept-Encoding': 'gzip'}
     url = 'https://api.globoplay.com.br/v1/live/%s?api_key=%s' % (affiliate, GLOBOPLAY_APIKEY)
 
-    response = requests.get(url, headers=headers).json()
+    session = requests.Session()
+    retry = Retry(connect=5, backoff_factor=0.5)
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
 
-    if not response or 'live' not in response:
-        return None
+    try:
+        response = session.get(url, headers=headers).json()
 
-    live = response['live']
+        if not response or 'live' not in response:
+            return None
 
-    return {
-        'id': live['id_dvr'],
-        'poster': live['poster'],
-        'thumb': live['poster_safe_area'],
-        'fanart': live['background_image'],
-        'program_id': live['program_id'],
-        'program_id_epg': live['program_id_epg'],
-        'title': live['program_name']
-    }
+        live = response['live']
+
+        return {
+            'id': live['id_dvr'],
+            'poster': live['poster'],
+            'thumb': live['poster_safe_area'],
+            'fanart': live['background_image'],
+            'program_id': live['program_id'],
+            'program_id_epg': live['program_id_epg'],
+            'title': live['program_name']
+        }
+    except:
+        control.log('ERROR __get_live_program: %s' % affiliate)
+        control.log(traceback.format_exc(), control.LOGERROR)
+
+    return {}
 
 
 def get_program_description(program_id_epg, program_id, affiliate='RJ'):
@@ -194,6 +235,7 @@ def __get_or_add_full_day_schedule_cache(date_str, affiliate, timeout):
             control.log("Returning globoplay_schedule cached response for affiliate %s and date_str %s" % (affiliate, date_str))
             return response
     except Exception as ex:
+        control.log(traceback.format_exc(), control.LOGERROR)
         control.log("CACHE ERROR: %s" % repr(ex))
 
     control.log("Fetching FullDaySchedule for %s: %s" % (affiliate, date_str))
@@ -541,3 +583,102 @@ def get_globo_americas():
         })
 
     return result
+
+
+def is_globoplay_mais_canais_available():
+    if not control.is_globoplay_mais_canais_ao_vivo_available():
+        return False
+
+    return control.globoplay_ignore_channel_authorization() or auth_helper.is_service_allowed(auth_helper.CADUN_SERVICES.GSAT_CHANNELS)
+
+
+def get_mais_canais():
+
+    query = 'query%20getBroadcastList%20%7B%0A%20%20%20%20%20%20broadcasts%20%7B%0A%20%20%20%20%20%20%20%20...broadcastFragment%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20fragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20transmissionId%0A%20%20%20%20%20%20logo%0A%20%20%20%20%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20%20%20%20%20withoutDVRMediaId%0A%20%20%20%20%20%20promotionalMediaId%0A%20%20%20%20%20%20salesPageCallToAction%0A%20%20%20%20%20%20promotionalText%0A%20%20%20%20%20%20geofencing%0A%20%20%20%20%20%20geoblocked%0A%20%20%20%20%20%20ignoreAdvertisements%0A%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20color%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%20%20%20%20payTvServiceId%0A%20%20%20%20%20%20%20%20payTvUsersMessage%0A%20%20%20%20%20%20%20%20payTvExternalLink%0A%20%20%20%20%20%20%20%20payTvExternalLinkLabel%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20epgCurrentSlots%20%7B%0A%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20tags%0A%20%20%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20landscape%0A%20%20%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20%20%20directors%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20cast%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20genres%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20media%20%7B%0A%20%20%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20subscriptionService%20%7B%0A%20%20%20%20%20%20%20%20%20%20faq%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20url%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20salesPage%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20identifier%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D'
+    variables = '{}'
+
+    response = request_query(query, variables, force_refresh=True) or {}
+
+    for broadcast in response.get('data', {}).get('broadcasts', []) or []:
+        channel = broadcast.get('channel', {}) or {}
+
+        if channel.get('id') == '196':
+            continue
+
+        media_id = str(broadcast.get('mediaId', 0))
+
+        epg = next((epg for epg in broadcast.get('epgCurrentSlots', [])), {})
+
+        control.log('EPG: %s' % epg)
+
+        logo = channel.get('logo')
+        channel_name = broadcast.get('media', {}).get('headline', '').replace('Agora no ', '').replace('Agora na ', '').strip()  #channel.get('name', '')
+        fanart = broadcast.get('imageOnAir')
+        channel_id = channel.get('id', 0)
+        service_id = broadcast.get('media', {}).get('serviceId', 0)
+        # channel_slug = '%s-americas' % channel.get('name', '').lower().replace(' ', '')
+
+        duration = epg.get('durationInMinutes', 0) * 60
+
+        title_obj = epg.get('title', {}) or {}
+
+        title = epg.get('name', '')
+        description = title_obj.get('description') or epg.get('description', '')
+        fanart = title_obj.get('cover', {}).get('landscape', fanart) or fanart
+        poster = title_obj.get('poster', {}).get('web')
+        thumb = THUMBS.get(str(broadcast.get('transmissionId')))
+        thumb = (SNAPSHOT_URL.format(transmission=thumb) + '?=' + str(int(time.time()))) if thumb else fanart
+
+        label = '[B]' + channel_name + '[/B]' + ('[I] - ' + title + '[/I]' if title else '')
+
+        program_datetime = datetime.datetime.utcfromtimestamp(epg.get('startTime', 0)) + util.get_utc_delta()
+        next_start = datetime.datetime.utcfromtimestamp(epg.get('endTime', 0)) + util.get_utc_delta()
+
+        plotoutline = datetime.datetime.strftime(program_datetime, '%H:%M') + ' - ' + datetime.datetime.strftime(next_start, '%H:%M')
+
+        description = '%s | %s' % (plotoutline, description)
+
+        tags = [plotoutline]
+
+        if epg.get('liveBroadcast', False):
+            tags.append(control.lang(32004))
+
+        tags.extend(epg.get('tags', []) or [])
+
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'play_stream',
+            'IsPlayable': True,
+            'id': media_id,
+            'channel_id': channel_id,
+            'service_id': service_id,
+            'live': epg.get('liveBroadcast', False) or False,
+            'livefeed': True,
+            'label': label,
+            'title': label,
+            # 'title': title,
+            'tvshowtitle': title,
+            'plot': description,
+            # 'plotoutline': plotoutline,
+            # "tagline": plotoutline,
+            'tag': tags,
+            'duration': duration,
+            "dateadded": datetime.datetime.strftime(program_datetime, '%Y-%m-%d %H:%M:%S'),
+            'sorttitle': title,
+            'studio': 'Globoplay',
+            'year': title_obj.get('releaseYear'),
+            'country': title_obj.get('countries', []),
+            'genre': title_obj.get('genresNames', []),
+            'cast': title_obj.get('castNames', []),
+            'director': title_obj.get('directorsNames', []),
+            'writer': title_obj.get('screenwritersNames', []),
+            'credits': title_obj.get('artDirectorsNames', []),
+            'mpaa': epg.get('contentRating'),
+            "art": {
+                'icon': logo,
+                'clearlogo': logo,
+                'thumb': thumb,
+                'fanart': fanart,
+                'tvshow.poster': poster
+            }
+        }
