@@ -61,7 +61,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
     Serves a HEAD request
     """
     def do_HEAD(self):
-        print "XBMCLocalProxy: Serving HEAD request..."
+        log("XBMCLocalProxy: Serving HEAD request...")
         global g_downloader
         self.send_response(200)
         self.send_header("Content-Type", g_downloader.MAIN_MIME_TYPE)
@@ -71,19 +71,19 @@ class ProxyHandler(BaseHTTPRequestHandler):
     Serves a GET request.
     """
     def do_GET(self):
-        print "XBMCLocalProxy: Serving GET request..."
+        log("XBMCLocalProxy: Serving GET request...")
         global g_stopEvent
         global g_downloader
 
         try:
             # Pull apart request path
-            request_path=self.path[1:]
-            path_and_query=request_path
+            request_path = self.path[1:]
+            path_and_query = request_path
             path_and_query_list = path_and_query.split('?')
             querystring = path_and_query_list[1] if len(path_and_query_list) > 1 else ''
-            request_path=re.sub(r"\?.*","",request_path)
+            request_path = re.sub(r"\?.*", "", request_path)
 
-            init_done=False
+            init_done = False
 
             log("GET REQUEST: %s" % self.path)
 
@@ -91,7 +91,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 (url, proxy, maxbitrate) = self.decode_url(querystring)
 
                 if not g_downloader.init(self.wfile, url, proxy, g_stopEvent, maxbitrate):
-                    print 'cannot init'
+                    log('cannot init')
                     raise Exception('HLS.url failed to play\nServer down? check Url.')
 
                 log("GET REQUEST Content-Type: %s" % g_downloader.MAIN_MIME_TYPE)
@@ -100,7 +100,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", g_downloader.MAIN_MIME_TYPE)
                 self.end_headers()
 
-                init_done=True
+                init_done = True
 
                 g_downloader.keep_sending_video(self.wfile)
 
@@ -133,14 +133,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if not init_done:
                 xbmc.executebuiltin("XBMC.Notification(BRPlayProxy,%s,4000,'')" % inst.message)
                 self.send_error(404)
-            print 'closed'
+            log('closed')
         finally:
             log("REQUEST COMPLETED")
             try:
                 self.finish()
                 log("REQUEST FINISHED CALLED SUCCESSFULLY")
-            except Exception, e:
-                control.log("PROXYHANDLER ERROR: %s " % e.message)
+            except Exception as e:
+                control.log("PROXYHANDLER ERROR: %s " % e.message, control.LOGERROR)
 
     def decode_url(self, url):
         control.log('in params: %s' % url)
@@ -172,7 +172,7 @@ class Server(HTTPServer):
     """HTTPServer class with timeout."""
  
     def get_request(self):
-        print "Server(HTTPServer): Serving GET request..."
+        log("Server(HTTPServer): Serving GET request...")
         global g_stopEvent
 
         """Get the request and client address from the socket."""
@@ -249,7 +249,7 @@ class HlsProxy:
 
     def resolve(self, url, proxy=None, maxbitrate=0, player=None):
 
-        self.stopPlaying=threading.Event()
+        self.stopPlaying = threading.Event()
         progress = xbmcgui.DialogProgress()
 
         progress.create('Starting local proxy')

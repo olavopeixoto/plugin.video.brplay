@@ -27,7 +27,7 @@ def run(params):
     if not action:
         from resources.lib.indexers import navigator, indexer
         syshandle = int(sys.argv[1])
-        indexer.create_directory(navigator.root())
+        indexer.create_directory(navigator.root(), cache_to_disk=False)
         control.category(handle=syshandle, category=control.addonInfo('name'))
 
     elif action == 'settings':

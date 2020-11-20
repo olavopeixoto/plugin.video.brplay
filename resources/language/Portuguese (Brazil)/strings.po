@@ -572,3 +572,11 @@ msgstr "Remover desgostar"
 msgctxt "#34147"
 msgid "Enable Globoplay + canais ao vivo"
 msgstr "Habilitar Globoplay + canais ao vivo"
+
+msgctxt "#34148"
+msgid "Enable SBT"
+msgstr "Habilitar SBT"
+
+msgctxt "#34149"
+msgid "Ignore Daylight Saving Time"
+msgstr "Ignorar Horário de Verão"

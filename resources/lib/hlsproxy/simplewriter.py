@@ -50,7 +50,7 @@ class SimpleHLSWriter:
 
     def log_error(self, msg):
         if is_standalone:
-            print msg
+            print(msg)
         else:
             control.log(msg)
 
@@ -64,24 +64,25 @@ class SimpleHLSWriter:
             self.proxy = proxy
 
             if self.proxy and len(self.proxy) == 0:
-                self.proxy=None
+                self.proxy = None
 
             self.use_proxy = False
 
-            if stopEvent: stopEvent.clear()
+            if stopEvent:
+                stopEvent.clear()
 
-            self.g_stopEvent=stopEvent
-            self.maxbitrate=maxbitrate
+            self.g_stopEvent = stopEvent
+            self.maxbitrate = maxbitrate
 
             if '|' in url:
                 sp = url.split('|')
                 url = sp[0]
                 self.clientHeader = sp[1]
                 self.log(self.clientHeader)
-                self.clientHeader= urlparse.parse_qsl(self.clientHeader)
+                self.clientHeader = urlparse.parse_qsl(self.clientHeader)
                 self.log('header received now url and headers are %s | %s' % (url, self.clientHeader))
 
-            self.url=url
+            self.url = url
 
             return True
         except:
@@ -92,7 +93,7 @@ class SimpleHLSWriter:
     def keep_sending_video(self, dest_stream):
         try:
             self.download_main_playlist(self.url, dest_stream, self.g_stopEvent, self.maxbitrate)
-        except Exception, e:
+        except Exception as e:
             self.log('ERROR SENDING MAIN PLAYLIST: %s' % e.message)
             traceback.print_exc()
 
@@ -155,7 +156,7 @@ class SimpleHLSWriter:
 
         retry = 20
 
-        while len(keys) <= 0 and retry > 0:
+        while len(keys) <= 0 < retry:
             xbmc.sleep(50)
             if self.g_stopEvent and self.g_stopEvent.isSet():
                 return

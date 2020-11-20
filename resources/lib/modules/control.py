@@ -172,6 +172,8 @@ isJarvis = infoLabel("System.BuildVersion").startswith("16.")
 
 isKrypton = infoLabel("System.BuildVersion").startswith("17.")
 
+supports_offscreen = infoLabel("System.BuildVersion") > '17'
+
 isKodi = True if infoLabel("System.BuildVersion") and len(infoLabel("System.BuildVersion")) > 0 else False
 
 isFTV = skin.lower().startswith('skin.ftv')
@@ -270,7 +272,8 @@ def is_live_available():
            or is_globoplay_available() \
            or is_oiplay_available() \
            or is_tntplay_available() \
-           or is_nowonline_available()
+           or is_nowonline_available() \
+           or is_sbt_available()
 
 
 def is_vod_available():
@@ -337,6 +340,10 @@ def is_telecine_available():
     password = setting('telecine_password')
 
     return setting('telecine_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_sbt_available():
+    return setting('sbt_available') == 'true'
 
 
 def getKodiVersion():
@@ -503,6 +510,7 @@ def clear_credentials():
     setSetting("oiplay_access_token_response", u'')
     setSetting("nowonline_credentials", u'')
     setSetting("telecine_credentials", u'')
+    setSetting('sbt_token', u'')
 
 
 def clear_globosat_credentials():

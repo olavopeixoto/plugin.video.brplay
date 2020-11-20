@@ -10,7 +10,6 @@ addonFanart = control.addonFanart()
 
 
 def root():
-
     if control.is_live_available():
         handler = live.__name__
         method = 'get_channels'

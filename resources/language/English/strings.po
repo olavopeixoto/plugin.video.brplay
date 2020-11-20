@@ -572,3 +572,11 @@ msgstr ""
 msgctxt "#34147"
 msgid "Enable Globoplay + canais ao vivo"
 msgstr ""
+
+msgctxt "#34148"
+msgid "Enable SBT"
+msgstr ""
+
+msgctxt "#34149"
+msgid "Ignore Daylight Saving Time"
+msgstr ""

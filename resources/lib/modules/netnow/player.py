@@ -53,7 +53,11 @@ class Player:
 
         self.url = url
 
-        item = control.item(path=self.url)
+        if control.supports_offscreen:
+            item = control.item(path=self.url, offscreen=True)
+        else:
+            item = control.item(path=self.url)
+
         item.setArt({'icon': thumb, 'thumb': thumb})
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))

@@ -7,6 +7,7 @@ import auth_helper
 import requests
 from urlparse import urlparse
 from resources.lib.modules import hlshelper
+from resources.lib.hlsproxy.simpleproxy import MediaProxy
 from resources.lib.modules import control
 from resources.lib.modules.util import get_signed_hashes
 from resources.lib.modules.globoplay import resourceshelper
@@ -167,22 +168,21 @@ class Player(xbmc.Player):
 
         control.log("live media url: %s" % url)
 
-        # title = info.get('title', '')
-        # meta.update({
-        #     "genre": info["category"],
-        #     "plot": info["title"],
-        #     "plotoutline": info["title"],
-        #     "title": title
-        # })
-
         parsed_url = urlparse(url)
         if parsed_url.path.endswith(".m3u8"):
             if pick_bandwidth:
                 url, mime_type, stop_event, cookies = hlshelper.pick_bandwidth(url)
             else:
                 mime_type, stop_event, cookies = None, None, None
+
+        elif parsed_url.path.endswith(".mpd"):
+            proxy_handler = MediaProxy()
+            url = proxy_handler.resolve(url)
+            stop_event = proxy_handler.stop_event
+            mime_type = None
+            cookies = None
+
         else:
-            # self.url = url
             mime_type, stop_event, cookies = 'video/mp4', None, None
 
         if url is None:
@@ -194,7 +194,11 @@ class Player(xbmc.Player):
 
         control.log("Resolved URL: %s" % repr(url))
 
-        item = control.item(path=url)
+        if control.supports_offscreen:
+            item = control.item(path=url, offscreen=True)
+        else:
+            item = control.item(path=url)
+
         item.setInfo(type='video', infoLabels=control.filter_info_labels(meta))
         item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')

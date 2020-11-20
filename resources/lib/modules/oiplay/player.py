@@ -71,7 +71,10 @@ class Player(xbmc.Player):
         control.log("Resolved URL: %s" % repr(self.url))
         control.log("Parsed URL: %s" % repr(parsed_url))
 
-        item = control.item(path=self.url)
+        if control.supports_offscreen:
+            item = control.item(path=self.url, offscreen=True)
+        else:
+            item = control.item(path=self.url)
         item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))

@@ -111,7 +111,7 @@ def _get_module(full_name):
     return module
 
 
-def create_directory(items, current=None):
+def create_directory(items, current=None, cache_to_disk=True):
     if current is None:
         current = {}
 
@@ -125,9 +125,11 @@ def create_directory(items, current=None):
 
         for data in items:
             label = data.get('label', '')
-            label2 = data.get('label2', None)
 
-            item = control.item(label=label, label2=label2)
+            if control.supports_offscreen:
+                item = control.item(label=label, offscreen=True)
+            else:
+                item = control.item(label=label)
 
             art = data.get('art', {}) or {}
             item.setArt(art)
@@ -217,4 +219,4 @@ def create_directory(items, current=None):
         control.log(traceback.format_exc(), control.LOGERROR)
         succeeded = False
     finally:
-        control.directory(syshandle, succeeded=succeeded, updateListing=False, cacheToDisc=True)
+        control.directory(syshandle, succeeded=succeeded, updateListing=False, cacheToDisc=cache_to_disk)

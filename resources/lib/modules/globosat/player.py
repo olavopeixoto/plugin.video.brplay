@@ -8,6 +8,7 @@ from resources.lib.modules import util
 import requests
 from resources.lib.modules import control
 from resources.lib.modules import hlshelper
+from resources.lib.hlsproxy.simpleproxy import MediaProxy
 from resources.lib.modules.globoplay import resourceshelper
 from resources.lib.modules.globosat import auth_helper
 
@@ -83,22 +84,31 @@ class Player(xbmc.Player):
 
         parsed_url = urlparse(url)
         if parsed_url.path.endswith(".m3u8"):
-            self.url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
+            self.url, mime_type, stop_event, cookies = hlshelper.pick_bandwidth(url)
+        elif parsed_url.path.endswith(".mpd"):
+            proxy_handler = MediaProxy()
+            self.url = proxy_handler.resolve(url)
+            stop_event = proxy_handler.stop_event
+            mime_type = None
+            cookies = None
         else:
             self.url = url
-            mime_type, stopEvent, cookies = 'video/mp4', None, None
+            mime_type, stop_event, cookies = 'video/mp4', None, None
 
         if self.url is None:
-            if stopEvent:
+            if stop_event:
                 control.log("Setting stop event for proxy player")
-                stopEvent.set()
+                stop_event.set()
             control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
         control.log("Parsed URL: %s" % repr(parsed_url))
 
-        item = control.item(path=self.url)
+        if control.supports_offscreen:
+            item = control.item(path=self.url, offscreen=True)
+        else:
+            item = control.item(path=self.url)
         item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))
@@ -167,9 +177,9 @@ class Player(xbmc.Player):
                         self.save_video_progress(self.token, self.video_id, current_time)
             control.sleep(1000)
 
-        if stopEvent:
+        if stop_event:
             control.log("Setting stop event for proxy player")
-            stopEvent.set()
+            stop_event.set()
 
         control.log("Done playing. Quitting...")
 

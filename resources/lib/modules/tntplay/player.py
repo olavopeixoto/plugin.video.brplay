@@ -6,6 +6,7 @@ from urlparse import urlparse
 import urllib
 import resources.lib.modules.control as control
 from resources.lib.modules import hlshelper
+from resources.lib.hlsproxy.simpleproxy import MediaProxy
 import requests
 import xbmc
 from auth import get_token, get_device_id, logout
@@ -38,7 +39,8 @@ class Player(xbmc.Player):
 
         control.log("TNT Play - play_stream: id=%s | meta=%s" % (id, meta))
 
-        if id is None: return
+        if id is None:
+            return
 
         try:
             url = self.geturl(id, encrypted=encrypted)
@@ -59,23 +61,33 @@ class Player(xbmc.Player):
 
         parsed_url = urlparse(url)
 
-        if ".m3u8" in parsed_url.path:
-            self.url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
-        else:
-            self.url = url
-            mime_type, stopEvent, cookies = None, None, None
+        # if ".m3u8" in parsed_url.path:
+        #     self.url, mime_type, stop_event, cookies = hlshelper.pick_bandwidth(url)
+        # else:
+        #     self.url = url
+        #     mime_type, stop_event, cookies = None, None, None
+
+        proxy_handler = MediaProxy(control.proxy_url)
+        self.url = proxy_handler.resolve(url)
+        stop_event = proxy_handler.stop_event
+        mime_type = None
+        cookies = None
 
         if self.url is None:
-            if stopEvent:
+            if stop_event:
                 control.log("Setting stop event for proxy player")
-                stopEvent.set()
+                stop_event.set()
             control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
         control.log("Parsed URL: %s" % repr(parsed_url))
 
-        item = control.item(path=self.url)
+        if control.supports_offscreen:
+            item = control.item(path=self.url, offscreen=True)
+        else:
+            item = control.item(path=self.url)
+
         item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))
@@ -144,7 +156,7 @@ class Player(xbmc.Player):
             item.setMimeType(mime_type)
             control.log("MIME TYPE: %s" % repr(mime_type))
 
-        if not cookies and control.is_inputstream_available():
+        if control.is_inputstream_available():
             item.setProperty('inputstreamaddon', 'inputstream.adaptive')
             item.setProperty('inputstream', 'inputstream.adaptive')  # Kodi 19
 

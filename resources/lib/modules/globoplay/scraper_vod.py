@@ -9,7 +9,8 @@ import os
 from resources.lib.modules.globosat import pfc
 from resources.lib.modules.globosat.pfc import PREMIERE_LOGO, PREMIERE_FANART
 
-GLOBO_LOGO_WHITE = 'https://s2.glbimg.com/VRae4HM1fvQ-rb9sWWptjeUriro=/fit-in/168x84/https://s2.glbimg.com/9Wy1I7Dz4-R6xhNVpPqTLzd0mME=/trim/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
+GLOBO_LOGO_WHITE = 'https://s2.glbimg.com/9Wy1I7Dz4-R6xhNVpPqTLzd0mME=/trim/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
+GLOBO_LOGO_WHITE_SMALL = 'https://s2.glbimg.com/1D3_vIjzzFrXkfMVFmEcMqq7gQk=/285x285/https://s2.glbimg.com/nItvOm5LGvf7xhO-zkUsoeFbVMY=/filters:fill(transparent,false)/https://i.s3.glbimg.com/v1/AUTH_c3c606ff68e7478091d1ca496f9c5625/internal_photos/bs/2020/V/q/33CD65RVK44W5BSLbx1g/rede-globo.png'
 GLOBO_FANART = os.path.join(control.artPath(), 'globoplay_bg_fhd.png')
 GLOBOPLAY_THUMB = os.path.join(control.artPath(), 'globoplay.png')
 
@@ -96,14 +97,15 @@ def get_categories(page=1, per_page=PAGE_SIZE):
     resources = request_query(query, variables).get('data', {}).get('categories', {}).get('resources', [])
 
     for resource in resources:
+        fanart = 'https://' + 'https://'.join(resource.get('background').split('https://')[2:])  # try high resolution image
         yield {
             'handler': __name__,
             'method': 'get_page' if resource.get('navigation', {}).get('identifier') else 'get_affiliate_states',
             'id': resource.get('navigation', {}).get('identifier', ''),
             'label': resource.get('name', ''),
             'art': {
-                'thumb': resource.get('background'),
-                'fanart': resource.get('background', GLOBO_FANART)
+                'thumb': fanart,
+                'fanart': fanart or GLOBO_FANART
             }
         }
 

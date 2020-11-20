@@ -8,6 +8,7 @@ from resources.lib.modules.sexyhotplay import scraper_live as sexyhotplay
 from resources.lib.modules.oiplay import scraper_live as oiplay
 from resources.lib.modules.tntplay import scraper_live as tntplay
 from resources.lib.modules.netnow import scraper_live as netnow
+from resources.lib.modules.sbt import scraper_live as sbt
 
 
 def get_channels():
@@ -31,6 +32,9 @@ def get_channels():
 
     if control.is_nowonline_available():
         threads.append(workers.Thread(netnow.get_live_channels))
+
+    if control.is_sbt_available():
+        threads.append(workers.Thread(sbt.get_live_channels))
 
     [i.start() for i in threads]
     [i.join() for i in threads]

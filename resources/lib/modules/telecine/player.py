@@ -50,7 +50,10 @@ class Player(xbmc.Player):
                 "mediatype": "video",
             }
 
-        item = control.item(path=url)
+        if control.supports_offscreen:
+            item = control.item(path=url, offscreen=True)
+        else:
+            item = control.item(path=url)
 
         art = meta.get('art', {}) or {}
         item.setArt(art)
