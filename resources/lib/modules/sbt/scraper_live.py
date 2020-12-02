@@ -1,6 +1,7 @@
 import requests
 import datetime
 import pytz
+import traceback
 from . import player, get_authorization
 from resources.lib.modules import control, util
 
@@ -30,12 +31,16 @@ def get_live_channels():
 
     control.log(programs)
 
-    program = next(iter(programs), {})
+    program = next(iter(programs), {}) or {}
 
-    start_time = datetime.datetime.strptime(program.get('startdate'), '%Y-%m-%dT%H:%M:%S')
-    start_time = br_timezone.localize(start_time)
-    start_time = start_time.astimezone(pytz.UTC)
-    start_time = start_time + util.get_utc_delta()
+    try:
+        start_time = util.strptime_workaround(program.get('startdate'), '%Y-%m-%dT%H:%M:%S')
+        start_time = br_timezone.localize(start_time)
+        start_time = start_time.astimezone(pytz.UTC)
+        start_time = start_time + util.get_utc_delta()
+    except:
+        control.log(traceback.format_exc(), control.LOGERROR)
+        start_time = datetime.datetime.now()
 
     plot = program.get('description')
     plot = '%s - | %s' % (datetime.datetime.strftime(start_time, '%H:%M'), plot)
@@ -105,7 +110,7 @@ def get_programmes():
 
     for result in results:
 
-        start_time = datetime.datetime.strptime(result['startdate'], '%Y-%m-%dT%H:%M:%S')
+        start_time = util.strptime_workaround(result['startdate'], '%Y-%m-%dT%H:%M:%S')
 
         start_time = pytz.timezone('America/Sao_Paulo').localize(start_time)
 

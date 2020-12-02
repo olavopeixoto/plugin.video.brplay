@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-	<addon id="plugin.video.brplay" version="1.0.8" name="BR play" provider-name="brplayer">
+	<addon id="plugin.video.brplay" version="1.0.9" name="BR play" provider-name="brplayer">
 	<requires>
 <!--		<import addon="xbmc.python" version="2.1.0" />-->
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -30,6 +30,9 @@
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
 		<news>
+1.0.9
+- Implemented Pluto TV Live and VOD
+- TNT search
 1.0.8
 - Huge performance gain when rendering items using Kodi >17 (ListItem offscreen)
 - Workaround to fix Dash playback from Globoplay and Canais Globo that was not working using only inputstream.adaptive

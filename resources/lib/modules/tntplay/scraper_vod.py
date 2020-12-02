@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import requests
-import resources.lib.modules.control as control
-import player
+from resources.lib.modules import control, cache
+from . import player
+from urllib import quote_plus
 
 PLAYER_HANDLER = player.__name__
 
@@ -98,7 +99,7 @@ def get_genres(category):
     media_type = 'movie%2Celemental' if category == MOVIES else 'series'
 
     url = 'https://apac.ti-platform.com/AGL/1.0/R/{lang}/{platform}/TNTGO_LATAM_BR/CONTENT/FACET?objectSubtype={type}&facet=genres&filter_brand=tnts%2Ctnt%2Cspace'.format(platform=PLATFORM, type=media_type, lang=LANGUAGE)
-    result = requests.get(url).json().get('resultObj', {}).get('facets', []) or []
+    result = cache.get(requests.get, 24, url, table='tntplay').json().get('resultObj', {}).get('facets', []) or []
 
     yield {
         'handler': __name__,
@@ -163,7 +164,11 @@ def get_content(category, genre):
                 filter_genres = '&filter_genres=%s' % genre.lower()
             url = 'https://apac.ti-platform.com/AGL/1.0/R/{lang}/IPHONE/TNTGO_LATAM_BR/TRAY/SEARCH/VOD?orderBy=year&sortOrder=desc&filter_objectSubtype=SERIES&filter_propertyName=TNTGO_LATAM_BR&from=0&to=99&filter_brand=space%2Ctnts%2Ctnt{filter}'.format(platform=PLATFORM, filter=filter_genres, lang=LANGUAGE)
 
-    result = requests.get(url).json().get('resultObj', {}).get('containers', []) or []
+    return request_content(url)
+
+
+def request_content(url):
+    result = cache.get(requests.get, 24, url, table='tntplay').json().get('resultObj', {}).get('containers', []) or []
 
     for item in result:
         metadata = item.get('metadata', {})
@@ -175,28 +180,28 @@ def get_content(category, genre):
         playable = metadata.get('contentSubtype', '') == 'MOVIE'
 
         program = {
-                    'handler': PLAYER_HANDLER if playable else __name__,
-                    'method': 'playlive' if playable else 'get_seasons',
-                    'IsPlayable': playable,
-                    'id': item.get('id'),
-                    'label': metadata.get('title', ''),
-                    'plot': metadata.get('longDescription', ''),
-                    'plotoutline': metadata.get('shortDescription', ''),
-                    'genre': metadata.get('genres'),
-                    'year': metadata.get('year'),
-                    'country': metadata.get('country'),
-                    'director': metadata.get('directors', []),
-                    'cast': metadata.get('actors', []),
-                    'episode': metadata.get('episodeNumber'),
-                    'season': metadata.get('season'),
-                    'encrypted': metadata.get('isEncrypted'),
-                    'mediatype': 'movie' if metadata.get('contentSubtype', '') == 'MOVIE' else 'tvshow',
-                    # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
-                    'art': {
-                        'poster': poster,
-                        'fanart': fanart
-                    }
-                }
+            'handler': PLAYER_HANDLER if playable else __name__,
+            'method': 'playlive' if playable else 'get_seasons',
+            'IsPlayable': playable,
+            'id': item.get('id'),
+            'label': metadata.get('title', ''),
+            'plot': metadata.get('longDescription', ''),
+            'plotoutline': metadata.get('shortDescription', ''),
+            'genre': metadata.get('genres'),
+            'year': metadata.get('year'),
+            'country': metadata.get('country'),
+            'director': metadata.get('directors', []),
+            'cast': metadata.get('actors', []),
+            'episode': metadata.get('episodeNumber'),
+            'season': metadata.get('season'),
+            'encrypted': metadata.get('isEncrypted'),
+            'mediatype': 'movie' if metadata.get('contentSubtype', '') == 'MOVIE' else 'tvshow',
+            # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+            'art': {
+                'poster': poster,
+                'fanart': fanart
+            }
+        }
 
         yield program
 
@@ -206,7 +211,7 @@ def get_seasons(id):
 
     control.log('TNT SEASONS GET %s' % url)
 
-    items = requests.get(url).json().get('resultObj', {}).get('containers', [])
+    items = cache.get(requests.get, 24, url, table='tntplay').json().get('resultObj', {}).get('containers', [])
 
     control.log(items)
 
@@ -268,7 +273,7 @@ def get_episodes(id):
 
     control.log('TNT EPISODES GET %s' % url)
 
-    items = requests.get(url).json().get('resultObj', {}).get('containers', [])
+    items = cache.get(requests.get, 24, url, table='tntplay').json().get('resultObj', {}).get('containers', [])
 
     control.log(items)
 
@@ -289,7 +294,13 @@ def get_episodes(id):
 
         obj_meta = obj.get('metadata', {}) or {}
         picture_url = obj_meta.get('pictureUrl') or None
-        thumb = IMAGE_URL.format(pictureUrl=picture_url, imageType='VIDSCREENSHOT') if picture_url else show_poster
+
+        thumb_url = '%s_%s' % (picture_url.split('_')[0], obj_meta.get('emfAttributes', {}).get('TopLevelEntityId', ''))
+
+        # thumb = IMAGE_URL.format(pictureUrl=thumb_url, imageType='VIDSCREENSHOT') if picture_url else show_poster
+        thumb = IMAGE_URL.format(pictureUrl=thumb_url, imageType='FEATURED_HANDSET') if picture_url else show_poster
+        # https://turner-latam-prod.akamaized.net/PROD-LATAM/{pictureUrl}/{pictureUrl}_{imageType}.jpg
+        # https://turner-latam-prod.akamaized.net/PROD-LATAM/TNTSERIES_213272714/TNTSERIES_213272714_FEATURED_HANDSET.jpg?imwidth=1125
 
         poster_url = '%s_%s' % (picture_url.split('_')[0], obj_meta.get('emfAttributes', {}).get('TopLevelEntityId', ''))
         poster = IMAGE_URL.format(pictureUrl=poster_url, imageType='POSTER')
@@ -319,6 +330,14 @@ def get_episodes(id):
             'art': {
                 'thumb': thumb,
                 'poster': poster,
+                'tvshow.poster': show_poster,
                 'fanart': show_fanart
             }
         }
+
+
+def search(term, page=1):
+    # url = 'https://api.tntgo.tv/AGL/1.0/A/POR/PCTV/TNTGO_LATAM_BR/TRAY/SEARCH/VOD?query=Marg%20Helgenberger&filter_objectSubtype=series,movie&from=0&to=99&selectedUserLevel=3'
+    url = 'https://apac.ti-platform.com/AGL/1.0/R/{lang}/IPHONE/TNTGO_LATAM_BR/TRAY/SEARCH/VOD?query={query}&filter_objectSubtype=MOVIE%2CSERIES&filter_propertyName=TNTGO_LATAM_BR&from=0&to=49&filter_brand=tnts%2Ctnt%2Cspace'.format(lang=LANGUAGE, query=quote_plus(term))
+
+    return request_content(url)

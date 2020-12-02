@@ -3,9 +3,10 @@
 import requests
 import datetime
 import time
+import traceback
 from . import player
 from .scraper_vod import FANART
-from resources.lib.modules import cache
+from resources.lib.modules import cache, control
 
 
 POSTER_URL = 'http://i.cdn.turner.com/tntla/images/portal/fixed/cards/{titleId}_424x636{lang}.jpg'
@@ -34,14 +35,15 @@ def get_live_channels():
     channel_ids = '1000036824,1000036827,1000036819'
     language = 'POR'  # 'ENG'
 
-    today = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
-    start_timestamp = to_timestamp(today)
-    end_timestamp = to_timestamp(today + datetime.timedelta(days=1))
-    epg_url = 'https://api.tntgo.tv/AGL/1.0/a/{language}/PCTV/TNTGO_LATAM_BR/CHANNEL/EPG?channelId={channels}&startTimeStamp={startTimeStamp}&endTimeStamp={endTimeStamp}&channel=PCTV'.format(language=language, channels=channel_ids, startTimeStamp=start_timestamp, endTimeStamp=end_timestamp)
+    epg_url = 'https://api.tntgo.tv/AGL/1.0/a/{language}/PCTV/TNTGO_LATAM_BR/CHANNEL/EPG?channelId={channels}&channel=PCTV'.format(language=language, channels=channel_ids)
 
-    channels = cache.get(requests.get, 24, epg_url, table='tntplay').json().get('resultObj', {}).get('channelList', [])
+    control.log('GET %s' % epg_url)
+    channels = requests.get(epg_url).json().get('resultObj', {}).get('channelList', [])
+    control.log(channels)
 
     now_timestamp = to_timestamp(datetime.datetime.now())
+
+    control.log('NOW = %s' % now_timestamp)
 
     results = []
     for channel in channels:
@@ -49,8 +51,22 @@ def get_live_channels():
         programmes = channel.get('programList', []) or []
         programme = next((p for p in programmes if p.get('startTime', 0) <= now_timestamp <= p.get('endTime', 0)), {})
 
+        control.log(programme)
+
         program_details_url = 'http://schedule.dmti.cloud/show-detail?id={id}&mapped=true&output=json'.format(id=programme.get('contentId', ''))
-        program_details_response = requests.get(program_details_url).json()
+
+        control.log('GET %s' % program_details_url)
+
+        program_details_response = cache.get(requests.get, 780, program_details_url, table='tntplay')
+
+        control.log(program_details_response.status_code)
+        control.log(program_details_response.content)
+
+        try:
+            program_details_response = program_details_response.json()
+        except:
+            control.log(traceback.format_exc(), control.LOGERROR)
+            program_details_response = {}
 
         details_key = next(iter(program_details_response.keys()), None)
         details = program_details_response.get(details_key, {}) or {}
@@ -60,7 +76,7 @@ def get_live_channels():
         title = programme.get('title', '')
         subtitle = programme.get('subtitle', '') if programme.get('subtitle', '') != title else u''
         plot = programme.get('contentDescription', '')
-        plotoutline = programme.get('shortDescription', '')
+        plot_outline = programme.get('shortDescription', '')
 
         start_time = datetime.datetime.utcfromtimestamp(programme.get('startTime', 0))
         end_time = datetime.datetime.utcfromtimestamp(programme.get('endTime', 0))
@@ -97,7 +113,7 @@ def get_live_channels():
             'channel_id': channel.get('channelId', ''),
             'dateadded': datetime.datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S'),
             'plot': plot,
-            'plotoutline': plotoutline,
+            'plotoutline': plot_outline,
             'duration': programme.get('duration', 0) or 0,
             'adult': False,
             'cast': details.get('actorList', []).split(','),

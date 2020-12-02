@@ -273,7 +273,8 @@ def is_live_available():
            or is_oiplay_available() \
            or is_tntplay_available() \
            or is_nowonline_available() \
-           or is_sbt_available()
+           or is_sbt_available() \
+           or is_pluto_available()
 
 
 def is_vod_available():
@@ -282,7 +283,8 @@ def is_vod_available():
            or is_tntplay_available() \
            or is_nowonline_available() \
            or is_telecine_available() \
-           or is_oiplay_available()
+           or is_oiplay_available() \
+           or is_pluto_available()
 
 
 def is_globosat_available():
@@ -344,6 +346,10 @@ def is_telecine_available():
 
 def is_sbt_available():
     return setting('sbt_available') == 'true'
+
+
+def is_pluto_available():
+    return setting('pluto_available') == 'true'
 
 
 def getKodiVersion():

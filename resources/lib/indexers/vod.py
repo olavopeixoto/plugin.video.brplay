@@ -8,6 +8,7 @@ from resources.lib.modules.tntplay import scraper_vod as tnt_vod
 from resources.lib.modules.netnow import scraper_vod as netnow
 from resources.lib.modules.telecine import scraper_vod as telecine
 from resources.lib.modules.oiplay import scraper_vod as oiplay
+from resources.lib.modules.pluto import scraper_vod as pluto
 from resources.lib.modules import workers
 from itertools import cycle, islice, chain
 import random
@@ -36,6 +37,9 @@ def get_vod_channels_directory():
 
     if control.is_oiplay_available():
         channels.extend(oiplay.get_channels())
+
+    if control.is_pluto_available():
+        channels.extend(pluto.get_channels())
 
     if not control.show_adult_content:
         channels = [channel for channel in channels if not channel.get("adult", False)]
@@ -70,6 +74,9 @@ def search(query, page=1):
 
     if control.is_nowonline_available():
         threads.append(workers.Thread(convert_to_list, netnow.search, query, page))
+
+    if control.is_tntplay_available():
+        threads.append(workers.Thread(convert_to_list, tnt_vod.search, query, page))
 
     [i.start() for i in threads]
     [i.join() for i in threads]

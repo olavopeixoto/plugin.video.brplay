@@ -18,6 +18,7 @@ PROXY_PORT = 55444
 PROXY_URL_FORMAT = 'http://%s:%s/proxy.%%s?url=%%s' % (HOST_NAME, PROXY_PORT)
 
 session = requests.Session()
+BASE_URL = None
 
 
 def log(msg):
@@ -35,6 +36,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         }
         self.uri_search = re.compile(r'URI="([^"]+)"')
         self.https_match = re.compile(r'https?://')
+        self.base_url_match = re.compile(r'<BaseURL>([^<]+)</BaseURL>')
+        self.proxy_match = re.compile(r'(/proxy(?:\.(\w+))?)\?url=(.*)')
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
     """
@@ -50,12 +53,17 @@ class RequestHandler(BaseHTTPRequestHandler):
     Serves a GET request.
     """
     def do_GET(self):
+        global BASE_URL
+
         log("Simple Proxy: GET %s" % self.path)
 
-        match = re.search(r'(/proxy(?:\.(\w+))?)\?url=(.*)', self.path)
+        match = self.proxy_match.search(self.path)
 
-        # extension = match.group(2)
-        media_url = urllib.unquote_plus(match.group(3))
+        if match:
+            # extension = match.group(2)
+            media_url = urllib.unquote_plus(match.group(3))
+        else:
+            media_url = urlparse.urljoin(BASE_URL, self.path[1:])
 
         headers = dict(self.headers)
 
@@ -66,7 +74,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         if 'origin' in headers:
             del headers['origin']
 
-        log(session)
         log('GET %s' % media_url)
         log(headers)
 
@@ -126,7 +133,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 log('CONTENT: %s' % content)
 
             elif '.mpd' in response.url.split('?')[0] and 200 <= response.status_code < 300:
-                base_url = re.search(r'<BaseURL>([^<]+)</BaseURL>', response.content).group(1)
+                base_url = self.base_url_match.search(response.content).group(1)
+
+                BASE_URL = response.url
 
                 new_url = urlparse.urljoin(response.url, base_url)
 
@@ -135,7 +144,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 ext = ext.replace('.', '')
 
                 new_base_url = PROXY_URL_FORMAT % (ext, urllib.quote_plus(new_url))
-                content = re.sub(r'<BaseURL>([^<]+)</BaseURL>', r'<BaseURL>' + new_base_url + r'</BaseURL>', response.content)
+                content = self.base_url_match.sub(r'<BaseURL>' + new_base_url + r'</BaseURL>', response.content)
 
                 log('CONTENT: %s' % content)
 
@@ -189,13 +198,13 @@ class ThreadedHTTPServer(ThreadingMixIn, Server, object):
     """Handle requests in a separate thread."""
     daemon_threads = True
 
-    def handle_error(self, request, client_address):
-        # surpress socket/ssl related errors
-        cls, e = sys.exc_info()[:2]
-        if cls is socket.error or cls is ssl.SSLError:
-            pass
-        else:
-            return Server.handle_error(self, request, client_address)
+    # def handle_error(self, request, client_address):
+    #     # surpress socket/ssl related errors
+    #     cls, e = sys.exc_info()[:2]
+    #     if cls is socket.error or cls is ssl.SSLError:
+    #         pass
+    #     else:
+    #         return Server.handle_error(self, request, client_address)
 
 
 class MediaProxy:

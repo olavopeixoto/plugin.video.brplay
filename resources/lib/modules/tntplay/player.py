@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import json
+import threading
 import sys
 from urlparse import urlparse
 import urllib
 import resources.lib.modules.control as control
-from resources.lib.modules import hlshelper
+# from resources.lib.modules import hlshelper
 from resources.lib.hlsproxy.simpleproxy import MediaProxy
 import requests
 import xbmc
@@ -14,13 +14,13 @@ import traceback
 
 LANGUAGE = control.lang(34125).encode('utf-8')
 
-proxy = None #control.proxy_url
+proxy = None  # control.proxy_url
 proxy = None if proxy is None or proxy == '' else {
     'http': proxy,
     'https': proxy,
 }
 
-vod_platform = 'PCTV_DASH' if control.prefer_dash else 'PCTV'
+vod_platform = 'PCTV_DASH'  # 'IPAD' 'IPHONE'  'TABLET_ANDROID' 'SMARTPHONE_ANDROID' 'PCTV_DASH'  # if control.prefer_dash else 'PCTV'
 
 
 class Player(xbmc.Player):
@@ -32,6 +32,7 @@ class Player(xbmc.Player):
         self.token = None
         self.video_id = None
         self.offset = 0.0
+        self.current_time = 0
 
     def playlive(self, id, meta, encrypted=False):
 
@@ -51,9 +52,10 @@ class Player(xbmc.Player):
 
         if encrypted and not control.is_inputstream_available():
             control.okDialog(u'TNT Play', control.lang(34103).encode('utf-8'))
+            self.stop_content(id, encrypted=encrypted)
             return
 
-        control.log("live media url: %s" % url)
+        control.log("media url: %s" % url)
 
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
 
@@ -131,6 +133,7 @@ class Player(xbmc.Player):
                 else:
                     logout()
                     control.infoDialog(drm_response.get('message', u'DRM ERROR'), icon='ERROR')
+                    self.stop_content(id, encrypted=encrypted)
                     return
 
             headers = {
@@ -162,7 +165,33 @@ class Player(xbmc.Player):
 
         control.resolve(int(sys.argv[1]), True, item)
 
+        self.stopPlayingEvent = threading.Event()
+        self.stopPlayingEvent.clear()
+
+        while not self.stopPlayingEvent.isSet():
+            if control.monitor.abortRequested():
+                control.log("Abort requested")
+                break
+
+            if self.isPlaying():
+                self.current_time = self.getTime()
+
+            control.sleep(100)
+
+        if stop_event:
+            control.log("Setting stop event for proxy player")
+            stop_event.set()
+
+        self.stop_content(id, encrypted=encrypted)
+
         control.log("Done playing. Quitting...")
+
+    def onPlayBackStopped(self):
+        # Will be called when user stops xbmc playing a file
+        control.log("setting event in onPlayBackStopped")
+
+        if self.stopPlayingEvent:
+            self.stopPlayingEvent.set()
 
     def geturl(self, content_id, cookie=None, encrypted=False):
 
@@ -198,3 +227,26 @@ class Player(xbmc.Player):
             raise Exception('%s: %s' % (result.get('message', u'STREAM URL ERROR'), result.get('errorDescription', u'UNKNOWN')))
 
         return result.get('resultObj', {}).get('src')
+
+    def stop_content(self, content_id, encrypted=False):
+        try:
+            device_id = get_device_id()
+            cookie = get_token()
+
+            platform = 'PCTV' if not encrypted else vod_platform
+
+            headers = {
+                'Accept': 'application/json',
+                'cookie': 'avs_cookie=' + cookie,
+                'User-Agent': 'Tnt/2.2.13.1908061505 CFNetwork/1107.1 Darwin/19.0.0'
+            }
+
+            url = 'https://apac.ti-platform.com/AGL/1.0/R/ENG/{platform}/TNTGO_LATAM_BR/CONTENT/USERDATA/VOD/{content_id}?bookmark={bookmark}&deltaThreshold={delta}&startDeltaTime=1&stopContent=Y&deviceId={device_id}&filter_brand=space%2Ctnts%2Ctnt'.format(platform=platform, content_id=content_id, device_id=device_id, bookmark=int(self.current_time), delta=int(self.current_time))
+            control.log('TNT GET ' + url)
+            # control.log(headers)
+
+            result = requests.get(url, headers=headers, proxies=proxy)
+            control.log(result.status_code)
+            control.log(result.content)
+        except:
+            control.log(traceback.format_exc(), control.LOGERROR)

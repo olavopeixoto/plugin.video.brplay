@@ -111,8 +111,15 @@
 
 		<setting type="lsep" label="SBT"/>
 		<setting id="sbt_available" type="bool" label="34148" default="false" subsetting="true" />
-		<setting id="sbt_ignore_dst" type="bool" label="34149" default="true" subsetting="true" />
+		<setting id="sbt_ignore_dst" type="bool" label="34149" default="true" visible="eq(-1,true)" subsetting="true" />
 		<setting id="sbt_token" type="text"  default="" visible="false" />
+
+		<setting type="sep" />
+
+		<setting type="lsep" label="Pluto TV"/>
+		<setting id="pluto_available" type="bool" label="34150" default="false" subsetting="true" />
+		<setting id="pluto_sid" type="text"  default="" visible="false" />
+		<setting id="pluto_did" type="text"  default="" visible="false" />
 		<setting type="sep" />
 	</category>
 

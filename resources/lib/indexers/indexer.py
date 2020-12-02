@@ -148,7 +148,7 @@ def create_directory(items, current=None, cache_to_disk=True):
             item.addContextMenuItems(cm)
 
             meta_string = urllib.quote_plus(json.dumps(data))
-            url = '%s?action=generic&meta=%s' % (sysaddon, meta_string)
+            url = data.get('url', None) or '%s?action=generic&meta=%s' % (sysaddon, meta_string)
 
             is_playable = data.get('IsPlayable', False)
             is_folder = data.get('IsFolder', not is_playable)

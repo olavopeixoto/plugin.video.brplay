@@ -580,3 +580,7 @@ msgstr ""
 msgctxt "#34149"
 msgid "Ignore Daylight Saving Time"
 msgstr ""
+
+msgctxt "#34150"
+msgid "Enable Pluto TV"
+msgstr ""
