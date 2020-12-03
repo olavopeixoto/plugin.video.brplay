@@ -6,6 +6,7 @@ from . import auth_helper
 from . import player
 import requests
 import os
+import datetime
 from resources.lib.modules.globosat import pfc
 from resources.lib.modules.globosat.pfc import PREMIERE_LOGO, PREMIERE_FANART
 
@@ -15,6 +16,8 @@ GLOBO_FANART = os.path.join(control.artPath(), 'globoplay_bg_fhd.png')
 GLOBOPLAY_THUMB = os.path.join(control.artPath(), 'globoplay.png')
 
 THUMB_URL = 'http://s01.video.glbimg.com/x1080/%s.jpg'
+
+EXCERPT_ICON = os.path.join(control.artPath(), 'excerpt_square.png')
 
 PLAYER_HANDLER = player.__name__
 
@@ -378,7 +381,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
 
     control.log('get_title: %s | page %s' % (id, page))
     variables = '{{"titleId":"{id}", "episodeTitlePage": {page}, "episodeTitlePerPage": {per_page}, "userIsLoggedIn": true}}'.format(id=id, page=page, per_page=per_page)
-    query = 'query%20getTitleFavorited%28%24titleId%3A%20String%2C%20%24episodeTitlePage%3A%20Int%2C%20%24episodeTitlePerPage%3A%20Int%2C%20%24userIsLoggedIn%3A%20Boolean%21%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20...titleFragment%0A%20%20%20%20...continueWatchingTitleFragment%0A%20%20%20%20favorited%0A%20%20%7D%0A%7D%0Afragment%20titleFragment%20on%20Title%20%7B%0A%20%20titleId%0A%20%20slug%0A%20%20headline%0A%20%20originalHeadline%0A%20%20description%0A%20%20originVideoId%0A%20%20originProgramId%0A%20%20type%0A%20%20format%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20releaseYear%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20poster%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20countries%0A%20%20genresNames%0A%20%20directorsNames%0A%20%20artDirectorsNames%0A%20%20authorsNames%0A%20%20castNames%0A%20%20screenwritersNames%0A%20%20extras%20%7B%0A%20%20%20%20%20%20editorialOffers%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20PageOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20offerId%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20structure%20%7B%0A%20%20%20%20%20%20...seasonedStructureFragment%0A%20%20%20%20%20%20...filmPlaybackStructureFragment%0A%20%20%20%20%20%20...episodeListStructureFragment%0A%20%20%20%20%7D%0A%7D%0Afragment%20seasonedStructureFragment%20on%20SeasonedStructure%20%7B%0A%20%20seasons%20%7B%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20totalEpisodes%0A%20%20%20%20%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20seasonsWithExcerpts%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%20%20totalEpisodes%0A%20%20%20%20%20%20%20%20%7D%0A%7D%0Afragment%20filmPlaybackStructureFragment%20on%20FilmPlaybackStructure%20%7B%0A%20%20videoPlayback%20%7B%0A%20%20%20%20id%0A%20%20%20%20exhibitedAt%0A%20%20%20%20encrypted%0A%20%20%20%20availableFor%0A%20%20%20%20headline%0A%20%20%20%20description%0A%20%20%20%20thumb%0A%20%20%20%20duration%0A%20%20%7D%0A%7D%0Afragment%20episodeListStructureFragment%20on%20EpisodeListStructure%20%7B%0A%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20total%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20excerpts%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20%20%20total%0A%20%20%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%7D%0Afragment%20continueWatchingTitleFragment%20on%20Title%20%7B%0A%20%20structure%20%7B%0A%20%20%20%20...%20on%20SeasonedStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20FilmPlaybackStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20continueWatchingVideoFragment%20on%20Video%20%7B%0A%20%20id%0A%20%20headline%0A%20%20description%0A%20%20watchedProgress%0A%20%20duration%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%7D'
+    query = 'query%20getTitleFavorited%28%24titleId%3A%20String%2C%20%24episodeTitlePage%3A%20Int%2C%20%24episodeTitlePerPage%3A%20Int%2C%20%24userIsLoggedIn%3A%20Boolean%21%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20...titleFragment%0A%20%20%20%20...continueWatchingTitleFragment%0A%20%20%20%20favorited%0A%20%20%7D%0A%7D%0Afragment%20titleFragment%20on%20Title%20%7B%0A%20%20titleId%0A%20%20slug%0A%20%20headline%0A%20%20originalHeadline%0A%20%20description%0A%20%20originVideoId%0A%20%20originProgramId%0A%20%20type%0A%20%20format%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20releaseYear%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20poster%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20countries%0A%20%20genresNames%0A%20%20directorsNames%0A%20%20artDirectorsNames%0A%20%20authorsNames%0A%20%20castNames%0A%20%20screenwritersNames%0A%20%20extras%20%7B%0A%20%20%20%20%20%20editorialOffers%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20PageOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20offerId%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20structure%20%7B%0A%20%20%20%20%20%20...seasonedStructureFragment%0A%20%20%20%20%20%20...filmPlaybackStructureFragment%0A%20%20%20%20%20%20...episodeListStructureFragment%0A%20%20%20%20%7D%0A%7D%0Afragment%20seasonedStructureFragment%20on%20SeasonedStructure%20%7B%0A%20%20seasons%20%7B%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20totalEpisodes%0A%20%20%20%20%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20seasonsWithExcerpts%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%20%20totalEpisodes%0A%20%20%20%20%20%20%20%20%7D%0A%7D%0Afragment%20filmPlaybackStructureFragment%20on%20FilmPlaybackStructure%20%7B%0A%20%20videoPlayback%20%7B%0A%20%20%20%20id%0A%20%20%20%20exhibitedAt%0A%20%20%20%20encrypted%0A%20%20%20%20availableFor%0A%20%20%20%20headline%0A%20%20%20%20description%0A%20%20%20%20thumb%0A%20%20%20%20duration%0A%20%20%7D%0A%7D%0Afragment%20episodeListStructureFragment%20on%20EpisodeListStructure%20%7B%0A%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20total%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20excerpts%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20%20%20total%0A%20%20%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%7D%0Afragment%20continueWatchingTitleFragment%20on%20Title%20%7B%0A%20%20structure%20%7B%0A%20%20%20%20...%20on%20SeasonedStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20FilmPlaybackStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20continueWatchingVideoFragment%20on%20Video%20%7B%0A%20%20id%0A%20%20headline%0A%20%20description%0A%20%20watchedProgress%0A%20%20duration%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20encrypted%0A%20%20thumb%0A%7D'
     title = request_query(query, variables)['data']['title']
 
     if not title.get('structure', {}):
@@ -389,6 +392,72 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
     page = 0
 
     is_favorite = title.get('favorited', False)
+
+    if 'excerpts' in structure:
+        yield {
+            'handler': __name__,
+            'method': 'get_excerpts',
+            'id': id,
+            'label': control.lang(34151).encode('utf-8'),
+            'program_id': title.get('originProgramId'),
+            'originaltitle': title.get('originalHeadline'),
+            'tvshowtitle': title.get('headline'),
+            'year': title.get('releaseYear'),
+            'country': title.get('countries', []),
+            'genre': title.get('genresNames', []),
+            'cast': title.get('castNames', []),
+            'director': title.get('directorsNames', []),
+            'writer': title.get('screenwritersNames', []),
+            'credits': title.get('artDirectorsNames', []),
+            'mpaa': title.get('contentRating'),
+            'studio': title.get('channel', {}).get('name'),
+            'art': {
+                'icon': EXCERPT_ICON,
+                'thumb': EXCERPT_ICON,
+                'fanart': title.get('cover', {}).get('landscape', GLOBO_FANART),
+                'tvshow.poster': title.get('poster', {}).get('web'),
+            },
+            'properties': {
+                'SpecialSort': 'top'
+            }
+        }
+
+    if 'continueWatching' in structure and structure.get('continueWatching'):
+        continue_watching = structure.get('continueWatching', {}) or {}
+        video = continue_watching.get('video', {})
+
+        yield {
+                'handler': PLAYER_HANDLER,
+                'method': 'play_stream',
+                'IsPlayable': True,
+                'id': video.get('id'),
+                'program_id': title.get('originProgramId'),
+                'label': '%s: %s' % (control.lang(34156).encode('utf-8'), video.get('headline', '')),
+                'title': video.get('headline', ''),
+                'originaltitle': title.get('originalHeadline'),
+                'plot': video.get('description', ''),
+                'duration': video.get('duration', 0) / 1000,
+                'mediatype': 'episode',
+                'tvshowtitle': title.get('headline'),
+                'year': title.get('releaseYear'),
+                'country': title.get('countries', []),
+                'genre': title.get('genresNames', []),
+                'cast': title.get('castNames', []),
+                'director': title.get('directorsNames', []),
+                'writer': title.get('screenwritersNames', []),
+                'credits': title.get('artDirectorsNames', []),
+                'mpaa': title.get('contentRating'),
+                'studio': title.get('channel', {}).get('name'),
+                'aired': (video.get('exhibitedAt', '') or '').split('T')[0],
+                'art': {
+                    'thumb': video.get('thumb'),
+                    'fanart': title.get('cover', {}).get('landscape', GLOBO_FANART),
+                    'tvshow.poster': title.get('poster', {}).get('web'),
+                },
+                'properties': {
+                    'resumetime': str(video.get('watchedProgress', 0) / 1000)
+                }
+            }
 
     if 'videoPlayback' in structure:
         video = title['structure']['videoPlayback']
@@ -550,6 +619,185 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
             'handler': __name__,
             'method': 'get_title',
             'id': id,
+            'season': season,
+            'page': page,
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': GLOBO_FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
+
+
+def get_excerpts(id, art=None, page=1, per_page=PAGE_SIZE):
+    if not id:
+        return
+
+    if art is None:
+        art = {}
+
+    control.log('get_excerpts: %s' % id)
+
+    variables = '{{"titleId":"{id}","page":{page},"perPage":{per_page}}}'.format(id=id, page=page, per_page=per_page)
+    query = 'query%20getDatesWithExcerpts%28%24titleId%3A%20String%2C%20%24gte%3A%20Date%2C%20%24lte%3A%20Date%2C%20%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20epgActive%0A%20%20%20%20format%0A%20%20%20%20titleId%0A%20%20%20%20slug%0A%20%20%20%20description%0A%20%20%20%20structure%20%7B%0A%20%20%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20%20%20datesWithExcerpts%28dateRange%3A%20%7Bgte%3A%20%24gte%2C%20lte%3A%20%24lte%7D%2C%20page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20resources%0A%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0A'
+
+    title = request_query(query, variables)['data']['title']
+
+    resources = title.get('structure', {}).get('datesWithExcerpts', {}).get('resources', [])
+
+    local_art = {
+        'icon': EXCERPT_ICON,
+        'thumb': EXCERPT_ICON,
+        'fanart': GLOBO_FANART
+    }
+    local_art.update(art)
+
+    control.set_locale()
+
+    if len(resources) > 0:
+        date_str = resources[0]
+        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        date_name = control.get_weekday_name(date_obj)
+        label = '%s, %s' % (date_name, date_obj.strftime('%d/%m/%Y'))
+
+        if label:
+            yield {
+                'handler': __name__,
+                'method': 'get_most_viewed_by_date',
+                'id': id,
+                'label': '%s %s' % (control.lang(34152).encode('utf-8'), label.lower()),
+                'gte': date_str,
+                'lte': date_str,
+                'art': local_art
+            }
+
+    yield {
+        'handler': __name__,
+        'method': 'get_most_viewed_by_date',
+        'id': id,
+        'label': control.lang(34155).encode('utf-8'),
+        'gte': None,
+        'lte': None,
+        'art': local_art
+    }
+
+    for date_str in resources:
+        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        date_name = control.get_weekday_name(date_obj)
+        label = '%s, %s' % (date_name, date_obj.strftime('%d/%m/%Y'))
+
+        yield {
+            'handler': __name__,
+            'method': 'get_excerpts_by_date',
+            'id': id,
+            'label': label,
+            'gte': date_str,
+            'lte': date_str,
+            'art': local_art,
+        }
+
+
+def get_excerpts_by_date(id, gte, lte):
+    query = 'query%20getExcerptsByDate%28%24titleId%3A%20String%21%2C%20%24gte%3A%20Date%21%2C%20%24lte%3A%20Date%21%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20headline%0A%20%20%20%20structure%20%7B%0A%20%20%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20%20%20excerpts%28dateRange%3A%20%7Bgte%3A%20%24gte%2C%20lte%3A%20%24lte%7D%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20originalHeadline%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20originVideoId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A'
+    variables = '{{"titleId":"{id}","gte":"{gte}","lte":"{lte}"}}'.format(id=id, gte=gte, lte=lte)
+    excerpts = request_query(query, variables).get('data', {}).get('title', {}).get('structure', {}).get('excerpts', {})
+    resources = excerpts.get('resources', [])
+
+    for resource in resources:
+        video = resource.get('video', resource)
+        title = resource.get('title', {})
+
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'play_stream',
+            'IsPlayable': True,
+            'id': video.get('id'),
+            'program_id': title.get('originProgramId'),
+            'label': video.get('headline', ''),
+            'title': video.get('headline', ''),
+            'originaltitle': title.get('originalHeadline'),
+            'plot': video.get('description', ''),
+            'duration': video.get('duration', 0) / 1000,
+            'episode': resource.get('number'),
+            'season': resource.get('seasonNumber'),
+            'mediatype': 'episode',
+            'tvshowtitle': title.get('headline'),
+            'year': title.get('releaseYear'),
+            'country': title.get('countries', []),
+            'genre': title.get('genresNames', []),
+            'cast': title.get('castNames', []),
+            'director': title.get('directorsNames', []),
+            'writer': title.get('screenwritersNames', []),
+            'credits': title.get('artDirectorsNames', []),
+            'mpaa': title.get('contentRating'),
+            'studio': title.get('channel', {}).get('name'),
+            'aired': (video.get('exhibitedAt', '') or '').split('T')[0],
+            'art': {
+                'thumb': video.get('thumb'),
+                'fanart': title.get('cover', {}).get('landscape', GLOBO_FANART),
+                'tvshow.poster': title.get('poster', {}).get('web'),
+            }
+        }
+
+
+def get_most_viewed_by_date(id, gte, lte, page=1, per_page=PAGE_SIZE):
+    query = 'query%20getMostViewed%28%24titleId%3A%20String%21%2C%20%24gte%3A%20Date%2C%20%24lte%3A%20Date%2C%20%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20structure%20%7B%0A%20%20%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20%20%20excerpts%28dateRange%3A%20%7Bgte%3A%20%24gte%2C%20lte%3A%20%24lte%7D%2C%20rule%3A%20TOP_HITS_ALL_TIMES%2C%20page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20%20%20total%0A%20%20%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20originalHeadline%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20originVideoId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A'
+    if gte and lte:
+        variables = '{{"titleId":"{id}","gte":"{gte}","lte":"{lte}","page":{page},"perPage":{perPage}}}'.format(id=id, gte=gte, lte=lte, page=page, perPage=per_page)
+    else:
+        variables = '{{"titleId":"{id}","page":{page},"perPage":{perPage}}}'.format(id=id, page=page, perPage=per_page)
+
+    excerpts = request_query(query, variables).get('data', {}).get('title', {}).get('structure', {}).get('excerpts', {})
+
+    page = excerpts.get('nextPage', 0) if excerpts.get('hasNextPage', False) else 0
+    resources = excerpts.get('resources', [])
+
+    for resource in resources:
+        video = resource.get('video', resource)
+        title = resource.get('title', {})
+
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'play_stream',
+            'IsPlayable': True,
+            'id': video.get('id'),
+            'program_id': title.get('originProgramId'),
+            'label': video.get('headline', ''),
+            'title': video.get('headline', ''),
+            'originaltitle': title.get('originalHeadline'),
+            'plot': video.get('description', ''),
+            'duration': video.get('duration', 0) / 1000,
+            'episode': resource.get('number'),
+            'season': resource.get('seasonNumber'),
+            'mediatype': 'episode',
+            'tvshowtitle': title.get('headline'),
+            'year': title.get('releaseYear'),
+            'country': title.get('countries', []),
+            'genre': title.get('genresNames', []),
+            'cast': title.get('castNames', []),
+            'director': title.get('directorsNames', []),
+            'writer': title.get('screenwritersNames', []),
+            'credits': title.get('artDirectorsNames', []),
+            'mpaa': title.get('contentRating'),
+            'studio': title.get('channel', {}).get('name'),
+            'aired': (video.get('exhibitedAt', '') or '').split('T')[0],
+            'art': {
+                'thumb': video.get('thumb'),
+                'fanart': title.get('cover', {}).get('landscape', GLOBO_FANART),
+                'tvshow.poster': title.get('poster', {}).get('web'),
+            }
+        }
+
+    if page > 0:
+        yield {
+            'handler': __name__,
+            'method': 'get_most_viewed_by_date',
+            'id': id,
+            'gte': gte,
+            'lte': lte,
             'page': page,
             'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
             'art': {

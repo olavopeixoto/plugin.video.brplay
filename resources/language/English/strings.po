@@ -584,3 +584,27 @@ msgstr ""
 msgctxt "#34150"
 msgid "Enable Pluto TV"
 msgstr ""
+
+msgctxt "#34151"
+msgid "Excerpts"
+msgstr ""
+
+msgctxt "#34152"
+msgid "Most viewed"
+msgstr ""
+
+msgctxt "#34153"
+msgid "Today"
+msgstr ""
+
+msgctxt "#34154"
+msgid "Yesterday"
+msgstr ""
+
+msgctxt "#34155"
+msgid "Most viewed"
+msgstr ""
+
+msgctxt "#34156"
+msgid "Continue watching"
+msgstr ""

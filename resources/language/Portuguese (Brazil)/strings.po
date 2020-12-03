@@ -584,3 +584,27 @@ msgstr "Ignorar Horário de Verão"
 msgctxt "#34150"
 msgid "Enable Pluto TV"
 msgstr "Habilitar Pluto TV"
+
+msgctxt "#34151"
+msgid "Excerpts"
+msgstr "Trechos"
+
+msgctxt "#34152"
+msgid "Most viewed"
+msgstr "Mais vistos de"
+
+msgctxt "#34153"
+msgid "Today"
+msgstr "Hoje"
+
+msgctxt "#34154"
+msgid "Yesterday"
+msgstr "Ontem"
+
+msgctxt "#34155"
+msgid "Most viewed"
+msgstr "Mais vistos"
+
+msgctxt "#34156"
+msgid "Continue watching"
+msgstr "Continue assistindo"

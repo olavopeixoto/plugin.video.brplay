@@ -75,7 +75,6 @@ def add_directory_item(handler, method, lang, thumb_file_name):
         'handler': handler,
         'method': method,
         'label': control.lang(lang).encode('utf-8'),
-        'sort': control.SORT_METHOD_LABEL,
         'art': {
             'thumb': os.path.join(artPath, thumb_file_name) if artPath else None,
             'fanart': addonFanart
