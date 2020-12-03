@@ -7,6 +7,7 @@ import urllib
 from resources.lib.modules import control
 from resources.lib.modules.telecine import get_headers
 from auth import get_device_id
+import traceback
 
 import xbmc
 
@@ -29,10 +30,16 @@ class Player(xbmc.Player):
             return
 
         if not control.is_inputstream_available():
-            control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
+            control.okDialog('Telecine Play', control.lang(34103).encode('utf-8'))
             return
 
-        url, license_url = self.get_stream(path)
+        try:
+            url, license_url = self.get_stream(path)
+        except:
+            control.log(traceback.format_exc(), control.LOGERROR)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            control.okDialog('Telecine Play', str(exc_value))
+            return
 
         if '.mpd' not in url:
             response = requests.get(url, proxies=proxy)

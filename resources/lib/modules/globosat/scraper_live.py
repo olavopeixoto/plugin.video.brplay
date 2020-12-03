@@ -85,7 +85,8 @@ def get_live_channels():
         label = u"[B]%s[/B][I] - %s[/I]%s" % (channel_name, program_name, live_text)
 
         fanart = FANART_URL.format(media_id=broadcast['mediaId'])
-        thumb = SNAPSHOT_URL.format(transmission=THUMBS[str(broadcast['channel']['id'])]) + '/?v=' + str(int(time.time())) if str(broadcast['channel']['id']) in THUMBS else THUMB_URL.format(media_id=broadcast['mediaId'])
+        # thumb = SNAPSHOT_URL.format(transmission=THUMBS[str(broadcast['channel']['id'])]) + '/?v=' + str(int(time.time())) if str(broadcast['channel']['id']) in THUMBS else THUMB_URL.format(media_id=broadcast['mediaId'])
+        thumb = THUMB_URL.format(media_id=broadcast['mediaId'])
 
         program_date = datetime.datetime.utcfromtimestamp(program['startTime'])
         end_time = datetime.datetime.utcfromtimestamp(program['endTime'])

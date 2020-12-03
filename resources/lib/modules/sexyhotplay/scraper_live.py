@@ -11,7 +11,7 @@ SEXYHOT_LOGO = os.path.join(control.artPath(), 'logo_sexyhot.png')
 SEXYHOT_FANART = os.path.join(control.artPath(), 'fanart_sexyhot.png')
 
 FANART_URL = 'http://s01.video.glbimg.com/x1080/{media_id}.jpg'
-# THUMB_URL = 'https://s04.video.glbimg.com/x720/{media_id}.jpg'
+THUMB_URL_MEDIA = 'https://s04.video.glbimg.com/x720/{media_id}.jpg'
 THUMB_URL = 'https://live-thumbs.video.globo.com/sexy24ha/snapshot/'
 
 
@@ -40,7 +40,8 @@ def get_broadcast():
     label = "[B]" + broadcast['channel']['name'] + "[/B]" + ('[I] - ' + program_name + '[/I]' if program_name else '') + live_text
 
     fanart = broadcast['imageOnAir']  # FANART_URL.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
-    thumb = THUMB_URL + '?v=' + str(int(time.time()))  # THUMB_URL.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
+    # thumb = THUMB_URL + '?v=' + str(int(time.time()))
+    thumb = THUMB_URL_MEDIA.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
 
     program_date = datetime.datetime.fromtimestamp(program['startTime'])
     end_time = datetime.datetime.fromtimestamp(program['endTime'])

@@ -107,8 +107,19 @@ def register_device():
     data = {
         "name": "BR Play"
     }
+
     log('register_device')
+    log('POST %s' % url)
+    log(headers)
+    log(data)
+
     response = requests.post(url, json=data, headers=headers)
+
+    log(response.content)
+
+    if response.status_code == 400:
+        response_json = response.json()
+        raise Exception(response_json.get('message').encode('utf-8'))
 
     response.raise_for_status()
 
@@ -215,6 +226,8 @@ def oitv_login(session, response, username, password):
 
     response.raise_for_status()
 
+    # control.log(response.content)
+
     html = BeautifulSoup(response.content)
 
     url = html.find('form')['action']
@@ -224,14 +237,17 @@ def oitv_login(session, response, username, password):
     post = {}
 
     for ipt in inputs:
-        if ipt['name'] == 'Ecom_User_ID':
+        if not ipt.has_key('name'):
+            continue
+
+        if ipt.get('name') == 'Ecom_User_ID':
             value = username
-        elif ipt['name'] == 'Ecom_Password':
+        elif ipt.get('name') == 'Ecom_Password':
             value = password
         else:
             value = ipt.get('value', '')
 
-        post[ipt['name']] = value
+        post[ipt.get('name')] = value
 
     log('POST (AUTH) %s' % url)
 
