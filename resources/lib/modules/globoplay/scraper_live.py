@@ -94,6 +94,7 @@ def get_live_channels():
 
 
 def __get_affiliate_live_channels(affiliate):
+    control.log('__get_affiliate_live_channels: %s' % affiliate)
     live_globo_id = get_globo_live_id()
 
     code, latitude, longitude = control.get_coordinates(affiliate)
@@ -103,14 +104,12 @@ def __get_affiliate_live_channels(affiliate):
         code = result['code'] if result and 'code' in result else None
 
     if code is None:
+        control.log('No affiliate code for: %s' % affiliate)
         return []
 
     live_program = __get_live_program(code)
 
-    if not live_program:
-        return []
-
-    program_description = get_program_description(live_program['program_id_epg'], live_program['program_id'], code)
+    program_description = get_program_description(live_program.get('program_id_epg'), live_program.get('program_id'), code)
 
     control.log("globo live (%s) program_description: %s" % (code, repr(program_description)))
 
@@ -120,7 +119,7 @@ def __get_affiliate_live_channels(affiliate):
 
     item.pop('datetimeutc', None)
 
-    title = program_description['title'] if 'title' in program_description else live_program['title']
+    title = program_description['title'] if 'title' in program_description else live_program.get('title')
     safe_tvshowtitle = program_description['tvshowtitle'] if 'tvshowtitle' in program_description and program_description['tvshowtitle'] else ''
     safe_subtitle = program_description['subtitle'] if 'subtitle' in program_description and program_description['subtitle'] and not safe_tvshowtitle.startswith(program_description['subtitle']) else ''
     subtitle_txt = (" / " if safe_tvshowtitle and safe_subtitle else '') + safe_subtitle
@@ -135,7 +134,7 @@ def __get_affiliate_live_channels(affiliate):
         'affiliate_code': code,
         'IsPlayable': True,
         'id': live_globo_id,
-        'program_id': live_program['program_id'],
+        'program_id': live_program.get('program_id'),
         'service_id': 4654,
         'channel_id': 196,
         'live': True,
@@ -153,13 +152,13 @@ def __get_affiliate_live_channels(affiliate):
 
     if not art.get('thumb'):
         # thumb = 'https://live-thumbs.video.globo.com/globo-rj/snapshot/' + str(int(time.time()))
-        art['thumb'] = live_program['thumb']
+        art['thumb'] = live_program.get('thumb')
 
     if not art.get('fanart'):
-        art['fanart'] = live_program['fanart']
+        art['fanart'] = live_program.get('fanart')
 
     if not art.get('poster'):
-        art['tvshow.poster'] = live_program['poster']
+        art['tvshow.poster'] = live_program.get('poster')
 
     art['clearlogo'] = GLOBO_LOGO
     art['icon'] = GLOBO_LOGO
@@ -178,10 +177,14 @@ def __get_live_program(affiliate='RJ'):
     session.mount('https://', adapter)
 
     try:
+        control.log('GET %s' % url)
+
         response = session.get(url, headers=headers).json()
 
+        control.log(response)
+
         if not response or 'live' not in response:
-            return None
+            return {}
 
         live = response['live']
 
