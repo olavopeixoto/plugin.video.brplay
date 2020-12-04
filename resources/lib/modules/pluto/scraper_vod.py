@@ -45,7 +45,8 @@ def get_main_menu():
                 'icon': LOGO,
                 'thumb': LOGO,
                 'fanart': FANART
-            }
+            },
+            # 'sort': control.SORT_METHOD_LABEL
         }
 
 

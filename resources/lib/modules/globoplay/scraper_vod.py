@@ -393,35 +393,6 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
 
     is_favorite = title.get('favorited', False)
 
-    if 'excerpts' in structure:
-        yield {
-            'handler': __name__,
-            'method': 'get_excerpts',
-            'id': id,
-            'label': control.lang(34151).encode('utf-8'),
-            'program_id': title.get('originProgramId'),
-            'originaltitle': title.get('originalHeadline'),
-            'tvshowtitle': title.get('headline'),
-            'year': title.get('releaseYear'),
-            'country': title.get('countries', []),
-            'genre': title.get('genresNames', []),
-            'cast': title.get('castNames', []),
-            'director': title.get('directorsNames', []),
-            'writer': title.get('screenwritersNames', []),
-            'credits': title.get('artDirectorsNames', []),
-            'mpaa': title.get('contentRating'),
-            'studio': title.get('channel', {}).get('name'),
-            'art': {
-                'icon': EXCERPT_ICON,
-                'thumb': EXCERPT_ICON,
-                'fanart': title.get('cover', {}).get('landscape', GLOBO_FANART),
-                'tvshow.poster': title.get('poster', {}).get('web'),
-            },
-            'properties': {
-                'SpecialSort': 'top'
-            }
-        }
-
     if 'continueWatching' in structure and structure.get('continueWatching'):
         continue_watching = structure.get('continueWatching', {}) or {}
         video = continue_watching.get('video', {})
@@ -500,6 +471,37 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
             excerpts = structure.get('excerpts', {}) or {}
             page = excerpts.get('nextPage', 0) if excerpts.get('hasNextPage', False) else 0
             resources = excerpts.get('resources', []) or []
+
+        elif 'excerpts' in structure:
+            excerpts = structure.get('excerpts', {}) or {}
+            if excerpts.get('total', 0) > 0:
+                yield {
+                    'handler': __name__,
+                    'method': 'get_excerpts',
+                    'id': id,
+                    'label': control.lang(34151).encode('utf-8'),
+                    'program_id': title.get('originProgramId'),
+                    'originaltitle': title.get('originalHeadline'),
+                    'tvshowtitle': title.get('headline'),
+                    'year': title.get('releaseYear'),
+                    'country': title.get('countries', []),
+                    'genre': title.get('genresNames', []),
+                    'cast': title.get('castNames', []),
+                    'director': title.get('directorsNames', []),
+                    'writer': title.get('screenwritersNames', []),
+                    'credits': title.get('artDirectorsNames', []),
+                    'mpaa': title.get('contentRating'),
+                    'studio': title.get('channel', {}).get('name'),
+                    'art': {
+                        'icon': EXCERPT_ICON,
+                        'thumb': EXCERPT_ICON,
+                        'fanart': title.get('cover', {}).get('landscape', GLOBO_FANART),
+                        'tvshow.poster': title.get('poster', {}).get('web'),
+                    },
+                    'properties': {
+                        'SpecialSort': 'top'
+                    }
+                }
 
         for resource in resources:
             video = resource.get('video', resource)
@@ -632,7 +634,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
         }
 
 
-def get_excerpts(id, art=None, page=1, per_page=PAGE_SIZE):
+def get_excerpts(id, art=None):
     if not id:
         return
 
@@ -641,8 +643,8 @@ def get_excerpts(id, art=None, page=1, per_page=PAGE_SIZE):
 
     control.log('get_excerpts: %s' % id)
 
-    variables = '{{"titleId":"{id}","page":{page},"perPage":{per_page}}}'.format(id=id, page=page, per_page=per_page)
-    query = 'query%20getDatesWithExcerpts%28%24titleId%3A%20String%2C%20%24gte%3A%20Date%2C%20%24lte%3A%20Date%2C%20%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20epgActive%0A%20%20%20%20format%0A%20%20%20%20titleId%0A%20%20%20%20slug%0A%20%20%20%20description%0A%20%20%20%20structure%20%7B%0A%20%20%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20%20%20datesWithExcerpts%28dateRange%3A%20%7Bgte%3A%20%24gte%2C%20lte%3A%20%24lte%7D%2C%20page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20resources%0A%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0A'
+    variables = '{{"titleId":"{id}"}}'.format(id=id)
+    query = 'query%20getDatesWithExcerpts%28%24titleId%3A%20String%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20epgActive%0A%20%20%20%20format%0A%20%20%20%20titleId%0A%20%20%20%20slug%0A%20%20%20%20description%0A%20%20%20%20structure%20%7B%0A%20%20%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20%20%20datesWithExcerpts%20%7B%0A%20%20%20%20%20%20%20%20%20%20resources%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
 
     title = request_query(query, variables)['data']['title']
 
