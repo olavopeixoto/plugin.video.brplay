@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, json, threading, time, sys, urllib, datetime, calendar, locale
+import os, json, threading, time, sys, urllib, datetime
 
 import xbmc, xbmcaddon, xbmcplugin, xbmcgui, xbmcvfs
 
@@ -719,12 +719,6 @@ def run_plugin_url(params=None):
     return 'RunPlugin(%s?%s)' % (sysaddon, urllib.urlencode(params))
 
 
-def set_locale():
-    loc = xbmc.getLanguage(xbmc.ISO_639_1, True)
-    loc = 'pt_BR' if loc.startswith('pb-') else 'en_GB'
-    locale.setlocale(locale.LC_ALL, loc)
-
-
 def get_weekday_name(date):
     diff = (datetime.datetime.today().date() - date.date()).days
     if diff == 0:  # Today
@@ -732,6 +726,5 @@ def get_weekday_name(date):
     elif diff == 1:  # Yesterday
         return lang(34154).encode('utf-8')
     else:
-        weekdays = list(calendar.day_name)
         weekday = date.weekday()
-        return weekdays[weekday]
+        return lang(34157 + weekday).encode('utf-8')

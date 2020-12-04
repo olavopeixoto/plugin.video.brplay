@@ -608,3 +608,31 @@ msgstr "Mais vistos"
 msgctxt "#34156"
 msgid "Continue watching"
 msgstr "Continue assistindo"
+
+msgctxt "#34157"
+msgid "Monday"
+msgstr "Segunda-feira"
+
+msgctxt "#34158"
+msgid "Tuesday"
+msgstr "Terça-feira"
+
+msgctxt "#34159"
+msgid "Wednesday"
+msgstr "Quarta-feira"
+
+msgctxt "#34160"
+msgid "Thursday"
+msgstr "Quinta-feira"
+
+msgctxt "#34161"
+msgid "Friday"
+msgstr "Sexta-feira"
+
+msgctxt "#34162"
+msgid "Saturday"
+msgstr "Sabado"
+
+msgctxt "#34163"
+msgid "Sunday"
+msgstr "Domingo"

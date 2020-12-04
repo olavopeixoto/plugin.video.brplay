@@ -608,3 +608,31 @@ msgstr ""
 msgctxt "#34156"
 msgid "Continue watching"
 msgstr ""
+
+msgctxt "#34157"
+msgid "Monday"
+msgstr ""
+
+msgctxt "#34158"
+msgid "Tuesday"
+msgstr ""
+
+msgctxt "#34159"
+msgid "Wednesday"
+msgstr ""
+
+msgctxt "#34160"
+msgid "Thursday"
+msgstr ""
+
+msgctxt "#34161"
+msgid "Friday"
+msgstr ""
+
+msgctxt "#34162"
+msgid "Saturday"
+msgstr ""
+
+msgctxt "#34163"
+msgid "Sunday"
+msgstr ""

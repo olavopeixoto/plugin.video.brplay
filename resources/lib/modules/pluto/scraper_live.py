@@ -1,8 +1,7 @@
 import requests
 import datetime
 import uuid
-from resources.lib.modules import control
-from resources.lib.modules import cache
+from resources.lib.modules import control, util, cache
 
 
 proxy = control.proxy_url
@@ -42,7 +41,7 @@ def get_live_channels():
         program_name = title + (u': ' + sub_title if sub_title else u'')
 
         duration_milliseconds = int(program['episode']['duration'])
-        start_time = datetime.datetime.strptime(program['start'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        start_time = util.strptime_workaround(program['start'], '%Y-%m-%dT%H:%M:%S.%fZ')
         stop_time = start_time + datetime.timedelta(milliseconds=duration_milliseconds)
 
         program_time_desc = datetime.datetime.strftime(start_time, '%H:%M') + ' - ' + datetime.datetime.strftime(stop_time, '%H:%M')

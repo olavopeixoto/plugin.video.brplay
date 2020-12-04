@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from resources.lib.modules import control
+from resources.lib.modules import control, util
 from resources.lib.modules.globoplay import request_query, get_headers, get_image_scaler, get_authorized_services
 from . import auth_helper
 from . import player
@@ -657,11 +657,9 @@ def get_excerpts(id, art=None):
     }
     local_art.update(art)
 
-    control.set_locale()
-
     if len(resources) > 0:
         date_str = resources[0]
-        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        date_obj = util.strptime_workaround(date_str, '%Y-%m-%d')
         date_name = control.get_weekday_name(date_obj)
         label = '%s, %s' % (date_name, date_obj.strftime('%d/%m/%Y'))
 
@@ -687,7 +685,7 @@ def get_excerpts(id, art=None):
     }
 
     for date_str in resources:
-        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+        date_obj = util.strptime_workaround(date_str, '%Y-%m-%d')
         date_name = control.get_weekday_name(date_obj)
         label = '%s, %s' % (date_name, date_obj.strftime('%d/%m/%Y'))
 
