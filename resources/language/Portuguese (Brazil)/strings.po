@@ -631,7 +631,7 @@ msgstr "Sexta-feira"
 
 msgctxt "#34162"
 msgid "Saturday"
-msgstr "Sabado"
+msgstr "Sábado"
 
 msgctxt "#34163"
 msgid "Sunday"
