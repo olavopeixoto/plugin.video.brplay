@@ -85,7 +85,7 @@ class Player(xbmc.Player):
         parsed_url = urlparse(url)
         if parsed_url.path.endswith(".m3u8"):
             self.url, mime_type, stop_event, cookies = hlshelper.pick_bandwidth(url)
-        elif parsed_url.path.endswith(".mpd"):
+        elif parsed_url.path.endswith(".mpd") and not self.isLive:
             proxy_handler = MediaProxy()
             self.url = proxy_handler.resolve(url)
             stop_event = proxy_handler.stop_event

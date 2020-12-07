@@ -117,7 +117,7 @@
 		<setting type="sep" />
 
 		<setting type="lsep" label="Pluto TV"/>
-		<setting id="pluto_available" type="bool" label="34150" default="false" subsetting="true" />
+		<setting id="pluto_available" type="bool" label="34150" default="true" subsetting="true" />
 		<setting id="pluto_sid" type="text"  default="" visible="false" />
 		<setting id="pluto_did" type="text"  default="" visible="false" />
 		<setting type="sep" />

@@ -23,7 +23,12 @@ def geturl(url):
     r = re.search(r'https?://www.youtube.com/embed/([^/|^?]+)', url)
     if r:
         video_id = r.group(1)
-        return get_manifest_url_v2(video_id)
+        url = get_manifest_url(video_id)
+
+        if not url:
+            url = get_manifest_url_v2(video_id)
+
+        return url
 
     if url and not url.startswith('http'):
         url = 'https://www.youtube.com/channel/{channel}/live'.format(channel=url)

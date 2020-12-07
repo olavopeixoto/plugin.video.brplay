@@ -133,18 +133,21 @@ class RequestHandler(BaseHTTPRequestHandler):
                 log('CONTENT: %s' % content)
 
             elif '.mpd' in response.url.split('?')[0] and 200 <= response.status_code < 300:
-                base_url = self.base_url_match.search(response.content).group(1)
-
                 BASE_URL = response.url
 
-                new_url = urlparse.urljoin(response.url, base_url)
+                result = self.base_url_match.search(response.content)
 
-                path = urlparse.urlparse(new_url).path
-                ext = os.path.splitext(path)[1] or 'mpd'
-                ext = ext.replace('.', '')
+                if result:
+                    base_url = result.group(1)
 
-                new_base_url = PROXY_URL_FORMAT % (ext, urllib.quote_plus(new_url))
-                content = self.base_url_match.sub(r'<BaseURL>' + new_base_url + r'</BaseURL>', response.content)
+                    new_url = urlparse.urljoin(response.url, base_url)
+
+                    path = urlparse.urlparse(new_url).path
+                    ext = os.path.splitext(path)[1] or 'mpd'
+                    ext = ext.replace('.', '')
+
+                    new_base_url = PROXY_URL_FORMAT % (ext, urllib.quote_plus(new_url))
+                    content = self.base_url_match.sub(r'<BaseURL>' + new_base_url + r'</BaseURL>', response.content)
 
                 log('CONTENT: %s' % content)
 
