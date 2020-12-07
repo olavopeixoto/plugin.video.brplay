@@ -44,9 +44,13 @@ class Player(xbmc.Player):
             control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
             return
 
-        http_proxy = MediaProxy(control.proxy_url)
-        self.url = http_proxy.resolve(url)
-        stop_event = http_proxy.stop_event
+        if control.proxy_url:
+            http_proxy = MediaProxy(control.proxy_url)
+            self.url = http_proxy.resolve(url)
+            stop_event = http_proxy.stop_event
+        else:
+            self.url = url
+            stop_event = None
 
         if self.url is None:
             if stop_event:
