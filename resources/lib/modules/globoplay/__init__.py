@@ -32,9 +32,9 @@ def get_headers():
         'authorization': token,
         'content-type': 'application/json',
         'Referer': 'https://globoplay.globo.com/',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36',
         'x-tenant-id': 'globo-play',
-        'x-client-version': '3.330.0',
+        'x-client-version': '3.395.1',
         'x-device-id': 'desktop',
         'x-platform-id': 'web',
         'x-user-id': user_id

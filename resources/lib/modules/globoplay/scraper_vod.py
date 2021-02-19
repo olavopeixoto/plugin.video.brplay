@@ -6,7 +6,7 @@ from . import auth_helper
 from . import player
 import requests
 import os
-import datetime
+import time
 from resources.lib.modules.globosat import pfc
 from resources.lib.modules.globosat.pfc import PREMIERE_LOGO, PREMIERE_FANART
 
@@ -232,6 +232,9 @@ def get_offer(id, component_type):
 
     if component_type == 'CATEGORYBACKGROUND':
         return get_category_offer(id)
+
+    if component_type == 'BROADCASTTHUMB':
+        return get_broadcastthumb_offer(id)
 
     # Default = POSTER
     return get_poster_offer(id)
@@ -1014,6 +1017,51 @@ def get_category_offer(id, page=1, per_page=PAGE_SIZE):
         yield {
             'handler': __name__,
             'method': 'get_category_offer',
+            'id': id,
+            'page': page.get('nextPage'),
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': GLOBO_FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
+
+
+# BROADCASTTHUMB
+def get_broadcastthumb_offer(id, page=1, per_page=PAGE_SIZE):
+    query = 'query%20getOfferBroadcastByIdAndAffiliateCode%28%24id%3A%20ID%21%2C%20%24affiliateCode%3A%20String%2C%20%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20localizedOffer%28id%3A%20%24id%2C%20affiliateCode%3A%20%24affiliateCode%29%20%7B%0A%20%20%20%20...%20on%20LocalizedOffer%20%7B%0A%20%20%20%20%20%20paginatedItems%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20...%20on%20Broadcast%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20channelId%0A%20%20%20%20%20%20%20%20%20%20%20%20liveThumbEnabled%0A%20%20%20%20%20%20%20%20%20%20%20%20media%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20kind%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20liveThumbnail%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20landscape%3A%20landscape%28scale%3A%20X276%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20assets%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20previewUrl%28format%3A%20MP4%2C%20scale%3A%20X216%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20thumbUrl%28format%3A%20JPEG%2C%20scale%3A%20X360%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20logo%3A%20trimmedLogo%28scale%3A%20X56%29%0A%20%20%20%20%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20logo%3A%20trimmedLogo%28scale%3A%20X56%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20epgCurrentSlots%28limit%3A%201%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20landscape%3A%20landscape%28scale%3A%20X276%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20imageOnAir%3A%20imageOnAir%28scale%3A%20X216%29%0A%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D'
+    variables = '{{"id":"{id}","affiliateCode":null,"page":{page},"perPage":{per_page}}}'.format(id=id, page=page, per_page=per_page)
+    page = request_query(query, variables).get('data', {}).get('localizedOffer', {}).get('paginatedItems', {})
+
+    for item in page.get('resources', []):
+        media = item.get('media', {}) or {}
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'play_stream',
+            'IsPlayable': True,
+            'live': True,
+            'livefeed': True,
+            'id': item.get('mediaId'),
+            # 'program_id': item.get('originProgramId', ''),
+            'label': '%s: %s' % (item.get('name', ''), media.get('headline', '')),
+            'title': item.get('headline', ''),
+            'mediatype': 'video',
+            # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+            'art': {
+                'thumb': media.get('liveThumbnail', GLOBOPLAY_THUMB)  + '?=' + str(int(time.time())),
+                'fanart': media.get('title', {}).get('cover', {}).get('landscape', GLOBO_FANART),
+                # 'poster': ((item.get('title', {}) or {}).get('poster', {}) or {}).get('web'),
+                'icon': item.get('logo')
+            }
+        }
+
+    if page.get('hasNextPage', False):
+        yield {
+            'handler': __name__,
+            'method': 'get_broadcastthumb_offer',
             'id': id,
             'page': page.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),

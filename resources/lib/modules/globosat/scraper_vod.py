@@ -2,6 +2,7 @@
 
 from resources.lib.modules import control
 from resources.lib.modules.globosat import request_query
+import time
 import player
 import pfc
 from pfc import PREMIERE_LOGO, PREMIERE_FANART
@@ -28,6 +29,9 @@ def get_authorized_channels():
     resources = query_response['data']['broadcastChannels']['resources']
 
     for broadcast in resources:
+        if broadcast['pageIdentifier'] == 'premiere':
+            continue
+
         yield {
                 'handler': __name__,
                 'method': 'get_channel_programs',
@@ -73,6 +77,7 @@ def get_channel_programs(slug, art=None):
             'handler': __name__,
             'method': 'get_offer',
             'id': offer.get('offerId'),
+            'component_type': offer.get('componentType'),
             'label': offer.get('title', ''),
             'art': {
                 'thumb': art.get('thumb'),
@@ -81,7 +86,27 @@ def get_channel_programs(slug, art=None):
         }
 
 
-def get_offer(id, page=1):
+def get_offer(id, component_type):
+    # if component_type == 'THUMB':
+    #     return get_thumb_offer(id)
+    #
+    # if component_type == 'CONTINUEWATCHING':
+    #     return get_continue_watching()
+    #
+    # if component_type == 'OFFERHIGHLIGHT':
+    #     return get_offer_highlight(id)
+    #
+    # if component_type == 'CATEGORYBACKGROUND':
+    #     return get_category_offer(id)
+
+    if component_type == 'BROADCASTTHUMB':
+        return get_broadcastthumb_offer(id)
+
+    # Default
+    return get_generic_offer(id)
+
+
+def get_generic_offer(id, page=1):
 
     control.log('Globosat - GET OFFER: %s | page: %s' % (id, page))
 
@@ -116,12 +141,12 @@ def get_offer(id, page=1):
             'plot': resource.get('description', title.get('description')),
             'year': title.get('releaseYear'),
             'originaltitle': title.get('originalHeadline', ''),
-            'country': title.get('countries', []),
-            'genre': title.get('genresNames', []),
-            'cast': title.get('castNames', []),
-            'director': title.get('directorsNames', []),
-            'writer': title.get('screenwritersNames', []),
-            'credits': title.get('artDirectorsNames', []),
+            'country': title.get('countries', []) or [],
+            'genre': title.get('genresNames', []) or [],
+            'cast': title.get('castNames', []) or [],
+            'director': title.get('directorsNames', []) or [],
+            'writer': title.get('screenwritersNames', []) or [],
+            'credits': title.get('artDirectorsNames', []) or [],
             'tag': title.get('contentRatingCriteria'),
             'mpaa': title.get('contentRating'),
             'studio': title.get('channel', {}).get('name'),
@@ -145,6 +170,47 @@ def get_offer(id, page=1):
             'method': 'get_offer',
             'id': id,
             'page': page,
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
+
+
+# BROADCASTTHUMB
+def get_broadcastthumb_offer(id, page=1, per_page=200):
+    query = 'query%20getLocalizedOffer%28%24id%3A%20ID%21%2C%20%24affiliateCode%3A%20String%29%20%7B%0A%20%20localizedOffer%28id%3A%20%24id%2C%20affiliateCode%3A%20%24affiliateCode%29%20%7B%0A%20%20%20%20__typename%0A%20%20%20%20...%20on%20LocalizedOffer%20%7B%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20paginatedItems%20%7B%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20...%20on%20Broadcast%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20transmissionId%0A%20%20%20%20%20%20%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20%20%20%20%20%20%20channelId%0A%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20assets%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20previewUrl%28format%3A%20MP4%2C%20scale%3A%20X216%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20teaserUrl%28format%3A%20MP4%2C%20scale%3A%20X360%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20thumbUrl%28format%3A%20JPEG%2C%20scale%3A%20X360%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20media%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20thumb%28size%3A%201080%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20liveThumbnail%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20mutedMediaId%0A%20%20%20%20%20%20%20%20%20%20%20%20promotionalMediaId%0A%20%20%20%20%20%20%20%20%20%20%20%20logo%3A%20trimmedLogo%28scale%3A%20X56%29%0A%20%20%20%20%20%20%20%20%20%20%20%20trimmedLogo%0A%20%20%20%20%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20logo%3A%20trimmedLogo%28scale%3A%20X56%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20epgCurrentSlots%28limit%3A%201%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20programId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20portrait%3A%20portrait%28scale%3A%20X768%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20landscape%3A%20landscape%28scale%3A%20X720%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20imageOnAir%3A%20imageOnAir%28scale%3A%20X720%29%0A%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20perPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
+    variables = '{{"id":"{id}","affiliateCode":null,"page":{page},"perPage":{per_page}}}'.format(id=id, page=page, per_page=per_page)
+    page = request_query(query, variables).get('data', {}).get('localizedOffer', {}).get('paginatedItems', {})
+
+    for item in page.get('resources', []):
+        media = item.get('media', {}) or {}
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'playlive',
+            'IsPlayable': True,
+            'livefeed': True,
+            'id': item.get('mediaId'),
+            'label': media.get('headline', ''),
+            'title': media.get('headline', ''),
+            'mediatype': 'video',
+            'art': {
+                'thumb': '%s?v=%s' % (media.get('liveThumbnail', FANART) or FANART, str(int(time.time()))),
+                'fanart': item.get('imageOnAir', FANART),
+                'icon': item.get('logo')
+            }
+        }
+
+    if page.get('hasNextPage', False):
+        yield {
+            'handler': __name__,
+            'method': 'get_broadcastthumb_offer',
+            'id': id,
+            'page': page.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
             'art': {
                 'poster': control.addonNext(),

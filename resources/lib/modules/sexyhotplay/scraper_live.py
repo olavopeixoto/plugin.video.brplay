@@ -40,8 +40,8 @@ def get_broadcast():
     label = "[B]" + broadcast['channel']['name'] + "[/B]" + ('[I] - ' + program_name + '[/I]' if program_name else '') + live_text
 
     fanart = broadcast['imageOnAir']  # FANART_URL.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
-    # thumb = THUMB_URL + '?v=' + str(int(time.time()))
-    thumb = THUMB_URL_MEDIA.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
+    thumb = THUMB_URL + '?v=' + str(int(time.time()))
+    # thumb = THUMB_URL_MEDIA.format(media_id=broadcast['mediaId']) + '?v=' + str(int(time.time()))
 
     program_date = datetime.datetime.fromtimestamp(program['startTime'])
     end_time = datetime.datetime.fromtimestamp(program['endTime'])

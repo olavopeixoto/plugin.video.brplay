@@ -1,6 +1,6 @@
 from resources.lib.modules import control
+from resources.lib.modules import util
 import requests
-import re
 
 PLAYER_VERSION = '1.1.24'
 DEVICE_ID = "NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ=="
@@ -283,3 +283,90 @@ def _select_resource(video_id, resources, metadata, title_override=None):
     control.log(result)
 
     return result
+
+
+def get_geofence_video_info(video_id, latitude, longitude, credentials):
+
+    if credentials is None:
+        return None
+
+    proxy = control.proxy_url
+    proxy = None if proxy is None or proxy == '' else {
+        'http': proxy,
+        'https': proxy,
+    }
+
+    version = PLAYER_VERSION
+
+    # enable_4k = control.is_4k_enabled
+    # enable_hdr = control.setting('enable_hdr') == 'true'
+
+    players_preference = []
+
+    # if enable_4k:
+    #     if enable_hdr:
+    #         players_preference.extend([
+    #             'androidtv_hdr',
+    #         ])
+    #     else:
+    #         players_preference.extend([
+    #             'androidtv_sdr'
+    #         ])
+
+    players_preference.extend([
+        # 'androidtv',
+        'android',
+        # 'android_native',
+
+    ])
+
+    selected_player = players_preference[0]
+
+    post_data = {
+        'player': selected_player,
+        'version': version,
+        'lat': latitude,
+        'long': longitude,
+        'cdn': 'globo'
+    }
+
+    # tz:       00:00
+    # player:  ios_native
+    # cdn:     globo
+    # ts:      1613693205
+    # udid:    bbec61e5f3a06ca54624e84accc232b5d49971a6
+    # version: 10.25.0
+    # lat:     51.49502563476562
+    # long:    -0.03278398965019131
+
+    hash_url = 'http://security.video.globo.com/videos/%s/hash' % video_id
+    control.log('POST %s' % hash_url)
+    control.log(post_data)
+    control.log(credentials)
+    response = requests.post(hash_url, cookies=credentials, headers={
+                                                            "Accept-Encoding": "gzip",
+                                                            "Content-Type": "application/x-www-form-urlencoded",
+                                                            "User-Agent": "Canais Globo (Globosat Play)/444 (iPhone)"
+                                                        }, data=post_data, proxies=proxy)
+
+    response.raise_for_status()
+
+    hash_json = response.json()
+
+    control.log(hash_json)
+
+    return {
+        "id": video_id,
+        "title": hash_json.get("name"),
+        "category": 'Live',
+        "subscriber_only": True,
+        "channel": None,
+        "player": selected_player,
+        "url": hash_json.get("url"),
+        "query_string_template": "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
+        "thumbUri": hash_json.get("thumbUri"),
+        "hash_token": util.get_signed_hashes(hash_json.get('hash'))[0],
+        "user": hash_json.get("user"),
+        "credentials": credentials,
+        "encrypted": hash_json.get('encrypted', False)
+    }

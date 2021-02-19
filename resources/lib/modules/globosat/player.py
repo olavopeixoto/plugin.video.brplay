@@ -44,6 +44,8 @@ class Player(xbmc.Player):
 
         if not meta.get('router', True):
             info = resourceshelper.get_video_info(id)
+        elif meta.get('geofencing') and meta.get('lat') and meta.get('long'):
+            info = resourceshelper.get_geofence_video_info(id, meta.get('lat'), meta.get('long'), auth_helper.get_credentials())
         else:
             info = resourceshelper.get_video_router(id, self.isLive)
             if not info:
@@ -55,7 +57,11 @@ class Player(xbmc.Player):
             return
 
         try:
-            hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'])
+            hash_token = info.get('hash_token')
+            user = info.get('user')
+
+            if not hash_token:
+                hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'])
         except Exception as ex:
             control.log(traceback.format_exc(), control.LOGERROR)
             control.log("PLAYER ERROR: %s" % repr(ex))
