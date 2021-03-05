@@ -23,7 +23,7 @@ SERVICES_LOCKS = {}
 
 class Auth:
 
-    ENDPOINT_URL = 'https://login.globo.com/api/authentication'
+    ENDPOINT_URL = 'https://login.globo.com/api/authentication/sdk'
     PROVIDER_ID = None
 
     def __init__(self, tenant='globoplay'):
@@ -104,24 +104,132 @@ class Auth:
     def error(self, msg):
         control.infoDialog('[%s] %s' % (self.__class__.__name__, msg), 'ERROR')
 
+    def get_instance_id(self):
+        globoplay_instance_id = control.setting('globoplay_instance_id')
+
+        if not globoplay_instance_id:
+            checkin_url = 'https://device-provisioning.googleapis.com/checkin'
+            post_data = {
+                    "checkin": {
+                        "iosbuild": {
+                            "model": "iPhone10,6",
+                            "os_version": "IOS_14.4"
+                        },
+                        "last_checkin_msec": 0,
+                        "type": 2,
+                        "user_number": 0
+                    },
+                    "digest": "",
+                    "fragment": 0,
+                    "id": 0,
+                    "locale": "pt",
+                    "security_token": 0,
+                    "time_zone": "America/Sao_Paulo",
+                    "user_serial_number": 0,
+                    "version": 2
+                }
+            control.log('POST %s' % checkin_url)
+            response = requests.post(checkin_url, json=post_data, headers={
+                'User-Agent': 'Globoplay/1 CFNetwork/1220.1 Darwin/20.3.0'
+            })
+
+            control.log(response.content)
+
+            response.raise_for_status()
+            response = response.json()
+
+            security_token = response.get('security_token')
+            android_id = response.get('android_id')
+            version_info = response.get('version_info')
+
+            installations_url = 'https://firebaseinstallations.googleapis.com/v1/projects/globo-play/installations/'
+            post_data = {
+                    "appId": "1:846115935537:ios:c91952b14380e445",
+                    "authVersion": "FIS_v2",
+                    "sdkVersion": "i:7.1.0"
+                }
+            control.log('POST %s' % installations_url)
+            response = requests.post(installations_url, json=post_data, headers={
+                'User-Agent': 'Globoplay/1 CFNetwork/1220.1 Darwin/20.3.0',
+                'x-goog-api-key': 'AIzaSyDbGxO8Bw7cfT5BYiAQTnReVItGEXlpnhY',
+                'x-firebase-client': 'apple-platform/ios apple-sdk/18B79 appstore/true deploy/cocoapods device/iPhone10,6 fire-abt/7.1.0 fire-analytics/7.3.0 fire-fcm/7.1.0 fire-iid/7.1.0 fire-install/7.1.0 fire-ios/7.1.0 fire-perf/7.0.1 fire-rc/7.1.0 firebase-crashlytics/7.1.0 os-version/14.4 swift/true xcode/12B45b',
+                'x-firebase-client-log-type': '3',
+                'x-ios-bundle-identifier': 'com.globo.hydra'
+            })
+
+            control.log(response.content)
+            response.raise_for_status()
+
+            response = response.json()
+
+            fid = response.get('fid')
+            auth_token = response.get('authToken', {}).get('token')
+
+            register_url = 'https://fcmtoken.googleapis.com/register'
+            post_data = {
+                'X-osv': '14.4',
+                'device': android_id,
+                'X-scope': '*',
+                'plat': '2',
+                'app': 'com.globo.hydra',
+                'app_ver': '3.91.0',
+                'X-cliv': 'fiid-7.1.0',
+                'sender': '846115935537',
+                'X-subtype': '846115935537',
+                'appid': fid,
+                'gmp_app_id': '1:846115935537:ios:c91952b14380e445'
+            }
+
+            headers = {
+                'x-firebase-client': 'apple-platform/ios apple-sdk/18B79 appstore/true deploy/cocoapods device/iPhone10,6 fire-abt/7.1.0 fire-analytics/7.3.0 fire-fcm/7.1.0 fire-iid/7.1.0 fire-install/7.1.0 fire-ios/7.1.0 fire-perf/7.0.1 fire-rc/7.1.0 firebase-crashlytics/7.1.0 os-version/14.4 swift/true xcode/12B45b',
+                'authorization': 'AidLogin %s:%s' % (android_id, security_token),
+                'x-firebase-client-log-type': '1',
+                'app': 'com.globo.hydra',
+                'user-agent': 'Globoplay/1 CFNetwork/1220.1 Darwin/20.3.0',
+                'info': version_info,
+                'x-goog-firebase-installations-auth': auth_token,
+                'content-type': 'application/x-www-form-urlencoded'
+            }
+
+            control.log('POST %s' % register_url)
+            control.log(headers)
+            control.log(post_data)
+
+            response = requests.post(register_url, data=post_data, headers=headers).content
+
+            if not response.startswith('token='):
+                raise Exception(response)
+
+            globoplay_instance_id = response.replace('token=', '')
+
+            control.log('NEW INSTANCE_ID: %s' % globoplay_instance_id)
+
+            control.setSetting('globoplay_instance_id', globoplay_instance_id)
+
+        return globoplay_instance_id
+
     def _authenticate(self, username, password):
 
+        instance_id = self.get_instance_id()
+
         payload = {
-            'captcha': '',
             'payload': {
                 'email': username,
                 'password': password,
                 'serviceId': 4654
             }
         }
-        with auth_lock:
-            response = cache.get(requests.post, 1, self.ENDPOINT_URL,
-                                     json=payload,
-                                     headers={'content-type': 'application/json; charset=UTF-8',
+        headers = {'content-type': 'application/json; charset=UTF-8',
                                               'accept': 'application/json, text/javascript',
                                               'Accept-Encoding': 'gzip',
-                                              'referer': 'https://login.globo.com/login/4654?url=https://globoplay.globo.com/&tam=WIDGET',
-                                              'origin': 'https://login.globo.com'}, table='globoplay')
+                                              'Authorization': 'IIDToken com.globo.hydra|%s' % instance_id}
+
+        control.log('POST %s' % self.ENDPOINT_URL)
+        control.log(headers)
+
+        response = cache.get(requests.post, 1, self.ENDPOINT_URL,
+                                 json=payload,
+                                 headers=headers, lock_obj=auth_lock, table='globoplay')
 
         control.log('GLOBOPLAY AUTHENTICATION RESPONSE: %s' % response.status_code)
         control.log(response.content)
@@ -166,17 +274,12 @@ class Auth:
         url = 'https://cocoon.globo.com/v2/user/logged' + service_str
         control.log('POST %s' % url)
 
-        control.log('Getting lock for service %s' % service_id)
         lock = self.get_service_lock(token, service_id)
-        control.log('About to lock code...')
-        with lock:
-            control.log('Requesting locked:')
-            response = cache.get(requests.post, 168, url, headers={
-                                                        'Origin': 'https://globoplay.globo.com',
-                                                        'Cookie': 'GLBID=%s' % token
-                                                    }, force_refresh=bypass_cache, table='globoplay')
+        response = cache.get(requests.post, 168, url, headers={
+                                                    'Origin': 'https://globoplay.globo.com',
+                                                    'Cookie': 'GLBID=%s' % token
+                                                }, force_refresh=bypass_cache, lock_obj=lock, table='globoplay')
 
-        control.log('Lock released for service %s' % service_id)
         control.log('GLOBOPLAY SERVICE (%s | %s) CHECK RESPONSE: %s' % (self.tenant, service_id, response.status_code))
         control.log(response.content)
 

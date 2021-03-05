@@ -7,12 +7,15 @@ DEVICE_ID = "NmExZjhkODljZWE5YTZkZWQ3MTIzNmJhNzg3NQ=="
 DEVICE_ID_KEY = "{{deviceId}}"
 
 
-def get_video_router(video_id, is_live=False):
+def get_video_router(video_id, is_live=False, cdn=None):
+
     proxy = control.proxy_url
     proxy = None if proxy is None or proxy == '' else {
         'http': proxy,
         'https': proxy,
     }
+
+    cdn = cdn or 'globo'
 
     version = PLAYER_VERSION
 
@@ -48,8 +51,8 @@ def get_video_router(video_id, is_live=False):
 
     response = None
     for player in players_preference:
-        playlist_url = 'https://router.video.globo.com/cdn?video_id={video_id}&player_type={player}&video_type={video_type}&content_protection=widevine&quality=max'
-        final_url = playlist_url.format(video_id=video_id, player=player, video_type='Live' if is_live else 'Video')
+        playlist_url = 'https://router.video.globo.com/cdn?video_id={video_id}&player_type={player}&video_type={video_type}&content_protection=widevine&quality=max&cdn={cdn}'
+        final_url = playlist_url.format(video_id=video_id, player=player, video_type='Live' if is_live else 'Video', cdn=cdn)
         control.log('[Globoplay Player] - GET %s' % final_url)
         response = requests.get(final_url, headers={"Accept-Encoding": "gzip"}, proxies=proxy).json()
         control.log(response)
@@ -111,7 +114,7 @@ def get_video_router(video_id, is_live=False):
     return result
 
 
-def get_video_info(video_id, children_id=None):
+def get_video_info(video_id, children_id=None, cdn=None):
     playlist_url = 'http://api.globovideos.com/videos/%s/playlist'
     playlist_json = requests.get(playlist_url % video_id, headers={"Accept-Encoding": "gzip"}).json()
 
@@ -120,18 +123,20 @@ def get_video_info(video_id, children_id=None):
         control.infoDialog(message=message, sound=True, icon='ERROR')
         return None
 
+    control.log(playlist_json)
+
     playlist_json = playlist_json['videos'][0]
 
     play_children = control.setting('play_children') == 'true' or children_id is not None
 
     if play_children and 'children' in playlist_json and len(playlist_json['children']) > 0 and 'cuepoints' in playlist_json and len(playlist_json['cuepoints']) > 0:
         # resources = next((children for children in playlist_json['children'] if children['id]']==children_id), playlist_json['children'][0])
-        return [_select_resource(children['id'], children['resources'], playlist_json, children['title']) for children in playlist_json['children']]
+        return [_select_resource(children['id'], children['resources'], playlist_json, children['title'], cdn=cdn) for children in playlist_json['children']]
     else:
-        return _select_resource(video_id, playlist_json['resources'], playlist_json)
+        return _select_resource(video_id, playlist_json['resources'], playlist_json, cdn=cdn)
 
 
-def _select_resource(video_id, resources, metadata, title_override=None):
+def _select_resource(video_id, resources, metadata, title_override=None, cdn=None):
     resource = None
     encrypted = False
     player = 'android'
@@ -257,6 +262,17 @@ def _select_resource(video_id, resources, metadata, title_override=None):
                 'url': subtitle['url']
             })
 
+    cdn_data = resource['cdns'][cdn] if cdn in resource['cdns'] else None
+    if cdn_data:
+        domain = cdn_data['domain']
+        query_string_template = cdn_data['query_string_template']
+        path = resource['paths']['max']
+        url = domain + path
+    else:
+        query_string_template = resource["query_string_template"]
+        url = resource["url"]
+        cdn = 'globo'
+
     result = {
         "resource_id": resource['_id'],
         "id": video_id,
@@ -271,8 +287,9 @@ def _select_resource(video_id, resources, metadata, title_override=None):
         "exhibited_at": metadata["exhibited_at"],
         "player": player,
         "version": PLAYER_VERSION,
-        "url": resource["url"],
-        "query_string_template": resource["query_string_template"],
+        "url": url,
+        "cdn": cdn,
+        "query_string_template": query_string_template,
         "thumbUri": resource["thumbUri"] if 'thumbUri' in resource else None,
         "encrypted": encrypted,
         "drm_scheme": drm_scheme,
@@ -285,7 +302,7 @@ def _select_resource(video_id, resources, metadata, title_override=None):
     return result
 
 
-def get_geofence_video_info(video_id, latitude, longitude, credentials):
+def get_geofence_video_info(video_id, latitude, longitude, credentials, cdn=None):
 
     if credentials is None:
         return None
@@ -327,7 +344,7 @@ def get_geofence_video_info(video_id, latitude, longitude, credentials):
         'version': version,
         'lat': latitude,
         'long': longitude,
-        'cdn': 'globo'
+        'cdn': cdn or 'globo'
     }
 
     # tz:       00:00
@@ -363,9 +380,9 @@ def get_geofence_video_info(video_id, latitude, longitude, credentials):
         "channel": None,
         "player": selected_player,
         "url": hash_json.get("url"),
-        "query_string_template": "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
+        "query_string_template": hash_json.get('query_string_template') or "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
         "thumbUri": hash_json.get("thumbUri"),
-        "hash_token": util.get_signed_hashes(hash_json.get('hash'))[0],
+        "hash_token": util.get_signed_hashes(hash_json.get('hash'))[0] if 'hash' in hash_json else hash_json['token'],
         "user": hash_json.get("user"),
         "credentials": credentials,
         "encrypted": hash_json.get('encrypted', False)

@@ -85,19 +85,17 @@ def get_manifest_url_v2(video_id):
 
     # print result
 
-    result = re.search(r';ytplayer\.config\s*=\s*({.+?});ytplayer', result)
+    result = re.search(r'var ytInitialPlayerResponse\s*=\s*({.+?});', result)
 
     if not result:
-        control.log('NO Config', control.LOGERROR)
+        print('NO Config')
         return None
 
     config = result.group(1)
 
     config_json = json.loads(config)
 
-    player_response = json.loads(config_json['args']['player_response'])
-
-    return player_response['streamingData']['hlsManifestUrl']
+    return config_json['streamingData']['hlsManifestUrl']
 
 
 def get_manifest_url_by_url(url):

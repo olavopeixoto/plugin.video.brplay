@@ -42,14 +42,18 @@ class Player(xbmc.Player):
 
         self.isLive = meta.get('livefeed', False)
 
-        if not meta.get('router', True):
-            info = resourceshelper.get_video_info(id)
-        elif meta.get('geofencing') and meta.get('lat') and meta.get('long'):
-            info = resourceshelper.get_geofence_video_info(id, meta.get('lat'), meta.get('long'), auth_helper.get_credentials())
+        cdn = control.setting('globosat_cdn')
+        if cdn:
+            cdn = cdn.lower() if cdn.lower() != 'auto' else None
+
+        if meta.get('geofencing') and meta.get('lat') and meta.get('long'):
+            info = resourceshelper.get_geofence_video_info(id, meta.get('lat'), meta.get('long'), auth_helper.get_credentials(), cdn)
+        elif not meta.get('router', True) or cdn:
+            info = resourceshelper.get_video_info(id, cdn=cdn)
         else:
-            info = resourceshelper.get_video_router(id, self.isLive)
+            info = resourceshelper.get_video_router(id, self.isLive, cdn)
             if not info:
-                info = resourceshelper.get_video_info(id)
+                info = resourceshelper.get_video_info(id, cdn=cdn)
 
         control.log("INFO: %s" % repr(info))
 
@@ -61,7 +65,8 @@ class Player(xbmc.Player):
             user = info.get('user')
 
             if not hash_token:
-                hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'])
+                control.log('Signing resource: %s' % info['resource_id'])
+                hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'], cdn)
         except Exception as ex:
             control.log(traceback.format_exc(), control.LOGERROR)
             control.log("PLAYER ERROR: %s" % repr(ex))
@@ -79,7 +84,8 @@ class Player(xbmc.Player):
             'hash': hash_token,
             'key': 'app',
             'openClosed': 'F' if info['subscriber_only'] and user else 'A',
-            'user': user if info['subscriber_only'] and user else ''
+            'user': user if info['subscriber_only'] and user else '',
+            'token': hash_token
         }
 
         url = '?'.join([info['url'], query_string])
@@ -208,7 +214,7 @@ class Player(xbmc.Player):
         if self.stopPlayingEvent:
             self.stopPlayingEvent.set()
 
-    def sign_resource(self, provider_id, resource_id, video_id, player, version):
+    def sign_resource(self, provider_id, resource_id, video_id, player, version, cdn=None):
         proxy = control.proxy_url
         proxy = None if proxy is None or proxy == '' else {
             'http': proxy,
@@ -218,10 +224,15 @@ class Player(xbmc.Player):
         credentials = auth_helper.get_globosat_cookie(provider_id)
 
         hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
+        if cdn:
+            hash_url = hash_url + '&cdn=' + cdn
+        control.log('GET %s' % hash_url)
         response = requests.get(hash_url, cookies=credentials, headers={"Accept-Encoding": "gzip"}, proxies=proxy)
         response.raise_for_status()
 
         hash_json = response.json()
+
+        control.log(hash_json)
 
         if not hash_json or hash_json is None or 'message' in hash_json and hash_json['message']:
             message = hash_json['message'] if hash_json and 'message' in hash_json else control.lang(34102)
@@ -229,9 +240,9 @@ class Player(xbmc.Player):
             control.infoDialog(message=message.encode('utf-8'), sound=True, icon='ERROR')
             raise Exception(message)
 
-        hash_token = util.get_signed_hashes(hash_json['hash'])[0]
-
-        return hash_token, hash_json["user"] if 'user' in hash_json else None, credentials
+        hash_token = util.get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
+        user = hash_json["user"] if 'user' in hash_json else None
+        return hash_token, user, credentials
 
     def save_video_progress(self, token, video_id, watched_seconds):
 

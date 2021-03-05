@@ -33,6 +33,9 @@ def get(function, timeout_hour, *args, **kargs):
     force_refresh = kargs['force_refresh'] if 'force_refresh' in kargs else False
     kargs.pop('force_refresh', None)
 
+    lock_obj = kargs['lock_obj'] if 'lock_obj' in kargs else None
+    kargs.pop('lock_obj', None)
+
     f = repr(function)
     f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
 
@@ -57,26 +60,60 @@ def get(function, timeout_hour, *args, **kargs):
         dbcur = dbcon.cursor()
 
         if not force_refresh:
-            dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-            match = dbcur.fetchone()
-            if match and len(match) > 3:
-                response = pickle.loads(str(match[2]))
-
-                t1 = int(match[3])
-                t2 = int(time.time())
-                update = timeout_hour and (abs(t2 - t1) / 3600) >= int(timeout_hour)
-                if update is False:
-                    control.log('RESULT FROM CACHE: %s' % table)
-                    return response
-                control.log('CACHE EXPIRED')
-            else:
-                control.log('NO CACHE FOUND')
+            response, found = __get_from_cache(dbcur, table, f, a, timeout_hour)
+            if found:
+                return response
         else:
             control.log('BYPASSING CACHE')
     except:
         control.log(traceback.format_exc(), control.LOGERROR)
         control.log('NO CACHE FOUND')
 
+    if lock_obj:
+        id = time.time()
+        control.log('About to lock code (%s)...' % id)
+
+        found = False
+
+        with lock_obj:
+            control.log('Executing locked (%s)' % id)
+
+            try:
+                result, found = __get_from_cache(dbcur, table, f, a, timeout_hour)
+            except:
+                control.log(traceback.format_exc(), control.LOGERROR)
+                control.log('NO CACHE FOUND')
+
+            if not found:
+                result = __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs)
+
+        control.log('Lock released (%s)' % id)
+        return result
+
+    else:
+        return __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs)
+
+
+def __get_from_cache(dbcur, table, f, a, timeout_hour):
+    dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
+    match = dbcur.fetchone()
+    if match and len(match) > 3:
+        response = pickle.loads(str(match[2]))
+
+        t1 = int(match[3])
+        t2 = int(time.time())
+        update = timeout_hour and (abs(t2 - t1) / 3600) >= int(timeout_hour)
+        if update is False:
+            control.log('RESULT FROM CACHE: %s' % table)
+            return response, True
+        control.log('CACHE EXPIRED')
+    else:
+        control.log('NO CACHE FOUND')
+
+    return None, False
+
+
+def __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs):
     # try:
     start_time = time.time()
     if kargs:
@@ -86,7 +123,8 @@ def get(function, timeout_hour, *args, **kargs):
     end_time = time.time()
 
     if control.log_enabled:
-        control.log('EXECUTED (%s.%s) IN %s' % (inspect.getmodule(function).__name__, f, str(datetime.timedelta(seconds=end_time - start_time))))
+        control.log('EXECUTED (%s.%s) IN %s' % (
+        inspect.getmodule(function).__name__, f, str(datetime.timedelta(seconds=end_time - start_time))))
 
     if (r is None or r == []) and response is not None:
         return response
@@ -102,7 +140,8 @@ def get(function, timeout_hour, *args, **kargs):
     r_raw = r
     r = pickle.dumps(r, 0)
     t = int(time.time())
-    dbcur.execute("CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response BLOB, ""added TEXT, ""UNIQUE(func, args)"");" % table)
+    dbcur.execute(
+        "CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response BLOB, ""added TEXT, ""UNIQUE(func, args)"");" % table)
     dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
     dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, buffer(r), t))
     dbcon.commit()

@@ -62,6 +62,10 @@ class Player(xbmc.Player):
         self.isLive = meta.get('livefeed', False)
         stop_event = None
 
+        cdn = control.setting('globo_cdn')
+        if cdn:
+            cdn = cdn.lower() if cdn.lower() != 'auto' else None
+
         if self.isLive and meta.get('lat') and meta.get('long'):
             control.log("PLAY LIVE!")
 
@@ -71,7 +75,7 @@ class Player(xbmc.Player):
             if not latitude or not longitude:
                 code, latitude, longitude = control.get_coordinates(control.get_affiliates_by_id(-1))
 
-            info = self.__getLiveVideoInfo(id, latitude, longitude)
+            info = self.__getLiveVideoInfo(id, latitude, longitude, cdn)
 
             if info is None:
                 return
@@ -79,12 +83,12 @@ class Player(xbmc.Player):
             item, self.url, stop_event = self.__get_list_item(meta, info)
 
         else:
-            if not meta.get('router', True):
-                info = resourceshelper.get_video_info(id, children_id)
+            if not meta.get('router', True) or cdn:
+                info = resourceshelper.get_video_info(id, children_id, cdn)
             else:
-                info = resourceshelper.get_video_router(id, self.isLive)
+                info = resourceshelper.get_video_router(id, self.isLive, cdn)
                 if not info:
-                    info = resourceshelper.get_video_info(id, children_id)
+                    info = resourceshelper.get_video_info(id, children_id, cdn)
 
             if info is None:
                 return
@@ -95,7 +99,7 @@ class Player(xbmc.Player):
                 xbmc.PlayList(1).clear()
                 first = True
                 for i in info:
-                    hash_token, user, self.credentials = self.sign_resource(i['resource_id'], i['id'], i['player'], i['version'])
+                    hash_token, user, self.credentials = self.sign_resource(i['resource_id'], i['id'], i['player'], i['version'], cdn=i['cdn'])
                     i['hash'] = hash_token
                     i['user'] = user
                     item, url, stop_event = self.__get_list_item(meta, i, False)
@@ -108,7 +112,7 @@ class Player(xbmc.Player):
                 item = items[0]
             else:
                 control.log("PLAY SINGLE RESOURCE!")
-                hash_token, user, self.credentials = self.sign_resource(info['resource_id'], info["id"], info['player'], info['version'], meta['anonymous'] if 'anonymous' in meta else False)
+                hash_token, user, self.credentials = self.sign_resource(info['resource_id'], info["id"], info['player'], info['version'], meta['anonymous'] if 'anonymous' in meta else False, cdn=info['cdn'])
                 info['hash'] = hash_token
                 info['user'] = user
                 item, self.url, stop_event = self.__get_list_item(meta, info)
@@ -254,7 +258,7 @@ class Player(xbmc.Player):
 
         return item, url, stop_event
 
-    def __getLiveVideoInfo(self, id, latitude, longitude):
+    def __getLiveVideoInfo(self, id, latitude, longitude, cdn=None):
 
         proxy = control.proxy_url
         proxy = None if proxy is None or proxy == '' else {
@@ -274,9 +278,13 @@ class Player(xbmc.Player):
             'long': longitude
         }
 
+        if cdn:
+            post_data['cdn'] = cdn
+
         # 4452349
         hash_url = 'http://security.video.globo.com/videos/%s/hash' % id
         control.log('POST %s' % hash_url)
+        control.log(post_data)
         response = requests.post(hash_url, cookies=credentials, headers={
                                                                 "Accept-Encoding": "gzip",
                                                                 "Content-Type": "application/x-www-form-urlencoded",
@@ -287,7 +295,10 @@ class Player(xbmc.Player):
 
         hash_json = response.json()
 
-        hash_token = get_signed_hashes(hash_json['hash'])[0]
+        control.log(hash_json)
+
+        hash_token = get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
+        querystring_template = hash_json.get('query_string_template') or "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}"
 
         return {
             "id": "-1",
@@ -303,7 +314,7 @@ class Player(xbmc.Player):
             # "exhibited_at": playlistJson["exhibited_at"],
             "player": PLAYER_SLUG,
             "url": hash_json["url"],
-            "query_string_template": "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
+            "query_string_template": querystring_template,
             "thumbUri": hash_json["thumbUri"],
             "hash": hash_token,
             "user": hash_json["user"],
@@ -311,7 +322,7 @@ class Player(xbmc.Player):
             "encrypted": False
         }
 
-    def sign_resource(self, resource_id, video_id, player, version, anonymous=False):
+    def sign_resource(self, resource_id, video_id, player, version, anonymous=False, cdn=None):
         proxy = control.proxy_url
         proxy = None if proxy is None or proxy == '' else {
             'http': proxy,
@@ -325,6 +336,9 @@ class Player(xbmc.Player):
             credentials = None
 
         hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
+        if cdn:
+            hash_url = hash_url + '&cdn=' + cdn
+
         control.log('GET %s' % hash_url)
         response = requests.get(hash_url, cookies=credentials, headers={"Accept-Encoding": "gzip"}, proxies=proxy)
 
@@ -332,7 +346,7 @@ class Player(xbmc.Player):
 
         hash_json = response.json()
 
-        if not hash_json or 'hash' not in hash_json:
+        if not hash_json or ('hash' not in hash_json and 'token' not in hash_json):
             message = (hash_json or {}).get('message') or control.lang(34101).encode('utf-8')
             control.log(hash_json or message, control.LOGERROR)
             control.infoDialog(message=message, sound=True, icon='ERROR')
