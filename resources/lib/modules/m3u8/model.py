@@ -8,8 +8,8 @@ import os
 import errno
 import math
 
-from parser import parse, format_date_time
-from mixins import BasePathMixin, GroupedBasePathMixin
+from .parser import parse, format_date_time
+from .mixins import BasePathMixin, GroupedBasePathMixin
 
 
 class M3U8(object):

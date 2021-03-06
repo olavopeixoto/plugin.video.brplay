@@ -1,5 +1,4 @@
 import requests
-import datetime
 import uuid
 from resources.lib.modules import control
 from resources.lib.modules import cache
@@ -135,7 +134,7 @@ def hydrate_seasons(response, seasons):
             'handler': __name__,
             'method': 'get_season',
             'id': response.get('_id'),
-            'label': '%s %s' % (control.lang(34137).encode('utf-8'), season.get('number')),
+            'label': '%s %s' % (control.lang(34137), season.get('number')),
             'tvshowtitle': response.get('name'),
             'plot': response.get('description'),
             'rating': response.get('rating'),

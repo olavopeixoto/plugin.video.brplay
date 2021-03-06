@@ -2,10 +2,10 @@
 
 import importlib
 import sys
-import urllib
+from urllib.parse import quote_plus
 import json
 import operator
-from allowkwargs import allow_kwargs
+from .allowkwargs import allow_kwargs
 from resources.lib.modules import control
 import traceback
 import types
@@ -139,15 +139,15 @@ def create_directory(items, current=None, cache_to_disk=True):
 
             item.setInfo(type='video', infoLabels=control.filter_info_labels(data))
 
-            cm = [(control.lang(32072).encode('utf-8'), 'RunPlugin(%s?action=refresh)' % sysaddon),
-                  (control.lang(33501).encode('utf-8'), 'RunPlugin(%s?action=clear)' % sysaddon)]
+            cm = [(control.lang(32072), 'RunPlugin(%s?action=refresh)' % sysaddon),
+                  (control.lang(33501), 'RunPlugin(%s?action=clear)' % sysaddon)]
 
             for menu in data.get('context_menu', []) or []:
                 cm.append(menu)
 
             item.addContextMenuItems(cm)
 
-            meta_string = urllib.quote_plus(json.dumps(data))
+            meta_string = quote_plus(json.dumps(data))
             url = data.get('url', None) or '%s?action=generic&meta=%s' % (sysaddon, meta_string)
 
             is_playable = data.get('IsPlayable', False)
@@ -195,7 +195,7 @@ def create_directory(items, current=None, cache_to_disk=True):
 
         # content: files, songs, artists, albums, movies, tvshows, episodes, musicvideos
         if not content and media_types:
-            media_type = max(media_types.iteritems(), key=operator.itemgetter(1))[0]
+            media_type = max(media_types.items(), key=operator.itemgetter(1))[0]
 
             if media_type == 'movie':
                 content = 'movies'

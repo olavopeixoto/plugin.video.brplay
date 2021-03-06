@@ -1,11 +1,11 @@
 from resources.lib.modules import control, cache, workers
 import requests
-import urllib
-import auth_helper
+from urllib.parse import quote_plus
+from . import auth_helper
 
 
 def request_query(query, variables, force_refresh=False, retry=3, use_cache=True):
-    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=urllib.quote_plus(variables))
+    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=quote_plus(variables))
     return request_url(url, force_refresh, retry, use_cache)
 
 

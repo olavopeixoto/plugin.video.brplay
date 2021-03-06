@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import vod
-import live
+from . import vod
+from . import live
 from resources.lib.modules import control, cache
 
 artPath = control.artPath()
@@ -38,7 +38,7 @@ def open_settings():
 
 def search(query=None, page=1):
     if not query:
-        query = control.dialog.input(control.lang2(24121).encode('utf-8'))
+        query = control.dialog.input(control.lang2(24121))
 
     return vod.search(query, page)
 
@@ -46,27 +46,27 @@ def search(query=None, page=1):
 def clear_cache():
     control.idle()
 
-    yes = control.yesnoDialog(control.lang(32056).encode('utf-8'), '', '')
+    yes = control.yesnoDialog(control.lang(32056), '', '')
 
     if not yes:
         return
 
     cache.delete_file()
 
-    control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
+    control.infoDialog(control.lang(32057), sound=True, icon='INFO')
 
 
 def clear_credentials():
     control.idle()
 
-    yes = control.yesnoDialog(control.lang(32056).encode('utf-8'), '', '')
+    yes = control.yesnoDialog(control.lang(32056), '', '')
 
     if not yes:
         return
 
     control.clear_credentials()
 
-    control.infoDialog(control.lang(32057).encode('utf-8'), sound=True, icon='INFO')
+    control.infoDialog(control.lang(32057), sound=True, icon='INFO')
 
 
 def add_directory_item(handler, method, lang, thumb_file_name):
@@ -74,7 +74,7 @@ def add_directory_item(handler, method, lang, thumb_file_name):
     return {
         'handler': handler,
         'method': method,
-        'label': control.lang(lang).encode('utf-8'),
+        'label': control.lang(lang),
         'art': {
             'thumb': os.path.join(artPath, thumb_file_name) if artPath else None,
             'fanart': addonFanart

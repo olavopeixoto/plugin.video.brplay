@@ -3,7 +3,7 @@
 import sys
 from resources.lib import main
 from resources.lib.modules import control
-import urlparse
+import urllib.parse as urlparse
 import buggalo
 
 

@@ -21,4 +21,4 @@ def setlocale(name):
 
 def format_datetimeshort(date_time):
     with setlocale('pt_BR'):
-        return date_time.strftime(BR_DATESHORT_FORMAT).decode('utf-8')
+        return date_time.strftime(BR_DATESHORT_FORMAT)

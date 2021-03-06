@@ -2,13 +2,15 @@ import json
 import datetime
 import re
 import requests
-from resources.lib.beatifulsoup import BeautifulSoup
-import urlparse
+from bs4 import BeautifulSoup
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 from json import JSONEncoder
 import pickle
 import resources.lib.modules.control as control
 import base64
-from private_data import get_user, get_password
+from .private_data import get_user, get_password
+unicode = str
 
 
 ACCESS_TOKEN_URL = 'https://apim.oi.net.br/connect/oauth2/token_endpoint/access_token'
@@ -112,7 +114,7 @@ def gettoken(force_new=False):
 def get_account_id(id_token):
     jwt = id_token.split('.')
     jwt_base64_string = jwt[1] + '====='
-    jwt_json_string = base64.decodestring(jwt_base64_string)
+    jwt_json_string = base64.decodebytes(str.encode(jwt_base64_string))
     account_id = json.loads(jwt_json_string).get('cpfcnpj')
 
     return account_id
@@ -159,7 +161,7 @@ def __login(user, password):
 
     response = session.get(url)
 
-    url = re.findall(r'action="([^"]+)"', response.content)[0]
+    url = re.findall(r'action="([^"]+)"', response.text)[0]
 
     url = 'https://logintv.oi.com.br' + url
 
@@ -176,13 +178,13 @@ def __login(user, password):
 
     # control.log(response.content)
 
-    url = re.findall(r"window.location.href='([^']+)';", response.content)[0]
+    url = re.findall(r"window.location.href='([^']+)';", response.text)[0]
 
     control.log('GET %s' % url)
 
     response = session.get(url)
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     url = html.find('form')['action']
 
@@ -195,9 +197,9 @@ def __login(user, password):
 
     response = session.post(url, data=post, allow_redirects=False)
 
-    url_parsed = urlparse.urlparse(response.headers['Location'])
+    url_parsed = urlparse(response.headers['Location'])
 
-    qs = urlparse.parse_qs(url_parsed.query)
+    qs = parse_qs(url_parsed.query)
 
     code = qs['code']
 
@@ -211,17 +213,17 @@ def __login(user, password):
 
     token_response = session.post(ACCESS_TOKEN_URL, data=post)
 
-    return json.loads(token_response.content, object_hook=as_python_object)
+    return json.loads(token_response.text, object_hook=as_python_object)
 
 
 class PythonObjectEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (list, dict, str, unicode, int, float, bool, type(None))):
             return JSONEncoder.default(self, obj)
-        return {'_python_object': pickle.dumps(obj)}
+        return {'_python_object': pickle.dumps(obj).decode('cp437')}
 
 
 def as_python_object(dct):
     if '_python_object' in dct:
-        return pickle.loads(str(dct['_python_object']))
+        return pickle.loads(dct['_python_object'].encode('cp437'))
     return dct

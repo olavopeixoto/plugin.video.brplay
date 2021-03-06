@@ -1,8 +1,8 @@
 import requests
 import re
 import json
-import urllib
-import control
+from urllib.parse import unquote_plus
+from . import control
 
 proxy = control.proxy_url
 proxy = None if proxy is None or proxy == '' else {
@@ -44,7 +44,7 @@ def geturl(url):
 
         return manifest_url
 
-    webpage = requests.get(url, proxies=proxy).content
+    webpage = requests.get(url, proxies=proxy).text
     mobj = re.search(r';ytplayer.config = ({.*?});', webpage)
     player_config = json.loads(mobj.group(1))
 
@@ -59,7 +59,7 @@ def geturl(url):
 # url = 'https://www.youtube.com/embed/live_stream?channel=' + channel
 def get_video_id(url):
 
-    webpage = requests.get(url, proxies=proxy).content
+    webpage = requests.get(url, proxies=proxy).text
 
     return re.search(r'\"video_id\":\"(.*?)\"', webpage).group(1)
 
@@ -67,8 +67,8 @@ def get_video_id(url):
 def get_manifest_url(video_id):
 
     url = 'https://www.youtube.com/get_video_info?video_id=' + video_id
-    result = requests.get(url, proxies=proxy).content
-    result = urllib.unquote_plus(result)
+    result = requests.get(url, proxies=proxy).text
+    result = unquote_plus(result)
 
     result = re.search(r'\"hlsManifestUrl\":\"(.*?)\"', result)
 
@@ -81,7 +81,7 @@ def get_manifest_url(video_id):
 def get_manifest_url_v2(video_id):
 
     url = 'https://www.youtube.com/watch?v=%s&gl=US&hl=en&has_verified=1&bpctr=9999999999' % video_id
-    result = requests.get(url, proxies=proxy).content
+    result = requests.get(url, proxies=proxy).text
 
     # print result
 
@@ -100,8 +100,8 @@ def get_manifest_url_v2(video_id):
 
 def get_manifest_url_by_url(url):
 
-    result = requests.get(url, proxies=proxy).content
-    result = urllib.unquote_plus(result)
+    result = requests.get(url, proxies=proxy).text
+    result = unquote_plus(result)
 
     result = re.search(r'\"hlsManifestUrl\":\"(.*?)\"', result)
 

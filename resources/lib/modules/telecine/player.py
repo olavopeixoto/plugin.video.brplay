@@ -3,10 +3,10 @@
 import json
 import sys
 import requests
-import urllib
+from urllib.parse import urlencode
 from resources.lib.modules import control
 from resources.lib.modules.telecine import get_headers
-from auth import get_device_id
+from .auth import get_device_id
 import traceback
 
 import xbmc
@@ -30,7 +30,7 @@ class Player(xbmc.Player):
             return
 
         if not control.is_inputstream_available():
-            control.okDialog('Telecine Play', control.lang(34103).encode('utf-8'))
+            control.okDialog('Telecine Play', control.lang(34103))
             return
 
         try:
@@ -86,9 +86,9 @@ class Player(xbmc.Player):
             }
 
             item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
-            item.setProperty('inputstream.adaptive.license_key', "%s|%s|R{SSM}|" % (license_url, urllib.urlencode(headers)))
+            item.setProperty('inputstream.adaptive.license_key', "%s|%s|R{SSM}|" % (license_url, urlencode(headers)))
 
-        item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+        item.setProperty('inputstream', 'inputstream.adaptive')
 
         # if 'subtitles' in info and info['subtitles'] and len(info['subtitles']) > 0:
         #     control.log("FOUND SUBTITLES: %s" % repr([sub['url'] for sub in info['subtitles']]))

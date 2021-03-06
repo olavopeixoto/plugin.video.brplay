@@ -2,17 +2,17 @@
 
 import threading
 import sys
-from urlparse import urlparse
-import urllib
+from urllib.parse import urlparse
+from urllib.parse import urlencode
 import resources.lib.modules.control as control
 # from resources.lib.modules import hlshelper
 from resources.lib.hlsproxy.simpleproxy import MediaProxy
 import requests
 import xbmc
-from auth import get_token, get_device_id, logout
+from .auth import get_token, get_device_id, logout
 import traceback
 
-LANGUAGE = control.lang(34125).encode('utf-8')
+LANGUAGE = control.lang(34125)
 
 proxy = None  # control.proxy_url
 proxy = None if proxy is None or proxy == '' else {
@@ -51,7 +51,7 @@ class Player(xbmc.Player):
             return
 
         if encrypted and not control.is_inputstream_available():
-            control.okDialog(u'TNT Play', control.lang(34103).encode('utf-8'))
+            control.okDialog(u'TNT Play', control.lang(34103))
             self.stop_content(id, encrypted=encrypted)
             return
 
@@ -79,7 +79,7 @@ class Player(xbmc.Player):
             if stop_event:
                 control.log("Setting stop event for proxy player")
                 stop_event.set()
-            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+            control.infoDialog(control.lang(34100), icon='ERROR')
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
@@ -143,13 +143,13 @@ class Player(xbmc.Player):
                 'content-type': 'application/octet-stream'
             }
 
-            license_key = '%s|%s|R{SSM}|' % (licence_url, urllib.urlencode(headers))
+            license_key = '%s|%s|R{SSM}|' % (licence_url, urlencode(headers))
             item.setProperty('inputstream.adaptive.license_key', license_key)
             stream_headers = {
                 'user-agent': 'Tnt/2.2.13.1908061505 CFNetwork/1107.1 Darwin/19.0.0',
                 'Origin': 'https://www.tntgo.tv'
             }
-            item.setProperty('inputstream.adaptive.stream_headers', urllib.urlencode(stream_headers))
+            item.setProperty('inputstream.adaptive.stream_headers', urlencode(stream_headers))
         else:
             item.setProperty('inputstream.adaptive.manifest_type', 'hls')
             # mime_type = 'application/vnd.apple.mpegurl'
@@ -160,8 +160,7 @@ class Player(xbmc.Player):
             control.log("MIME TYPE: %s" % repr(mime_type))
 
         if control.is_inputstream_available():
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
-            item.setProperty('inputstream', 'inputstream.adaptive')  # Kodi 19
+            item.setProperty('inputstream', 'inputstream.adaptive')
 
         control.resolve(int(sys.argv[1]), True, item)
 
@@ -247,6 +246,6 @@ class Player(xbmc.Player):
 
             result = requests.get(url, headers=headers, proxies=proxy)
             control.log(result.status_code)
-            control.log(result.content)
+            control.log(result.text)
         except:
             control.log(traceback.format_exc(), control.LOGERROR)

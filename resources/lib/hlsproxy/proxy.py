@@ -27,10 +27,10 @@ import ssl
 import re
 import socket
 import traceback
-import urllib
-import urlparse
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from SocketServer import ThreadingMixIn
+from urllib.parse import urlencode
+import urllib.parse as urlparse
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 
 import xbmc
 import xbmcgui
@@ -243,7 +243,7 @@ class HlsProxy:
 
     def __prepare_url(self, url, proxy=None, port=PORT_NUMBER, maxbitrate=0):
         global PORT_NUMBER
-        newurl = urllib.urlencode({'url': url, 'proxy': proxy, 'maxbitrate': maxbitrate})
+        newurl = urlencode({'url': url, 'proxy': proxy, 'maxbitrate': maxbitrate})
         link = 'http://%s:%s/brplay?%s' % (HOST_NAME, str(port), newurl)
         return link  # make a url that caller then call load into player
 

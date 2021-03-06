@@ -93,7 +93,7 @@ def search(query, page=1):
     has_next_page = False
 
     if not combined:
-        control.okDialog(line1=control.lang(34141).encode('utf-8'), heading=control.lang(32010).encode('utf-8'))
+        control.okDialog(line1=control.lang(34141), heading=control.lang(32010))
         yield control.run_plugin_url()
         return
 
@@ -122,7 +122,7 @@ def search(query, page=1):
             'method': 'search',
             'query': query,
             'page': page+1,
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page+1),
+            'label': '%s (%s)' % (control.lang(34136), page+1),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': control.addonFanart()

@@ -1,6 +1,6 @@
 
 import os
-from parser import is_url
+from .parser import is_url
 
 try:
     import urlparse as url_parser

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-from auth import PLATFORM
-from auth import get_request_data
+from .auth import PLATFORM
+from .auth import get_request_data
 import requests
 import resources.lib.modules.control as control
 from resources.lib.modules import cache
 from resources.lib.modules import workers
-import scraper_live
-import player
+from . import scraper_live
+from . import player
 import os
-import urllib
+from urllib.parse import quote_plus, urlencode
 
 PLAYER_HANDLER = player.__name__
 
@@ -125,8 +125,8 @@ def get_page(category):
                 'handler': __name__,
                 'method': 'get_content',
                 'category': category,
-                'subcategory': item.get('title', '').encode('utf-8'),
-                'label': item.get('title', '').encode('utf-8'),
+                'subcategory': item.get('title', ''),
+                'label': item.get('title', ''),
                 'art': {
                     'thumb': LOGO,
                     'fanart': FANART
@@ -271,7 +271,7 @@ def get_episodes(id, season_number=None):
 
 def search(term, page=1, limit=20):
     params = {
-        'query': urllib.quote_plus(term),
+        'query': quote_plus(term),
         'limit': limit,
         'offset': (page-1) * limit,
         'onlyMyPackages': 'Y',
@@ -282,7 +282,7 @@ def search(term, page=1, limit=20):
         'channel': PLATFORM
     }
 
-    url = 'https://www.nowonline.com.br/avsclient/contents/search?{qs}'.format(qs=urllib.urlencode(params, True))
+    url = 'https://www.nowonline.com.br/avsclient/contents/search?{qs}'.format(qs=urlencode(params, True))
     response = request_logged_in(url).get('response', []) or []
 
     has_more_pages = False
@@ -313,7 +313,7 @@ def search(term, page=1, limit=20):
             'term': term,
             'page': page + 1,
             'limit': limit,
-            'label': control.lang(34136).encode('utf-8'),
+            'label': control.lang(34136),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -336,7 +336,7 @@ def request_logged_in(url, use_cache=True, validate=False, force_refresh=False, 
     if response.status_code >= 400 and retry > 0:
         control.log('ERROR FOR URL: %s' % url)
         control.log(response.status_code)
-        control.log(response.content)
+        control.log(response.text)
         control.log('Retrying... (%s)' % retry)
         return request_logged_in(url, use_cache, validate=True, force_refresh=True, retry=retry-1)
 

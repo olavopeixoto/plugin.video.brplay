@@ -2,9 +2,9 @@
 
 import re
 import sys
-from urlparse import urlparse
+from urllib.parse import urlparse
 import traceback
-from resources.lib.modules import util
+from resources.lib.modules.globo_util import get_signed_hashes
 import requests
 from resources.lib.modules import control
 from resources.lib.modules import hlshelper
@@ -75,7 +75,7 @@ class Player(xbmc.Player):
         encrypted = 'encrypted' in info and info['encrypted']
 
         if encrypted and not control.is_inputstream_available():
-            control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
+            control.okDialog(control.lang(31200), control.lang(34103))
             return
 
         query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
@@ -111,7 +111,7 @@ class Player(xbmc.Player):
             if stop_event:
                 control.log("Setting stop event for proxy player")
                 stop_event.set()
-            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+            control.infoDialog(control.lang(34100), icon='ERROR')
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
@@ -152,7 +152,7 @@ class Player(xbmc.Player):
             control.log("MIME TYPE: %s" % repr(mime_type))
 
         if not cookies and control.is_inputstream_available():
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            item.setProperty('inputstream', 'inputstream.adaptive')
             # reqCookies = client.request(url=self.url,output='cookiejar',headRequest=True)
             # cookie_string = "; ".join([str(x) + "=" + str(y) for x, y in reqCookies.items()])
             # item.setProperty('inputstream.adaptive.stream_headers', 'cookie=%s' % cookie_string)
@@ -236,11 +236,11 @@ class Player(xbmc.Player):
 
         if not hash_json or hash_json is None or 'message' in hash_json and hash_json['message']:
             message = hash_json['message'] if hash_json and 'message' in hash_json else control.lang(34102)
-            message = str(hash_json['http_status_code']) + u'|' + message.encode('utf-8') if hash_json and 'http_status_code' in hash_json else message
-            control.infoDialog(message=message.encode('utf-8'), sound=True, icon='ERROR')
+            message = str(hash_json['http_status_code']) + u'|' + message if hash_json and 'http_status_code' in hash_json else message
+            control.infoDialog(message=message, sound=True, icon='ERROR')
             raise Exception(message)
 
-        hash_token = util.get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
+        hash_token = get_signed_hashes(hash_json['hash']) if 'hash' in hash_json else hash_json['token']
         user = hash_json["user"] if 'user' in hash_json else None
         return hash_token, user, credentials
 

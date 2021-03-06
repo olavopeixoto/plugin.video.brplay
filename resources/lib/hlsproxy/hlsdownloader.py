@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import cookielib
+import http.cookiejar as cookielib
 import os
 import traceback
-import urlparse
+import urllib.parse as urlparse
 
 import requests
-import Queue
+from queue import Queue
 import datetime
 
 import struct
@@ -69,14 +69,14 @@ class HLSDownloader:
     def log(self, msg):
         if self.enable_log:
             if is_standalone:
-                print msg
+                print(msg)
             else:
                 import threading
                 control.log("%s - %s" % (threading.currentThread(), msg))
 
     def log_error(self, msg):
         if is_standalone:
-            print msg
+            print(msg)
         else:
             control.log(msg)
 
@@ -210,7 +210,7 @@ class HLSDownloader:
 
     def load_playlist_from_uri(self, uri):
         response = self.get_url_with_retry(uri, return_response=True)
-        content = response.content.strip()
+        content = response.text.strip()
         self.log("PLAYLIST: %s" % content)
         parsed_url = urlparse.urlparse(uri)
         prefix = parsed_url.scheme + '://' + parsed_url.netloc

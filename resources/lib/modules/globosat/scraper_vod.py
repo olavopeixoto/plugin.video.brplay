@@ -3,9 +3,9 @@
 from resources.lib.modules import control
 from resources.lib.modules.globosat import request_query
 import time
-import player
-import pfc
-from pfc import PREMIERE_LOGO, PREMIERE_FANART
+from . import player
+from . import pfc
+from .pfc import PREMIERE_LOGO, PREMIERE_FANART
 
 
 FANART = 'https://canaisglobo.globo.com/_next/static/images/canaisglobo-e3e629829ab01851d983aeaec3377807.png'
@@ -170,7 +170,7 @@ def get_generic_offer(id, page=1):
             'method': 'get_offer',
             'id': id,
             'page': page,
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -211,7 +211,7 @@ def get_broadcastthumb_offer(id, page=1, per_page=200):
             'method': 'get_broadcastthumb_offer',
             'id': id,
             'page': page.get('nextPage'),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -310,7 +310,7 @@ def get_title(title_id, page=1):
 
     elif 'seasons' in structure:
 
-        seasons = structure.get('seasons', {}).get('resources', [])
+        seasons = structure.get('seasons', {}).get('resources', []) or []
         if len(seasons) == 1:
             season = seasons[0]
             for episode in season.get('episodes', {}).get('resources', []):
@@ -347,12 +347,12 @@ def get_title(title_id, page=1):
                     'sort': control.SORT_METHOD_EPISODE
                 }
         else:
-            for season in structure.get('seasons', {}).get('resources', []):
+            for season in structure.get('seasons', {}).get('resources', []) or []:
                 yield {
                     'handler': __name__,
                     'method': 'get_episodes',
                     'title_id': title_id,
-                    'label': '%s %s' % (control.lang(34137).encode('utf-8'), season.get('number', 0)),
+                    'label': '%s %s' % (control.lang(34137), season.get('number', 0)),
                     'sort': [(control.SORT_METHOD_LABEL, '%Y')],
                     'season': season.get('number', 0),
                     'mediatype': 'season',
@@ -372,7 +372,7 @@ def get_title(title_id, page=1):
             'method': 'get_title',
             'title_id': title_id,
             'page': page,
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -444,7 +444,7 @@ def get_episodes(title_id, season, page=1):
             'title_id': title_id,
             'season': season,
             'page': page,
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -466,7 +466,7 @@ def search(term, page=1):
 
     titles = response.get('titles', {})
 
-    provider = control.lang(31200).encode('utf-8')
+    provider = control.lang(31200)
 
     for title in titles.get('resources', []):
         playable = True if title.get('originVideoId') else False
@@ -541,7 +541,7 @@ def search(term, page=1):
             'method': 'search',
             'term': term,
             'page': videos.get('nextPage', titles.get('nextPage')),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART

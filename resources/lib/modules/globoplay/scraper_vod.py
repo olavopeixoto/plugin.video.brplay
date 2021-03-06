@@ -88,7 +88,7 @@ def get_categories(page=1, per_page=PAGE_SIZE):
         'method': 'get_page',
         'id': home,
         'type': None,
-        'label': control.lang(34135).encode('utf-8'),
+        'label': control.lang(34135),
         'art': {
             'thumb': GLOBOPLAY_THUMB,
             'fanart': GLOBO_FANART
@@ -294,7 +294,7 @@ def get_thumb_offer(id, page=1, per_page=PAGE_SIZE):
             'method': 'get_thumb_offer',
             'id': id,
             'page': items.get('nextPage'),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': GLOBO_FANART
@@ -367,7 +367,7 @@ def get_poster_offer(id, page=1, per_page=PAGE_SIZE):
             'method': 'get_poster_offer',
             'id': id,
             'page': items.get('nextPage'),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': GLOBO_FANART
@@ -406,7 +406,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
                 'IsPlayable': True,
                 'id': video.get('id'),
                 'program_id': title.get('originProgramId'),
-                'label': '%s: %s' % (control.lang(34156).encode('utf-8'), video.get('headline', '')),
+                'label': '%s: %s' % (control.lang(34156), video.get('headline', '')),
                 'title': video.get('headline', ''),
                 'originaltitle': title.get('originalHeadline'),
                 'plot': video.get('description', ''),
@@ -482,7 +482,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
                     'handler': __name__,
                     'method': 'get_excerpts',
                     'id': id,
-                    'label': control.lang(34151).encode('utf-8'),
+                    'label': control.lang(34151),
                     'program_id': title.get('originProgramId'),
                     'originaltitle': title.get('originalHeadline'),
                     'tvshowtitle': title.get('headline'),
@@ -593,7 +593,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
                     'handler': __name__,
                     'method': 'get_title',
                     'id': id,
-                    'label': '%s %s' % (control.lang(34137).encode('utf-8'), season.get('number', 0)),
+                    'label': '%s %s' % (control.lang(34137), season.get('number', 0)),
                     'season': season.get('number', 0),
                     'title': title.get('headline'),
                     'tvshowtitle': title.get('headline'),
@@ -626,7 +626,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
             'id': id,
             'season': season,
             'page': page,
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': GLOBO_FANART
@@ -671,7 +671,7 @@ def get_excerpts(id, art=None):
                 'handler': __name__,
                 'method': 'get_most_viewed_by_date',
                 'id': id,
-                'label': '%s %s' % (control.lang(34152).encode('utf-8'), label.lower()),
+                'label': '%s %s' % (control.lang(34152), label.lower()),
                 'gte': date_str,
                 'lte': date_str,
                 'art': local_art
@@ -681,7 +681,7 @@ def get_excerpts(id, art=None):
         'handler': __name__,
         'method': 'get_most_viewed_by_date',
         'id': id,
-        'label': control.lang(34155).encode('utf-8'),
+        'label': control.lang(34155),
         'gte': None,
         'lte': None,
         'art': local_art
@@ -802,7 +802,7 @@ def get_most_viewed_by_date(id, gte, lte, page=1, per_page=PAGE_SIZE):
             'gte': gte,
             'lte': lte,
             'page': page,
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': GLOBO_FANART
@@ -1019,7 +1019,7 @@ def get_category_offer(id, page=1, per_page=PAGE_SIZE):
             'method': 'get_category_offer',
             'id': id,
             'page': page.get('nextPage'),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': GLOBO_FANART
@@ -1064,7 +1064,7 @@ def get_broadcastthumb_offer(id, page=1, per_page=PAGE_SIZE):
             'method': 'get_broadcastthumb_offer',
             'id': id,
             'page': page.get('nextPage'),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': GLOBO_FANART
@@ -1162,7 +1162,7 @@ def search(term, page=1):
             'method': 'search',
             'term': term,
             'page': videos.get('nextPage', titles.get('nextPage')),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': GLOBO_FANART

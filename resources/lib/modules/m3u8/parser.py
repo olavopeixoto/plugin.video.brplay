@@ -3,11 +3,11 @@
 # Use of this source code is governed by a MIT License
 # license that can be found in the LICENSE file.
 
-import iso8601
+from . import iso8601
 import datetime
 import itertools
 import re
-import protocol
+from . import protocol
 
 '''
 http://tools.ietf.org/html/draft-pantos-http-live-streaming-08#section-3.2

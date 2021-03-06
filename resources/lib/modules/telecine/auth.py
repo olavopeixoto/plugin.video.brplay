@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import requests
-from resources.lib.beatifulsoup import BeautifulSoup
-import urlparse
+from bs4 import BeautifulSoup
+import urllib.parse as urlparse
 import resources.lib.modules.control as control
 import re
 import datetime
@@ -115,11 +115,11 @@ def register_device():
 
     response = requests.post(url, json=data, headers=headers)
 
-    log(response.content)
+    log(response.text)
 
     if response.status_code == 400:
         response_json = response.json()
-        raise Exception(response_json.get('message').encode('utf-8'))
+        raise Exception(response_json.get('message'))
 
     response.raise_for_status()
 
@@ -155,7 +155,7 @@ def _login_internal(user, password, idp):
     idp_func_name = '%s_login' % idp
 
     if idp_func_name not in globals():
-        raise Exception(control.lang(34129).encode('utf-8'))
+        raise Exception(control.lang(34129))
 
     log('Logging in using provider: %s' % idp)
 
@@ -216,7 +216,7 @@ def _login_internal(user, password, idp):
 
 def oitv_login(session, response, username, password):
 
-    login_path = re.findall(r'action="([^"]+)"', response.content)[0]
+    login_path = re.findall(r'action="([^"]+)"', response.text)[0]
 
     url = urlparse.urljoin(response.url, login_path)
 
@@ -226,9 +226,9 @@ def oitv_login(session, response, username, password):
 
     response.raise_for_status()
 
-    # control.log(response.content)
+    # control.log(response.text)
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     url = html.find('form')['action']
 
@@ -254,17 +254,17 @@ def oitv_login(session, response, username, password):
     response = session.post(url, data=post)
 
     log(response.status_code)
-    log(response.content)
+    log(response.text)
 
     response.raise_for_status()
 
-    url = re.findall(r"window.location.href='([^']+)';", response.content)[0]
+    url = re.findall(r"window.location.href='([^']+)';", response.text)[0]
 
     log('GET %s' % url)
 
     response = session.get(url)
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     url = html.find('form')['action']
 
@@ -281,7 +281,7 @@ def oitv_login(session, response, username, password):
     response = session.post(url, data=post)
 
     log(response.status_code)
-    log(response.content)
+    log(response.text)
 
     response.raise_for_status()
 
@@ -297,7 +297,7 @@ def net_login(session, response, username, password):
     p = urlparse.urlparse(response.url)
     qs = urlparse.parse_qs(p.query)
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     form = html.find('form')
 
@@ -325,6 +325,6 @@ def net_login(session, response, username, password):
     qs = urlparse.parse_qs(p.query)
 
     if 'error' in qs and 'error_description' in qs:
-        raise Exception(qs.get('error_description')[0].encode('utf-8'))
+        raise Exception(qs.get('error_description')[0])
 
     return response

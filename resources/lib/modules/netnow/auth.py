@@ -58,7 +58,7 @@ def validate_login(credentials, do_request=True):
     response = requests.get(url, headers=header, cookies=cookies, proxies=proxy)
 
     control.log('Login Validation:')
-    control.log(response.content)
+    control.log(response.text)
 
     # {"resultCode":"KO","errorDescription":"ACN_3000","message":"400 - \"{\\\"error\\\": \\\"invalid_grant\\\", \\\"error_description\\\": \\\"Refresh token doesn't exist or it's expired\\\"}\"","resultObj":"","systemTime":1603476452213}
 

@@ -3,7 +3,7 @@
 import threading
 import sys
 import traceback
-from Queue import Queue
+from queue import Queue
 
 
 class Thread(threading.Thread):

@@ -1,13 +1,13 @@
 from resources.lib.modules import cache
 from resources.lib.modules import control
 import requests
-import urllib
+from urllib.parse import quote_plus
 from resources.lib.modules.globosat import auth_helper
 
 
 def request_query(query, variables, force_refresh=False, retry=3):
     tenant = 'sexy-hot'
-    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=urllib.quote_plus(variables))
+    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=quote_plus(variables))
     headers = {
         'x-tenant-id': tenant,
         'x-platform-id': 'web',

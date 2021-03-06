@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import json
 import sys
-import urllib
-from auth import login
-from auth import PLATFORM
+from urllib.parse import urlencode
+from .auth import login
+from .auth import PLATFORM
 import resources.lib.modules.control as control
 import requests
 import base64
@@ -44,7 +43,7 @@ class Player:
         encrypted = True
 
         if encrypted and not control.is_inputstream_available():
-            control.okDialog(u'Now Online', control.lang(34103).encode('utf-8'))
+            control.okDialog(u'Now Online', control.lang(34103))
             return
 
         control.log("live media url: %s" % url)
@@ -116,14 +115,14 @@ class Player:
             key_headers['User-Agent'] = user_agent
             key_headers['content-type'] = 'application/octet-stream'
 
-            license_key = '%s|%s|R{SSM}|' % (licence_url, urllib.urlencode(key_headers))
+            license_key = '%s|%s|R{SSM}|' % (licence_url, urlencode(key_headers))
             item.setProperty('inputstream.adaptive.license_key', license_key)
             item.setProperty('inputstream.adaptive.stream_headers', user_agent)
 
             control.log('license_key: %s' % license_key)
 
         if control.is_inputstream_available():
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            item.setProperty('inputstream', 'inputstream.adaptive')
 
         control.resolve(int(sys.argv[1]), True, item)
 
@@ -195,7 +194,7 @@ class Player:
 
         response = requests.get(url, headers=headers, cookies=cookies, proxies=proxy)
 
-        control.log(response.content)
+        control.log(response.text)
 
         return response.cookies.get('avs_browser_id')
 
@@ -217,4 +216,4 @@ class Player:
         response = requests.get(url, headers=headers, cookies=cookies, proxies=proxy)
 
         control.log('Response: %s' % response.status_code)
-        control.log(response.content)
+        control.log(response.text)

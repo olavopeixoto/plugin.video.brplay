@@ -133,7 +133,7 @@ class Auth:
                 'User-Agent': 'Globoplay/1 CFNetwork/1220.1 Darwin/20.3.0'
             })
 
-            control.log(response.content)
+            control.log(response.text)
 
             response.raise_for_status()
             response = response.json()
@@ -157,7 +157,7 @@ class Auth:
                 'x-ios-bundle-identifier': 'com.globo.hydra'
             })
 
-            control.log(response.content)
+            control.log(response.text)
             response.raise_for_status()
 
             response = response.json()
@@ -195,7 +195,7 @@ class Auth:
             control.log(headers)
             control.log(post_data)
 
-            response = requests.post(register_url, data=post_data, headers=headers).content
+            response = requests.post(register_url, data=post_data, headers=headers).text
 
             if not response.startswith('token='):
                 raise Exception(response)
@@ -232,13 +232,13 @@ class Auth:
                                  headers=headers, lock_obj=auth_lock, table='globoplay')
 
         control.log('GLOBOPLAY AUTHENTICATION RESPONSE: %s' % response.status_code)
-        control.log(response.content)
+        control.log(response)
 
         success = response.status_code < 400
         try:
-            message = (response.json().get('userMessage') or '').encode('utf-8')
+            message = (response.json().get('userMessage') or '')
         except:
-            message = response.content
+            message = response.text
 
         brplay_id = self.hash_user_credentials(username, password)
         return {'GLBID': response.cookies.get('GLBID'), 'brplay_id': brplay_id, 'success': success, 'error_message': message}
@@ -281,7 +281,7 @@ class Auth:
                                                 }, force_refresh=bypass_cache, lock_obj=lock, table='globoplay')
 
         control.log('GLOBOPLAY SERVICE (%s | %s) CHECK RESPONSE: %s' % (self.tenant, service_id, response.status_code))
-        control.log(response.content)
+        control.log(response.text)
 
         user_data = response.json()
         is_authenticated = user_data.get('status') == 'authorized'
@@ -291,7 +291,7 @@ class Auth:
         return is_authenticated, user_data
 
     def hash_user_credentials(self, username, password):
-        return hashlib.sha256('%s|%s' % (username.encode('utf-8'), password.encode('utf-8'))).hexdigest()
+        return hashlib.sha256(b'%s|%s' % (username.encode('utf-8'), password.encode('utf-8'))).hexdigest()
 
     def logout(self, token):
         # https://login.globo.com/logout?realm=globo.com

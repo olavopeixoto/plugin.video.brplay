@@ -2,11 +2,11 @@ import requests
 from resources.lib.modules import control
 from resources.lib.modules import cache
 import os
-from auth import gettoken, get_default_profile
-from private_data import get_device_id
-import urllib
+from .auth import gettoken, get_default_profile
+from .private_data import get_device_id
+from urllib.parse import quote_plus, urlencode
 from collections import OrderedDict
-import player
+from . import player
 import json
 import traceback
 
@@ -40,7 +40,7 @@ def get_main_menu_url():
         'maxRating': 18,
         'useragent': 'web'
     })
-    return 'https://apim.oi.net.br/app/oiplay/ummex/v1/menu?{qs}'.format(qs=urllib.urlencode(qs))
+    return 'https://apim.oi.net.br/app/oiplay/ummex/v1/menu?{qs}'.format(qs=urlencode(qs))
 
 
 def get_main_menu():
@@ -212,12 +212,12 @@ def get_list(id, page=1, page_size=50):
     qs = {
         'limit': page_size,
         'maxRating': 18,
-        'offerids': urllib.quote_plus(','.join(get_offers())),
+        'offerids': quote_plus(','.join(get_offers())),
         'orderby': 'titleAsc',  # DateDesc
         'page': page
     }
 
-    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/lists/{id}?{query}'.format(id=id, query=urllib.urlencode(qs))
+    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/lists/{id}?{query}'.format(id=id, query=urlencode(qs))
     response = request_cached(url)
 
     hosts = get_subscribed_host_ids()
@@ -261,7 +261,7 @@ def get_list(id, page=1, page_size=50):
             'method': 'get_list',
             'id': id,
             'page': page + 1,
-            'label': control.lang(34136).encode('utf-8'),
+            'label': control.lang(34136),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -289,7 +289,7 @@ def get_content(id):
 
         cm = []
         if liked is True or liked is None:
-            cm_label = control.lang(34146).encode('utf-8') if liked is True else control.lang(34144).encode('utf-8')
+            cm_label = control.lang(34146) if liked is True else control.lang(34144)
             cm.append((cm_label, control.run_plugin_url({
                 'action': 'generic',
                 'meta': json.dumps({
@@ -300,7 +300,7 @@ def get_content(id):
                 })
             })))
         if liked is False or liked is None:
-            cm_label = control.lang(34145).encode('utf-8') if liked is False else control.lang(34143).encode('utf-8')
+            cm_label = control.lang(34145) if liked is False else control.lang(34143)
             cm.append((cm_label, control.run_plugin_url({
                 'action': 'generic',
                 'meta': json.dumps({
@@ -356,7 +356,7 @@ def get_content(id):
             'handler': __name__,
             'method': 'get_content_recommendations',
             'id': id,
-            'label': control.lang(34142).encode('utf-8'),
+            'label': control.lang(34142),
             'art': {
                 'poster': FAVORITES,
                 'fanart': fanart
@@ -374,7 +374,7 @@ def get_seasons(serie, art=None):
     params = {
         'offerids': ','.join(offer_ids)
     }
-    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/series/{serie}/seasons?{qs}'.format(serie=serie, qs=urllib.urlencode(params))
+    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/series/{serie}/seasons?{qs}'.format(serie=serie, qs=urlencode(params))
     response = request_cached(url)
 
     if response and len(response) == 1:
@@ -390,7 +390,7 @@ def _get_seasons(seasons, serie, art):
         yield {
             'handler': __name__,
             'method': 'get_episodes',
-            'label': '%s %s' % (control.lang(34137).encode('utf-8'), item.get('title')),
+            'label': '%s %s' % (control.lang(34137), item.get('title')),
             'serie': serie,
             'season': item.get('seasonId'),
             'mediatype': 'season',
@@ -405,7 +405,7 @@ def get_episodes(serie, season, art=None):
     params = {
         'offerids': ','.join(offer_ids)
     }
-    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/series/{serie}/seasons/{season}/episodes?{qs}'.format(serie=serie, season=season, qs=urllib.urlencode(params))
+    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/series/{serie}/seasons/{season}/episodes?{qs}'.format(serie=serie, season=season, qs=urlencode(params))
     response = request_cached(url)
 
     hosts = get_subscribed_host_ids()
@@ -560,7 +560,7 @@ def like_content(id, like=True):
     control.log(data)
     response = requests.post(url, json=data, headers=headers)
     control.log(response.status_code)
-    control.log(response.content)
+    control.log(response.text)
 
     response = response.json()
     return True if response.get('name') == 'Like' else False if response.get('name') == 'Dislike' else None
@@ -572,10 +572,10 @@ def search(term, page=1, limit=20):
         'orderby': 'DateDescending',
         'page': page,
         'limit': limit,
-        'offerids': urllib.quote_plus(','.join(get_offers())),
+        'offerids': quote_plus(','.join(get_offers())),
         'maxRating': 18
     }
-    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/search?%s' % urllib.urlencode(params)
+    url = 'https://apim.oi.net.br/app/oiplay/ummex/v1/search?%s' % urlencode(params)
 
     try:
         response = request_cached(url) or []
@@ -627,7 +627,7 @@ def search(term, page=1, limit=20):
             'term': term,
             'page': page + 1,
             'limit': limit,
-            'label': control.lang(34136).encode('utf-8'),
+            'label': control.lang(34136),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART

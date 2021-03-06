@@ -2,8 +2,8 @@
 
 from resources.lib.modules import control
 from resources.lib.modules.telecine import get_cached
-import player
-import urllib
+from . import player
+from urllib.parse import quote_plus
 import os
 
 HANDLER = __name__
@@ -44,7 +44,7 @@ def get_channel_categories():
     yield {
             'handler': HANDLER,
             'method': 'get_page',
-            'label': control.lang(34135).encode('utf-8'),
+            'label': control.lang(34135),
             'path': '/',
             'art': {
                 'thumb': LOGO,
@@ -55,7 +55,7 @@ def get_channel_categories():
     yield {
         'handler': HANDLER,
         'method': 'get_page',
-        'label': control.lang(34134).encode('utf-8'),
+        'label': control.lang(34134),
         'path': '/account/profile/watched/list',
         'art': {
             'thumb': LOGO,
@@ -179,7 +179,7 @@ def get_page(path, absolute=False):
                     'method': 'get_page',
                     'absolute': True,
                     'path': list_obj.get('paging', {}).get('next'),
-                    'label': control.lang(34136).encode('utf-8'),
+                    'label': control.lang(34136),
                     'art': {
                         'poster': control.addonNext(),
                         'fanart': FANART
@@ -211,7 +211,7 @@ def get_page(path, absolute=False):
                     'handler': HANDLER,
                     'method': 'get_page',
                     'path': path,
-                    'label': item.get('title', item.get('text', '')) or control.lang(34132).encode('utf-8'),
+                    'label': item.get('title', item.get('text', '')) or control.lang(34132),
                     'plot': response.get('description'),
                     'sorttitle': "%04d" % (index,),
                     'sort': [control.SORT_METHOD_VIDEO_SORT_TITLE, control.SORT_METHOD_LABEL],
@@ -234,7 +234,7 @@ def get_film(path, overlay=4):
     item = get_cached(url)
 
     playable = True if not item.get('comingSoon', False) else False
-    label = item.get('title', '') if playable else '%s - %s' % (control.lang(34133).encode('utf-8'), item.get('title', ''))
+    label = item.get('title', '') if playable else '%s - %s' % (control.lang(34133), item.get('title', ''))
     film_item = {
         'path': item.get('moviePath'),
         'label': label,
@@ -343,7 +343,7 @@ def search(term, page=1):
     if page > 1:
         return
 
-    url = '/search?term=%s' % urllib.quote_plus(term)
+    url = '/search?term=%s' % quote_plus(term)
 
     response = get_cached(BASE_URL + url) or {}
 

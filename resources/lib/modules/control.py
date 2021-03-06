@@ -1,8 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import os, json, threading, time, sys, urllib, datetime
+import os
+import json
+import threading
+import time
+import sys
+import datetime
+from urllib.parse import urlencode
 
-import xbmc, xbmcaddon, xbmcplugin, xbmcgui, xbmcvfs
+import xbmc
+import xbmcaddon
+import xbmcplugin
+import xbmcgui
+import xbmcvfs
 
 lang = xbmcaddon.Addon().getLocalizedString
 
@@ -154,7 +164,7 @@ tempPath = xbmc.translatePath('special://temp/')
 
 addonPath = xbmc.translatePath(addonInfo('path'))
 
-dataPath = xbmc.translatePath(addonInfo('profile')).decode('utf-8')
+dataPath = xbmc.translatePath(addonInfo('profile'))
 
 settingsFile = os.path.join(dataPath, 'settings.xml')
 
@@ -401,8 +411,8 @@ def artPath():
     return os.path.join(addonPath, 'resources', 'media')
 
 
-def okDialog(heading, line1, line2=None, line3=None):
-    dialog.ok(heading=heading, line1=line1, line2=line2, line3=line3)
+def okDialog(heading, line1):
+    dialog.ok(heading=heading, message=line1)
 
 
 def infoDialog(message, heading=addonInfo('name'), icon='', time=3000, sound=False):
@@ -612,11 +622,11 @@ def get_coordinates(affiliate):
 
 
 def get_ip_coordinates():
-    from urllib2 import urlopen
+    import requests
 
     url = 'http://ipinfo.io/json'
-    response = urlopen(url)
-    data = json.load(response)
+    response = requests.get(url)
+    data = response.json()
 
     loc = data['loc']
     city = data['city']
@@ -716,15 +726,15 @@ def run_plugin_url(params=None):
     if params is None:
         params = {}
 
-    return 'RunPlugin(%s?%s)' % (sysaddon, urllib.urlencode(params))
+    return 'RunPlugin(%s?%s)' % (sysaddon, urlencode(params))
 
 
 def get_weekday_name(date):
     diff = (datetime.datetime.today().date() - date.date()).days
     if diff == 0:  # Today
-        return lang(34153).encode('utf-8')
+        return lang(34153)
     elif diff == 1:  # Yesterday
-        return lang(34154).encode('utf-8')
+        return lang(34154)
     else:
         weekday = date.weekday()
-        return lang(34157 + weekday).encode('utf-8')
+        return lang(34157 + weekday)

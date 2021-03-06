@@ -2,11 +2,11 @@
 
 import requests
 import sys
-from urlparse import urlparse
+from urllib.parse import urlparse
 import threading
-from auth import gettoken
-from auth import get_default_profile
-from private_data import get_device_id
+from .auth import gettoken
+from .auth import get_default_profile
+from .private_data import get_device_id
 import resources.lib.modules.control as control
 from resources.lib.modules import hlshelper
 import xbmc
@@ -36,14 +36,14 @@ class Player(xbmc.Player):
         data = self.individualize(self.isLive, id, provider)
 
         if not data or 'individualization' not in data:
-            error_message = '%s: %s' % (data.get('reason'), data.get('detail')) if data and data.get('reason') else control.lang(34100).encode('utf-8')
+            error_message = '%s: %s' % (data.get('reason'), data.get('detail')) if data and data.get('reason') else control.lang(34100)
             control.infoDialog(error_message, icon='ERROR')
             return
 
         encrypted = 'drm' in data and 'licenseUrl' in data['drm']
 
         if encrypted and not control.is_inputstream_available():
-            control.okDialog(u'Oi Play', control.lang(34103).encode('utf-8'))
+            control.okDialog(u'Oi Play', control.lang(34103))
             return
 
         url = data['individualization']['url']
@@ -65,7 +65,7 @@ class Player(xbmc.Player):
             if stopEvent:
                 control.log("Setting stop event for proxy player")
                 stopEvent.set()
-            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+            control.infoDialog(control.lang(34100), icon='ERROR')
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
@@ -105,7 +105,7 @@ class Player(xbmc.Player):
             control.log("MIME TYPE: %s" % repr(mime_type))
 
         if not cookies and control.is_inputstream_available():
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            item.setProperty('inputstream', 'inputstream.adaptive')
 
         # if 'subtitles' in info and info['subtitles'] and len(info['subtitles']) > 0:
         #     control.log("FOUND SUBTITLES: %s" % repr([sub['url'] for sub in info['subtitles']]))
@@ -167,7 +167,7 @@ class Player(xbmc.Player):
         if is_live:
             url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/individualize?deviceId=%s&tablet=false&useragent=%s' % (account, profile, content_id, device_id, 'ios' if format == 'm3u8' else 'web')
         else:
-            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/{account}/profiles/{profile}/content/{content}/{provider}/individualize?deviceId={deviceId}&tablet=false&useragent={useragent}'.format(account=account, profile=profile, content=content_id, provider=provider.encode('utf-8'), deviceId=device_id, useragent=useragent)
+            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/{account}/profiles/{profile}/content/{content}/{provider}/individualize?deviceId={deviceId}&tablet=false&useragent={useragent}'.format(account=account, profile=profile, content=content_id, provider=provider, deviceId=device_id, useragent=useragent)
 
         headers = {
             'Accept': 'application/json',

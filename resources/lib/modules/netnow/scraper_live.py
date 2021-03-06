@@ -1,7 +1,7 @@
 import requests
 import datetime
-from auth import PLATFORM
-import player
+from .auth import PLATFORM
+from . import player
 
 PLAYER_HANDLER = player.__name__
 

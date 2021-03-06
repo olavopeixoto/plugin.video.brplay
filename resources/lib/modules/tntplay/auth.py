@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import requests
-import urlparse
+import urllib.parse as urlparse
 import re
-from resources.lib.beatifulsoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import resources.lib.modules.control as control
 
 TNT_PROVIDERS = [
@@ -167,7 +167,7 @@ def tnt_login(username, password, identity_provider, country='BR'):
     idp_func_name = '%s_login' % identity_provider
 
     if idp_func_name not in globals():
-        raise Exception(control.lang(34129).encode('utf-8'))
+        raise Exception(control.lang(34129))
 
     # start tnt login
     device_id = get_device_id()
@@ -220,7 +220,7 @@ def tnt_login(username, password, identity_provider, country='BR'):
 
 def oitv_login(session, response, username, password):
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     form = html.find('form')
 
@@ -238,7 +238,7 @@ def oitv_login(session, response, username, password):
 
     response.raise_for_status()
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     if not html:
         raise Exception('Failed to login: %s' % response.url)
@@ -262,17 +262,17 @@ def oitv_login(session, response, username, password):
 
     response.raise_for_status()
 
-    url = re.findall(r"window.location.href='([^']+)';", response.content)[0]
+    url = re.findall(r"window.location.href='([^']+)';", response.text)[0]
 
     control.log('[TNT] - GET %s' % url)
 
     response = session.get(url)
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     error = html.find("div", {"class": "data-invalid-text"})
     if error:
-        control.log(response.content)
+        control.log(response.text)
         msg = error.text.encode('utf8')
         raise Exception(msg)
 
@@ -299,7 +299,7 @@ def net_login(session, response, username, password):
     p = urlparse.urlparse(response.url)
     qs = urlparse.parse_qs(p.query)
 
-    html = BeautifulSoup(response.content)
+    html = BeautifulSoup(response.text)
 
     form = html.find('form')
 
@@ -327,6 +327,6 @@ def net_login(session, response, username, password):
     qs = urlparse.parse_qs(p.query)
 
     if 'error' in qs and 'error_description' in qs:
-        raise Exception(qs.get('error_description')[0].encode('utf-8'))
+        raise Exception(qs.get('error_description')[0])
 
     return response

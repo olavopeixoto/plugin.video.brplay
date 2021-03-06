@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import cookielib
+import http.cookiejar as cookielib
 import os
 import traceback
-import urlparse
+import urllib.parse as urlparse
 
 import requests
 import datetime
@@ -12,7 +12,7 @@ from resources.lib.modules import util
 from resources.lib.modules import control
 from resources.lib.modules import m3u8 as m3u8
 
-import Queue
+from queue import Queue
 from resources.lib.modules import workers
 
 try:

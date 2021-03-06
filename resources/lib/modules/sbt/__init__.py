@@ -15,7 +15,7 @@ def get_authorization():
 
     response = requests.get(url, verify=False)
 
-    r = re.search(r'setHeaders:\s*{Authorization:"(.+?)"', response.content)
+    r = re.search(r'setHeaders:\s*{Authorization:"(.+?)"', response.text)
 
     token = r.group(1)
 

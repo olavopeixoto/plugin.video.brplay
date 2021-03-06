@@ -3,7 +3,7 @@
 import requests
 from resources.lib.modules import control, cache
 from . import player
-from urllib import quote_plus
+from urllib.parse import quote_plus
 
 PLAYER_HANDLER = player.__name__
 
@@ -47,13 +47,13 @@ IMAGE_URL = "https://turner-latam-prod.akamaized.net/PROD-LATAM/{pictureUrl}/{pi
 FANART = 'https://i.vimeocdn.com/video/529460829_1280x720.jpg'
 
 PLATFORM = 'PCTV_DASH'
-LANGUAGE = control.lang(34125).encode('utf-8')  # 'ENG'  # 'POR'
+LANGUAGE = control.lang(34125)  # 'ENG'  # 'POR'
 
-FEATURED = control.lang(32080).upper().encode('utf-8')
-ALL_GENRES = control.lang(34126).upper().encode('utf-8')
+FEATURED = control.lang(32080).upper()
+ALL_GENRES = control.lang(34126).upper()
 
-SERIES = control.lang(34127).upper().encode('utf-8')
-MOVIES = control.lang(34128).upper().encode('utf-8')
+SERIES = control.lang(34127).upper()
+MOVIES = control.lang(34128).upper()
 
 
 def get_channels():
@@ -135,9 +135,9 @@ def get_genres(category):
         yield {
                 'handler': __name__,
                 'method': 'get_content',
-                'label': facet.get('key').upper().encode('utf-8'),
+                'label': facet.get('key').upper(),
                 'category': category,
-                'genre': facet.get('key').upper().encode('utf-8'),
+                'genre': facet.get('key').upper(),
                 'art': {
                     'thumb': LOGO_MAP['TNTLA_BR'],
                     'fanart': FANART

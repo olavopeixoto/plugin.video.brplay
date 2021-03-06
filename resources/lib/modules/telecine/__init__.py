@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from auth import get_auth_token
+from .auth import get_auth_token
 from resources.lib.modules import control
 from resources.lib.modules import cache
 import requests

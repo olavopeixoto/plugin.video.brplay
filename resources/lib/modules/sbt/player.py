@@ -5,7 +5,7 @@ from resources.lib.modules import control, ytlive
 from . import get_authorization
 import re
 import requests
-from urlparse import urlparse
+from urllib.parse import urlparse
 from resources.lib.hlsproxy.simpleproxy import MediaProxy
 
 import xbmc
@@ -41,7 +41,7 @@ class Player(xbmc.Player):
         control.log("live media url: %s" % url)
 
         if not url:
-            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+            control.infoDialog(control.lang(34100), icon='ERROR')
             return
 
         if control.proxy_url:
@@ -56,7 +56,7 @@ class Player(xbmc.Player):
             if stop_event:
                 control.log("Setting stop event for proxy player")
                 stop_event.set()
-            control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
+            control.infoDialog(control.lang(34100), icon='ERROR')
             return
 
         parsed_url = urlparse(url)
@@ -89,7 +89,7 @@ class Player(xbmc.Player):
             control.log("MIME TYPE: %s" % repr(mime_type))
 
         if control.is_inputstream_available():
-            item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            item.setProperty('inputstream', 'inputstream.adaptive')
 
         control.resolve(int(sys.argv[1]), True, item)
 
@@ -97,11 +97,10 @@ class Player(xbmc.Player):
         self.stopPlayingEvent.clear()
 
         while not self.stopPlayingEvent.isSet():
+            control.monitor.waitForAbort(1)
             if control.monitor.abortRequested():
                 control.log("Abort requested")
                 break
-
-            control.sleep(1000)
 
         if stop_event:
             control.log("Setting stop event for proxy player")
@@ -118,8 +117,8 @@ class Player(xbmc.Player):
         # Will be called when xbmc stops playing a file
         control.log("setting event in onPlayBackEnded ")
 
-        # if self.stopPlayingEvent:
-        #     self.stopPlayingEvent.set()
+        if self.stopPlayingEvent:
+            self.stopPlayingEvent.set()
 
     def onPlayBackStopped(self):
         # Will be called when user stops xbmc playing a file

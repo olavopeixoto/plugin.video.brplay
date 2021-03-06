@@ -139,7 +139,7 @@
 		<!-- 33106 = Medium 	-->
 		<!-- 33107 = Low 		-->
 		<!--<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104|33105|33106|33107" default="0" />-->
-		<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104" default="0" />
+		<setting id="bandwidth" type="enum" label="33101" lvalues="33103|33102|33104" default="0" visible="false" />
 
 		<!-- 33201 = Proxy Type -->
 		<!-- 33202 = Downloader -->

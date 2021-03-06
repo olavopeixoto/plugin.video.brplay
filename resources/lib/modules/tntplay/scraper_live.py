@@ -60,7 +60,7 @@ def get_live_channels():
         program_details_response = cache.get(requests.get, 780, program_details_url, table='tntplay')
 
         control.log(program_details_response.status_code)
-        control.log(program_details_response.content)
+        control.log(program_details_response.text)
 
         try:
             program_details_response = program_details_response.json()

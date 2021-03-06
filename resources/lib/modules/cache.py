@@ -40,10 +40,10 @@ def get(function, timeout_hour, *args, **kargs):
     f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
 
     a = hashlib.md5()
-    for i in args: a.update(str(i))
+    for i in args: a.update(i.encode('utf-8'))
     for key in kargs:
         if key != 'table':
-            a.update('%s=%s' % (key, str(kargs[key])))
+            a.update(b'%s=%s' % (key.encode('utf-8'), str(kargs[key]).encode('utf-8')))
     a = str(a.hexdigest())
     # except:
     #     pass
@@ -98,7 +98,8 @@ def __get_from_cache(dbcur, table, f, a, timeout_hour):
     dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
     match = dbcur.fetchone()
     if match and len(match) > 3:
-        response = pickle.loads(str(match[2]))
+        response = pickle.loads(match[2])
+        # response = pickle.loads(str(match[2]))
 
         t1 = int(match[3])
         t2 = int(time.time())
@@ -143,13 +144,14 @@ def __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kar
     dbcur.execute(
         "CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response BLOB, ""added TEXT, ""UNIQUE(func, args)"");" % table)
     dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-    dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, buffer(r), t))
+    # dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, buffer(r), t))
+    dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, r, t))
     dbcon.commit()
     # except:
     #     pass
 
     # try:
-    # return eval(r.encode('utf-8'))
+    # return eval(r)
     return r_raw
     # except:
     #     return eval(r)

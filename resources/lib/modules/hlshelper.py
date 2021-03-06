@@ -84,13 +84,13 @@ def pick_bandwidth(url):
         player_type = "Redirect"
 
     if bandwidth_setting == 'Manual':
-        option_adaptive_downloader = '%s %s' % (control.lang(33102).encode('utf-8'), control.lang(33202).encode('utf-8'))
-        option_adaptive_redirect = '%s %s' % (control.lang(33102).encode('utf-8'), control.lang(33203).encode('utf-8'))
-        option_auto = control.lang(33103).encode('utf-8')
-        option_manual = control.lang(33104).encode('utf-8')
+        option_adaptive_downloader = '%s %s' % (control.lang(33102), control.lang(33202))
+        option_adaptive_redirect = '%s %s' % (control.lang(33102), control.lang(33203))
+        option_auto = control.lang(33103)
+        option_manual = control.lang(33104)
         options = [option_auto, option_adaptive_downloader, option_adaptive_redirect, option_manual]
         dialog = xbmcgui.Dialog()
-        bandwidth_option = dialog.select(control.lang(34010).encode('utf-8'), options)
+        bandwidth_option = dialog.select(control.lang(34010), options)
         if bandwidth_option<0:
             return None, None, None, None
         elif bandwidth_option == 0:
@@ -149,7 +149,7 @@ def pick_bandwidth(url):
         options = []
         options = options + [b['bandwidth'] for b in bandwidth_options]
         dialog = xbmcgui.Dialog()
-        bandwidth = dialog.select(control.lang(34010).encode('utf-8'), options)
+        bandwidth = dialog.select(control.lang(34010), options)
         if bandwidth<0:
             return None, None, None, None
     else:

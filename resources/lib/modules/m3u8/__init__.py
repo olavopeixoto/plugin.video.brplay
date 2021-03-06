@@ -16,8 +16,8 @@ except ImportError:  # Python 2.x
     from urllib2 import urlopen, Request, HTTPError
     from urlparse import urlparse, urljoin
 
-from model import M3U8, Playlist, IFramePlaylist, Media, Segment
-from parser import parse, is_url, ParseError
+from .model import M3U8, Playlist, IFramePlaylist, Media, Segment
+from .parser import parse, is_url, ParseError
 
 PYTHON_MAJOR_VERSION = sys.version_info
 
@@ -63,7 +63,7 @@ def _load_from_uri(uri, timeout=None, headers={}, cookies=None):
     response = requests.get(uri, cookies=cookies, timeout=timeout, headers=headers)
     if response.status_code != 200:
         return None, None
-    content = response.content.strip()
+    content = response.text.strip()
     parsed_url = urlparse(uri)
     prefix = parsed_url.scheme + '://' + parsed_url.netloc
     base_path = os.path.normpath(parsed_url.path + '/..')

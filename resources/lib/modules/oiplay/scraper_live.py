@@ -3,7 +3,7 @@ from resources.lib.modules import workers
 from resources.lib.modules import util
 from resources.lib.modules import cache
 import datetime
-import player
+from . import player
 
 PLAYER_HANDLER = player.__name__
 

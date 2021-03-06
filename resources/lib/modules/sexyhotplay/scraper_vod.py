@@ -30,7 +30,7 @@ def get_categories():
     yield {
         'handler': __name__,
         'method': 'get_home',
-        'label': control.lang(34135).encode('utf-8'),
+        'label': control.lang(34135),
         'art': {
             'thumb': LOGO,
             'fanart': FANART
@@ -168,7 +168,7 @@ def get_genres(id, page=1):
                 'method': 'get_genres',
                 'page': categories.get('nextPage'),
                 'id': id,
-                'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+                'label': '%s (%s)' % (control.lang(34136), page),
                 'art': {
                     'poster': control.addonNext(),
                     'fanart': FANART
@@ -250,7 +250,7 @@ def get_thumb_offer(id, page=1, per_page=200):
             'method': 'get_thumb_offer',
             'id': id,
             'page': items.get('nextPage'),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -311,7 +311,7 @@ def get_poster_offer(id, page=1, per_page=40):
             'method': 'get_poster_offer',
             'id': id,
             'page': items.get('nextPage'),
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART
@@ -454,7 +454,7 @@ def get_title(id, season=None, page=1):
                     'handler': __name__,
                     'method': 'get_title',
                     'id': id,
-                    'label': '%s %s' % (control.lang(34137).encode('utf-8'), season.get('number', 0)),
+                    'label': '%s %s' % (control.lang(34137), season.get('number', 0)),
                     'season': season.get('number', 0),
                     'title': title.get('headline'),
                     'tvshowtitle': title.get('headline'),
@@ -486,7 +486,7 @@ def get_title(id, season=None, page=1):
             'method': 'get_title',
             'id': id,
             'page': page,
-            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'label': '%s (%s)' % (control.lang(34136), page),
             'art': {
                 'poster': control.addonNext(),
                 'fanart': FANART

@@ -2,12 +2,12 @@
 
 from resources.lib.modules import control, cache, workers
 import requests
-import urllib
-import auth_helper
+from urllib.parse import quote_plus
+from . import auth_helper
 
 
 def request_query(query, variables, force_refresh=False, retry=3):
-    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=urllib.quote_plus(variables))
+    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=quote_plus(variables))
     headers = get_headers()
 
     control.log('{} - GET {}'.format('Globoplay', url))
@@ -21,6 +21,9 @@ def request_query(query, variables, force_refresh=False, retry=3):
     json_response = response.json()
 
     control.log(json_response)
+
+    if 'errors' in json_response and json_response['errors'] and retry > 0:
+        return request_query(query, variables, force_refresh=True, retry=retry-1)
 
     return json_response
 

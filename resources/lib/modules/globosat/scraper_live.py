@@ -6,7 +6,7 @@ from resources.lib.modules import control
 from resources.lib.modules.globosat import request_query, request_url
 from . import get_authorized_services
 from . import auth_helper
-import player
+from . import player
 
 FANART_URL = 'http://s01.video.glbimg.com/x1080/{media_id}.jpg'
 THUMB_URL = 'https://s04.video.glbimg.com/x1080/{media_id}.jpg'

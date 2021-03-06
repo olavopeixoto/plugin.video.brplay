@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import cookielib
+import http.cookiejar as cookielib
 import os
 import traceback
-import urlparse
+import urllib.parse as urlparse
 
 import requests
 import copy
@@ -43,7 +43,7 @@ class SimpleHLSWriter:
     def log(self, msg):
         if self.enable_log:
             if is_standalone:
-                print msg
+                print(msg)
             else:
                 import threading
                 control.log("%s - %s" % (threading.currentThread(), msg))

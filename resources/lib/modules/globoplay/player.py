@@ -3,13 +3,13 @@
 import re
 import sys
 import xbmc
-import auth_helper
+from . import auth_helper
 import requests
-from urlparse import urlparse
+from urllib.parse import urlparse
 from resources.lib.modules import hlshelper
 from resources.lib.hlsproxy.simpleproxy import MediaProxy
 from resources.lib.modules import control
-from resources.lib.modules.util import get_signed_hashes
+from resources.lib.modules.globo_util import get_signed_hashes
 from resources.lib.modules.globoplay import resourceshelper
 import threading
 import traceback
@@ -193,7 +193,7 @@ class Player(xbmc.Player):
             if stop_event:
                 control.log("Setting stop event for proxy player")
                 stop_event.set()
-            control.infoDialog(message=control.lang(34100).encode('utf-8'), icon='ERROR')
+            control.infoDialog(message=control.lang(34100), icon='ERROR')
             return None, None, None
 
         control.log("Resolved URL: %s" % repr(url))
@@ -217,7 +217,7 @@ class Player(xbmc.Player):
                 control.log("Using inputstream.adaptive MPD")
                 item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
                 item.setProperty('inputstream.adaptive.stream_headers', user_agent)
-                item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+                item.setProperty('inputstream', 'inputstream.adaptive')
 
         if mime_type:
             item.setMimeType(mime_type)
@@ -227,12 +227,12 @@ class Player(xbmc.Player):
                 control.log("Using inputstream.adaptive HLS")
                 item.setProperty('inputstream.adaptive.manifest_type', 'hls')
                 item.setProperty('inputstream.adaptive.stream_headers', user_agent)
-                item.setProperty('inputstreamaddon', 'inputstream.adaptive')
+                item.setProperty('inputstream', 'inputstream.adaptive')
 
         encrypted = info.get('encrypted', False)
 
         if encrypted and not control.is_inputstream_available():
-            control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
+            control.okDialog(control.lang(31200), control.lang(34103))
             return
 
         if encrypted:
@@ -297,7 +297,7 @@ class Player(xbmc.Player):
 
         control.log(hash_json)
 
-        hash_token = get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
+        hash_token = get_signed_hashes(hash_json['hash']) if 'hash' in hash_json else hash_json['token']
         querystring_template = hash_json.get('query_string_template') or "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}"
 
         return {
@@ -347,13 +347,13 @@ class Player(xbmc.Player):
         hash_json = response.json()
 
         if not hash_json or ('hash' not in hash_json and 'token' not in hash_json):
-            message = (hash_json or {}).get('message') or control.lang(34101).encode('utf-8')
+            message = (hash_json or {}).get('message') or control.lang(34101)
             control.log(hash_json or message, control.LOGERROR)
             control.infoDialog(message=message, sound=True, icon='ERROR')
             control.idle()
             sys.exit()
 
-        hash_token = get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
+        hash_token = get_signed_hashes(hash_json['hash']) if 'hash' in hash_json else hash_json['token']
 
         return hash_token, hash_json.get('user'), credentials
 

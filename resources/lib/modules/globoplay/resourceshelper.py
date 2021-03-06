@@ -1,5 +1,5 @@
 from resources.lib.modules import control
-from resources.lib.modules import util
+from resources.lib.modules.globo_util import get_signed_hashes
 import requests
 
 PLAYER_VERSION = '1.1.24'
@@ -119,7 +119,7 @@ def get_video_info(video_id, children_id=None, cdn=None):
     playlist_json = requests.get(playlist_url % video_id, headers={"Accept-Encoding": "gzip"}).json()
 
     if not playlist_json or playlist_json is None or 'videos' not in playlist_json or len(playlist_json['videos']) == 0:
-        message = (playlist_json or {}).get('message') or control.lang(34101).encode('utf-8')
+        message = (playlist_json or {}).get('message') or control.lang(34101)
         control.infoDialog(message=message, sound=True, icon='ERROR')
         return None
 
@@ -248,7 +248,7 @@ def _select_resource(video_id, resources, metadata, title_override=None, cdn=Non
                 break
 
     if (resource or None) is None:
-        control.infoDialog(message=control.lang(34102).encode('utf-8'), sound=True, icon='ERROR')
+        control.infoDialog(message=control.lang(34102), sound=True, icon='ERROR')
         return None
 
     control.log('Selected resource for video %s: %s' % (video_id, resource['_id']))
@@ -382,7 +382,7 @@ def get_geofence_video_info(video_id, latitude, longitude, credentials, cdn=None
         "url": hash_json.get("url"),
         "query_string_template": hash_json.get('query_string_template') or "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
         "thumbUri": hash_json.get("thumbUri"),
-        "hash_token": util.get_signed_hashes(hash_json.get('hash'))[0] if 'hash' in hash_json else hash_json['token'],
+        "hash_token": get_signed_hashes(hash_json.get('hash')) if 'hash' in hash_json else hash_json['token'],
         "user": hash_json.get("user"),
         "credentials": credentials,
         "encrypted": hash_json.get('encrypted', False)
