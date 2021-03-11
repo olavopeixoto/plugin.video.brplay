@@ -1,17 +1,18 @@
+# -*- coding: utf-8 -*-
+
 import json
 import datetime
 import re
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import parse_qs
-from urllib.parse import urlparse
 from json import JSONEncoder
 import pickle
 import resources.lib.modules.control as control
 import base64
 from .private_data import get_user, get_password
+import traceback
+import urllib.parse as urlparse
 unicode = str
-
 
 ACCESS_TOKEN_URL = 'https://apim.oi.net.br/connect/oauth2/token_endpoint/access_token'
 
@@ -84,13 +85,16 @@ def gettoken(force_new=False):
         settings_data = control.setting('oiplay_access_token_response')
         refresh_token = None
         if settings_data:
-            auth_json = json.loads(settings_data, object_hook=as_python_object)
-            refresh_token = auth_json['refresh_token']
+            try:
+                auth_json = json.loads(settings_data, object_hook=as_python_object)
+                refresh_token = auth_json['refresh_token']
 
-            if auth_json['date'] + datetime.timedelta(seconds=auth_json['expires_in']) > datetime.datetime.utcnow():
-                control.log('ACCESS TOKEN FROM FILE: ' + auth_json['access_token'])
-                id_token = auth_json.get('id_token')
-                return auth_json['access_token'], get_account_id(id_token)
+                if auth_json['date'] + datetime.timedelta(seconds=auth_json['expires_in']) > datetime.datetime.utcnow():
+                    control.log('ACCESS TOKEN FROM FILE: ' + auth_json['access_token'])
+                    id_token = auth_json.get('id_token')
+                    return auth_json['access_token'], get_account_id(id_token)
+            except:
+                control.log(traceback.format_exc(), control.LOGERROR)
 
         if not refresh_token:
             response = __login(user, password)
@@ -161,7 +165,7 @@ def __login(user, password):
 
     response = session.get(url)
 
-    url = re.findall(r'action="([^"]+)"', response.text)[0]
+    url = re.findall(r'action="([^"]+)"', response.content.decode('utf-8'))[0]
 
     url = 'https://logintv.oi.com.br' + url
 
@@ -178,13 +182,13 @@ def __login(user, password):
 
     # control.log(response.content)
 
-    url = re.findall(r"window.location.href='([^']+)';", response.text)[0]
+    url = re.findall(r"window.location.href='([^']+)';", response.content.decode('utf-8'))[0]
 
     control.log('GET %s' % url)
 
     response = session.get(url)
 
-    html = BeautifulSoup(response.text)
+    html = BeautifulSoup(response.content, features="html.parser")
 
     url = html.find('form')['action']
 
@@ -197,9 +201,9 @@ def __login(user, password):
 
     response = session.post(url, data=post, allow_redirects=False)
 
-    url_parsed = urlparse(response.headers['Location'])
+    url_parsed = urlparse.urlparse(response.headers['Location'])
 
-    qs = parse_qs(url_parsed.query)
+    qs = urlparse.parse_qs(url_parsed.query)
 
     code = qs['code']
 
@@ -213,7 +217,7 @@ def __login(user, password):
 
     token_response = session.post(ACCESS_TOKEN_URL, data=post)
 
-    return json.loads(token_response.text, object_hook=as_python_object)
+    return json.loads(token_response.content, object_hook=as_python_object)
 
 
 class PythonObjectEncoder(JSONEncoder):
