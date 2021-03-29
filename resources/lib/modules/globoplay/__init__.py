@@ -22,6 +22,9 @@ def request_query(query, variables, force_refresh=False, retry=3):
 
     control.log(json_response)
 
+    if 'errors' in json_response and json_response['errors'] and retry > 0:
+        return request_query(query, variables, force_refresh=True, retry=retry-1)
+
     return json_response
 
 

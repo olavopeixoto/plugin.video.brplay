@@ -612,20 +612,20 @@ def get_coordinates(affiliate):
 
 
 def get_ip_coordinates():
-    from urllib2 import urlopen
+    import requests
 
     url = 'http://ipinfo.io/json'
-    response = urlopen(url)
-    data = json.load(response)
+    response = requests.get(url)
+    data = response.json()
 
     loc = data['loc']
     city = data['city']
-    loc = loc.split(', ')
+    loc = loc.split(',')
 
-    latitude = loc[0]
-    longitude = loc[1]
+    latitude = loc[0] or ''
+    longitude = loc[1] or ''
 
-    return city, latitude, longitude
+    return city, latitude.strip(), longitude.strip()
 
 
 def get_affiliates_by_id(id):

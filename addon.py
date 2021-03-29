@@ -9,7 +9,7 @@ import buggalo
 
 if __name__ == '__main__':
     try:
-        control.log("Starting...")
+        control.log('%s %s | Starting...' % (control.addonInfo('name'), control.addonInfo('version')))
 
         buggalo.EMAIL_CONFIG = {
                 "recipient": 'brplayissues@gmail.com',

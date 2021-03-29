@@ -30,7 +30,7 @@ def _authenticate():
 
     auth = Authenticator()
 
-    credentials, user_data = auth.authenticate(username, password)
+    credentials, user_data = auth.authenticate(username, password, CADUN_SERVICES.LOGGED_ONLY)
 
     return credentials, user_data, auth
 
@@ -77,7 +77,7 @@ def is_logged_in():
     username = control.setting('globoplay_username')
     password = control.setting('globoplay_password')
 
-    return Authenticator().is_authenticated(username, password)
+    return Authenticator().is_authenticated(username, password, CADUN_SERVICES.LOGGED_ONLY)
 
 
 def get_subscription_type():

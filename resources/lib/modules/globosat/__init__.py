@@ -31,7 +31,7 @@ def request_url(url, force_refresh=False, retry=3, use_cache=True):
         response = requests.get(url, headers=headers)
 
     if response.status_code >= 500 and retry > 0:
-        return request_query(url, True, retry - 1)
+        return request_url(url, True, retry - 1)
 
     response.raise_for_status()
 

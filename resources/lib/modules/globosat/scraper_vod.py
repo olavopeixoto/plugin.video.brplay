@@ -310,7 +310,7 @@ def get_title(title_id, page=1):
 
     elif 'seasons' in structure:
 
-        seasons = structure.get('seasons', {}).get('resources', [])
+        seasons = structure.get('seasons', {}).get('resources', []) or []
         if len(seasons) == 1:
             season = seasons[0]
             for episode in season.get('episodes', {}).get('resources', []):
@@ -347,7 +347,7 @@ def get_title(title_id, page=1):
                     'sort': control.SORT_METHOD_EPISODE
                 }
         else:
-            for season in structure.get('seasons', {}).get('resources', []):
+            for season in structure.get('seasons', {}).get('resources', []) or []:
                 yield {
                     'handler': __name__,
                     'method': 'get_episodes',
