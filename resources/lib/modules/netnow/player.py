@@ -37,7 +37,7 @@ class Player:
             url, avs_cookie, login_info, xsrf, device_id, sc_id, cdn_token = self.get_cdn(id, self.isLive)
         except Exception as ex:
             control.log(traceback.format_exc(), control.LOGERROR)
-            control.okDialog(u'Now Online', ex.message)
+            control.okDialog(u'Now Online', str(ex))
             return
 
         encrypted = True
@@ -71,7 +71,7 @@ class Player:
 
             item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
 
-            licence_url = 'https://proxy.claro01.verspective.net/multirights/widevine?deviceId={deviceId}'.format(deviceId=base64.urlsafe_b64encode(device_id))
+            licence_url = 'https://proxy.claro01.verspective.net/multirights/widevine?deviceId={deviceId}'.format(deviceId=base64.urlsafe_b64encode(device_id.encode('utf-8')))
 
             key_headers = {
                 'Referer': 'https://www.nowonline.com.br/',

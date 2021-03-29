@@ -630,12 +630,12 @@ def get_ip_coordinates():
 
     loc = data['loc']
     city = data['city']
-    loc = loc.split(', ')
+    loc = loc.split(',')
 
-    latitude = loc[0]
-    longitude = loc[1]
+    latitude = loc[0] or ''
+    longitude = loc[1] or ''
 
-    return city, latitude, longitude
+    return city, latitude.strip(), longitude.strip()
 
 
 def get_affiliates_by_id(id):

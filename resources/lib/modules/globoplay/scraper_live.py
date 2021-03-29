@@ -80,7 +80,7 @@ def get_live_channels():
             threads.append(workers.Thread(get_globo_americas))
         [i.start() for i in threads]
         [i.join() for i in threads]
-        [live.extend(i.get_result()) for i in threads]
+        [live.extend(i.get_result() or []) for i in threads]
 
     seen = []
     filtered_channels = filter(lambda x: seen.append(x['affiliate_code'] if 'affiliate_code' in x else '$FOO$') is None if 'affiliate_code' not in x or x['affiliate_code'] not in seen else False, live)

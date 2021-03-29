@@ -1,11 +1,7 @@
 import requests
 import uuid
 from resources.lib.modules import control
-
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import json
 
 
 PLATFORM = 'PCTV'  # PCTV | IPHONEH | ANDROIDTABLETH | ANDROIDMOBILEH
@@ -71,7 +67,7 @@ def login(validate=True):
 
     if credentials:
         control.log('Found credentials cached')
-        result = pickle.loads(credentials)
+        result = json.loads(credentials)
         if validate_login(result, validate):
             return result
 
@@ -141,7 +137,7 @@ def login(validate=True):
 
     control.log(credentials)
 
-    control.setSetting('nowonline_credentials', pickle.dumps(credentials))
+    control.setSetting('nowonline_credentials', json.dumps(credentials))
 
     return credentials
 
