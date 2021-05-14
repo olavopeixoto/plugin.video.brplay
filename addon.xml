@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-	<addon id="plugin.video.brplay" version="1.0.22" name="BR play" provider-name="brplayer">
+	<addon id="plugin.video.brplay" version="1.0.23" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
 		<import addon="script.module.requests" version="0.13.2"/>§
@@ -30,6 +30,8 @@
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
 		<news>
+1.0.23
+- Fix Globoplay excerpts nos showing
 1.0.22
 - Individual Globo login service id for Canais Globo and Globoplay
 - Code bug fixes
