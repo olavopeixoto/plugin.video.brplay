@@ -477,7 +477,8 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
 
         elif 'excerpts' in structure:
             excerpts = structure.get('excerpts', {}) or {}
-            if excerpts.get('total', 0) > 0:
+            excerpts_resources = excerpts.get('resources', []) or []
+            if excerpts_resources:
                 yield {
                     'handler': __name__,
                     'method': 'get_excerpts',
