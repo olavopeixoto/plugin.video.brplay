@@ -123,6 +123,8 @@ def create_directory(items, current=None, cache_to_disk=True):
         content = None
         sort_methods = set()
 
+        item_count = 0
+
         for data in items:
             label = data.get('label', '')
 
@@ -182,6 +184,10 @@ def create_directory(items, current=None, cache_to_disk=True):
                 item.setCast(data.get('setCast', None))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=is_folder)
+
+            item_count = item_count + 1
+
+        control.log('Added %s item%s' % (item_count, 's' if item_count > 1 else ''))
 
         for sort in sort_methods:
             if isinstance(sort, tuple):

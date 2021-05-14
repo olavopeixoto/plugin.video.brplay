@@ -291,7 +291,7 @@ class Auth:
         return is_authenticated, user_data
 
     def hash_user_credentials(self, username, password, service_id):
-        return hashlib.sha256(b'%s|%s|%s' % (username.encode('utf-8'), password.encode('utf-8'), str(service_id).encode('utf-8'))).hexdigest()
+        return hashlib.sha256(('%s|%s|%s' % (username, password, service_id)).encode('utf-8')).hexdigest()
 
     def logout(self, token):
         # https://login.globo.com/logout?realm=globo.com
