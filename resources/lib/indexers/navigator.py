@@ -46,7 +46,7 @@ def search(query=None, page=1):
 def clear_cache():
     control.idle()
 
-    yes = control.yesnoDialog(control.lang(32056), '', '')
+    yes = control.yesnoDialog(control.lang(32056))
 
     if not yes:
         return
@@ -59,7 +59,7 @@ def clear_cache():
 def clear_credentials():
     control.idle()
 
-    yes = control.yesnoDialog(control.lang(32056), '', '')
+    yes = control.yesnoDialog(control.lang(32056))
 
     if not yes:
         return

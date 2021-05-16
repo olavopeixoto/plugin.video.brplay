@@ -427,8 +427,8 @@ def infoDialog(message, heading=addonInfo('name'), icon='', time=3000, sound=Fal
     dialog.notification(heading=heading, message=message, icon=icon, time=time, sound=sound)
 
 
-def yesnoDialog(line1, line2, line3, heading=addonInfo('name'), nolabel='', yeslabel=''):
-    return dialog.yesno(heading, line1, line2, line3, nolabel, yeslabel)
+def yesnoDialog(message, heading=addonInfo('name'), nolabel='', yeslabel='', autoclose=0):
+    return dialog.yesno(heading, message, nolabel, yeslabel, autoclose)
 
 
 def selectDialog(list, heading=addonInfo('name')):
