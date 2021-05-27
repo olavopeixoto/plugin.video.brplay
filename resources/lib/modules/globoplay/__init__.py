@@ -13,8 +13,11 @@ def request_query(query, variables, force_refresh=False, retry=3):
     control.log('{} - GET {}'.format('Globoplay', url))
     response = cache.get(requests.get, 1, url, headers=headers, force_refresh=force_refresh, table='globoplay')
 
-    if response.status_code >= 500 and retry > 0:
-        return request_query(query, variables, True, retry - 1)
+    if response.status_code >= 500:
+        if retry > 0:
+            return request_query(query, variables, True, retry - 1)
+        else:
+            cache.clear_item(requests.get, url, headers=headers, table='globoplay')
 
     response.raise_for_status()
 

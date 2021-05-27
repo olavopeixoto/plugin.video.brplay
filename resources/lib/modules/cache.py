@@ -82,9 +82,9 @@ def get(function, timeout_hour, *args, **kargs):
                 result, found = __get_from_cache(dbcur, table, f, a, timeout_hour)
             except:
                 control.log(traceback.format_exc(), control.LOGERROR)
-                control.log('NO CACHE FOUND')
 
             if not found:
+                control.log('NO CACHE FOUND')
                 result = __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs)
 
         control.log('Lock released (%s)' % id)
@@ -92,6 +92,38 @@ def get(function, timeout_hour, *args, **kargs):
 
     else:
         return __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs)
+
+
+def clear_item(function, *args, **kargs):
+    f = repr(function)
+    f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
+
+    a = hashlib.md5()
+    for i in args: a.update(str(i))
+    for key in kargs:
+        if key != 'table':
+            a.update('%s=%s' % (key, str(kargs[key])))
+    a = str(a.hexdigest())
+
+    try:
+        table = kargs['table']
+        kargs.pop('table')
+    except:
+        table = 'rel_list'
+
+    try:
+        control.makeFile(control.dataPath)
+        dbcon = database.connect(control.cacheFile)
+        dbcur = dbcon.cursor()
+
+        dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
+
+        dbcon.commit()
+
+        control.log('CACHE DELETED FOR %s - %s' % (table, f))
+    except:
+        control.log(traceback.format_exc(), control.LOGERROR)
+        control.log('NO CACHE FOUND')
 
 
 def __get_from_cache(dbcur, table, f, a, timeout_hour):
