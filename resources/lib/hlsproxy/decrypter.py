@@ -63,15 +63,16 @@ block_size = 16
 # variable length key: 16, 24 or 32 bytes
 key_size = None
 
+
 class AESDecrypter():
-    MODE_CBC=2
-    def new(self, key, mode, IV=None):
+
+    def new(self, key, mode=MODE_CBC, iv=None):
         if mode == MODE_ECB:
             return ECBMode(AES(key))
         elif mode == MODE_CBC:
-            if IV is None:
+            if iv is None:
                 raise ValueError("CBC mode needs an IV value!")
-            return CBCMode(AES(key), IV)
+            return CBCMode(AES(key), iv)
         else:
             raise NotImplementedError
 

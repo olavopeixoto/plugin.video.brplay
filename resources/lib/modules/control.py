@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, json, threading
+import os, json, threading, time, sys, urllib, datetime
 
 import xbmc, xbmcaddon, xbmcplugin, xbmcgui, xbmcvfs
 
@@ -35,6 +35,7 @@ monitor = xbmc.Monitor()
 addSortMethod = xbmcplugin.addSortMethod
 SORT_METHOD_NONE = xbmcplugin.SORT_METHOD_NONE
 SORT_METHOD_UNSORTED = xbmcplugin.SORT_METHOD_UNSORTED
+SORT_METHOD_VIDEO_RATING = xbmcplugin.SORT_METHOD_VIDEO_RATING
 SORT_METHOD_TRACKNUM = xbmcplugin.SORT_METHOD_TRACKNUM
 SORT_METHOD_FILE = xbmcplugin.SORT_METHOD_FILE
 SORT_METHOD_TITLE = xbmcplugin.SORT_METHOD_TITLE
@@ -51,6 +52,10 @@ SORT_METHOD_CHANNEL = xbmcplugin.SORT_METHOD_CHANNEL
 SORT_METHOD_DATE = xbmcplugin.SORT_METHOD_DATE
 SORT_METHOD_DATEADDED = xbmcplugin.SORT_METHOD_DATEADDED
 SORT_METHOD_PLAYLIST_ORDER = xbmcplugin.SORT_METHOD_PLAYLIST_ORDER
+SORT_METHOD_EPISODE = xbmcplugin.SORT_METHOD_EPISODE
+SORT_METHOD_STUDIO = xbmcplugin.SORT_METHOD_STUDIO
+SORT_METHOD_STUDIO_IGNORE_THE = xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE
+SORT_METHOD_MPAA_RATING = xbmcplugin.SORT_METHOD_MPAA_RATING
 
 #
 # SORT_METHOD_ALBUM = 13
@@ -167,6 +172,10 @@ isJarvis = infoLabel("System.BuildVersion").startswith("16.")
 
 isKrypton = infoLabel("System.BuildVersion").startswith("17.")
 
+supports_offscreen = infoLabel("System.BuildVersion") > '17'
+
+isKodi = True if infoLabel("System.BuildVersion") and len(infoLabel("System.BuildVersion")) > 0 else False
+
 isFTV = skin.lower().startswith('skin.ftv')
 
 cookieFile = os.path.join(tempPath, 'cookies.dat')
@@ -181,11 +190,15 @@ ignore_channel_authorization = xbmcaddon.Addon().getSetting('ignore_channel_auth
 
 is_4k_enabled =  xbmcaddon.Addon().getSetting('enable_4k') == 'true'
 
-is_4k_images_enabled =  xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true'
+is_4k_images_enabled = xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true'
 
 log_enabled = setting('enable_log') == 'true'
 
 enable_inputstream_adaptive = setting("enable_inputstream_adaptive") == 'true'
+
+prefer_dash = setting('prefer_dash') == 'true'
+
+sysaddon = sys.argv[0]
 
 
 def get_current_brasilia_utc_offset():
@@ -227,6 +240,9 @@ def get_inputstream_addon():
     return None, None
 
 
+lock = threading.RLock()
+
+
 def is_inputstream_available():
     global enable_inputstream_adaptive
 
@@ -236,13 +252,12 @@ def is_inputstream_available():
     global __inputstream_addon_available
 
     if __inputstream_addon_available is None:
-        lock = threading.RLock()
 
         try:
-            lock.acquire()
-            if __inputstream_addon_available is None:
-                (inputstream_addon, inputstream_enabled) = get_inputstream_addon()
-                __inputstream_addon_available = inputstream_addon is not None and inputstream_enabled
+            if lock.acquire():
+                if __inputstream_addon_available is None:
+                    (inputstream_addon, inputstream_enabled) = get_inputstream_addon()
+                    __inputstream_addon_available = inputstream_addon is not None and inputstream_enabled
         except Exception as ex:
             log("ERROR FINDING INPUTSTREAM ADDON, CONSIDERING MISSING: %s" % repr(ex))
             __inputstream_addon_available = False
@@ -252,15 +267,89 @@ def is_inputstream_available():
     return __inputstream_addon_available
 
 
+def is_live_available():
+    return is_globosat_available() \
+           or is_globoplay_available() \
+           or is_oiplay_available() \
+           or is_tntplay_available() \
+           or is_nowonline_available() \
+           or is_sbt_available() \
+           or is_pluto_available()
+
+
+def is_vod_available():
+    return is_globosat_available() \
+           or is_globoplay_available() \
+           or is_tntplay_available() \
+           or is_nowonline_available() \
+           or is_telecine_available() \
+           or is_oiplay_available() \
+           or is_pluto_available()
+
+
 def is_globosat_available():
-    return setting('globosat_available') == 'true' and (is_globoplay_available() if setting('use_globoplay_credentials_for_globosat') == 'true' else setting('globosat_username') != '' and setting('globosat_password') != '')
+
+    if setting('globosat_available') != 'true':
+        return False
+
+    if is_globoplay_available() and setting('use_globoplay_credentials_for_globosat') == 'true':
+        return True
+
+    username = setting('globosat_username')
+    password = setting('globosat_password')
+
+    return username and password and username.strip() != '' and password.strip() != ''
 
 
 def is_globoplay_available():
     username = setting('globoplay_username')
     password = setting('globoplay_password')
 
-    return username and password and username.strip() != '' and password.strip() != ''
+    return setting('globoplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_globoplay_mais_canais_ao_vivo_available():
+    return not is_globosat_available() and (setting('globoplay_enable_mais_canais') == 'true' or not globoplay_ignore_channel_authorization())
+
+
+def globoplay_ignore_channel_authorization():
+    return setting('globoplay_ignore_channel_authorization') == 'true'
+
+
+def is_oiplay_available():
+    username = setting('oiplay_account')
+    password = setting('oiplay_password')
+
+    return setting('oiplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_tntplay_available():
+    username = setting('tntplay_account')
+    password = setting('tntplay_password')
+
+    return setting('tntplay_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_nowonline_available():
+    username = setting('nowonline_account')
+    password = setting('nowonline_password')
+
+    return setting('nowonline_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_telecine_available():
+    username = setting('telecine_account')
+    password = setting('telecine_password')
+
+    return setting('telecine_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
+
+
+def is_sbt_available():
+    return setting('sbt_available') == 'true'
+
+
+def is_pluto_available():
+    return setting('pluto_available') == 'true'
 
 
 def getKodiVersion():
@@ -395,28 +484,6 @@ def version():
     return int(num)
 
 
-def cdnImport(uri, name):
-    import imp
-    from resources.lib.modules import client
-
-    path = os.path.join(dataPath, 'py' + name)
-    path = path.decode('utf-8')
-
-    deleteDir(os.path.join(path, ''), force=True)
-    makeFile(dataPath)
-    makeFile(path)
-
-    r = client.request(uri)
-    p = os.path.join(path, name + '.py')
-    f = openFile(p, 'w')
-    f.write(r)
-    f.close()
-    m = imp.load_source(name, p)
-
-    deleteDir(os.path.join(path, ''), force=True)
-    return m
-
-
 def openSettings(query=None, id=addonInfo('id')):
     try:
         idle()
@@ -442,14 +509,33 @@ def queueItem():
 
 
 def clear_credentials():
-    setSetting("sexyhot_credentials", None)
-    setSetting("globosat_credentials", None)
-    setSetting("globoplay_credentials", None)
+    setSetting("sexyhot_credentials", u'')
+    setSetting("globosat_credentials", u'')
+    setSetting("globoplay_credentials", u'')
+    setSetting("tntplay_token", u'')
+    setSetting("oiplay_access_token_response", u'')
+    setSetting("nowonline_credentials", u'')
+    setSetting("telecine_credentials", u'')
+    setSetting('sbt_token', u'')
 
 
-def log(msg):
+def clear_globosat_credentials():
+    setSetting("globosat_credentials", u'')
+
+
+LOGDEBUG = 0
+LOGERROR = 4
+LOGFATAL = 6
+LOGINFO = 1
+LOGNONE = 7
+LOGNOTICE = 2
+LOGSEVERE = 5
+LOGWARNING = 3
+
+
+def log(msg, level=LOGNOTICE):
     if log_enabled:
-        xbmc.log('[plugin.video.brplay] - ' + str(msg), xbmc.LOGNOTICE)  # xbmc.LOGDEBUG
+        xbmc.log('[plugin.video.brplay] - %s' % msg, level)  # xbmc.LOGDEBUG
 
 
 def get_coordinates(affiliate):
@@ -459,55 +545,55 @@ def get_coordinates(affiliate):
     elif affiliate == "Sao Paulo":
         code, latitude, longitude = "SP1", '-23.5505', '-46.6333'
     elif affiliate == "Brasilia":
-        code, latitude, longitude = "DF", '-15.7942',' -47.8825'
+        code, latitude, longitude = "DF", '-15.7942', ' -47.8825'
     elif affiliate == "Belo Horizonte":
-        code, latitude, longitude = "BH", '-19.9245','-43.9352'
+        code, latitude, longitude = "BH", '-19.9245', '-43.9352'
     elif affiliate == "Recife":
-        code, latitude, longitude = "PE1", '-8.0476','-34.8770'
+        code, latitude, longitude = "PE1", '-8.0476', '-34.8770'
     elif affiliate == "Salvador":
-        code, latitude, longitude = "SAL", '-12.9722','-38.5014'
+        code, latitude, longitude = "SAL", '-12.9722', '-38.5014'
     elif affiliate == "Fortaleza":
-        code, latitude, longitude = "CE1", '-3.7319','-38.5267'
+        code, latitude, longitude = "CE1", '-3.7319', '-38.5267'
     elif affiliate == "Aracaju":
-        code, latitude, longitude = "SER", '-10.9472','-37.0731'
+        code, latitude, longitude = "SER", '-10.9472', '-37.0731'
     elif affiliate == "Maceio":
-        code, latitude, longitude = "MAC", '-9.6498','-35.7089'
+        code, latitude, longitude = "MAC", '-9.6498', '-35.7089'
     elif affiliate == "Cuiaba":
-        code, latitude, longitude = "MT", '-15.6014','-56.0979'
+        code, latitude, longitude = "MT", '-15.6014', '-56.0979'
     elif affiliate == "Porto Alegre":
-        code, latitude, longitude = "RS1", '-30.0347','-51.2177'
+        code, latitude, longitude = "RS1", '-30.0347', '-51.2177'
     elif affiliate == "Florianopolis":
-        code, latitude, longitude = "SC1", '-27.5949','-48.5482'
+        code, latitude, longitude = "SC1", '-27.5949', '-48.5482'
     elif affiliate == "Curitiba":
-        code, latitude, longitude = "CUR", '-25.4244','-49.2654'
+        code, latitude, longitude = "CUR", '-25.4244', '-49.2654'
     elif affiliate == "Vitoria":
-        code, latitude, longitude = "VIT", '-20.2976','-40.2958'
+        code, latitude, longitude = "VIT", '-20.2976', '-40.2958'
     elif affiliate == "Goiania":
-        code, latitude, longitude = "GO01", '-16.6869','-49.2648'
+        code, latitude, longitude = "GO01", '-16.6869', '-49.2648'
     elif affiliate == "Campo Grande":
-        code, latitude, longitude = "MS1", '-20.4697','-54.6201'
+        code, latitude, longitude = "MS1", '-20.4697', '-54.6201'
     elif affiliate == "Manaus":
-        code, latitude, longitude = "MAN", '-3.1190','-60.0217'
+        code, latitude, longitude = "MAN", '-3.1190', '-60.0217'
     elif affiliate == "Belem":
-        code, latitude, longitude = "BEL", '-1.4558','-48.4902'
+        code, latitude, longitude = "BEL", '-1.4558', '-48.4902'
     elif affiliate == "Macapa":
-        code, latitude, longitude = "AMP", '-0.0356','-51.0705'
+        code, latitude, longitude = "AMP", '-0.0356', '-51.0705'
     elif affiliate == "Palmas":
-        code, latitude, longitude = "PAL", '-10.2491','-48.3243'
+        code, latitude, longitude = "PAL", '-10.2491', '-48.3243'
     elif affiliate == "Rio Branco":
-        code, latitude, longitude = "ACR", '-9.9754','-67.8249'
+        code, latitude, longitude = "ACR", '-9.9754', '-67.8249'
     elif affiliate == "Teresina":
-        code, latitude, longitude = "TER", '-5.0920','-42.8038'
+        code, latitude, longitude = "TER", '-5.0920', '-42.8038'
     elif affiliate == "Sao Luis":
-        code, latitude, longitude = "MA1", '-2.5391','-44.2829'
+        code, latitude, longitude = "MA1", '-2.5391', '-44.2829'
     elif affiliate == "Joao Pessoa":
-        code, latitude, longitude = "JP", '-7.1195','-34.8450'
+        code, latitude, longitude = "JP", '-7.1195', '-34.8450'
     elif affiliate == "Natal":
-        code, latitude, longitude = "NAT", '-5.7793','-35.2009'
+        code, latitude, longitude = "NAT", '-5.7793', '-35.2009'
     elif affiliate == "Boa Vista":
-        code, latitude, longitude = "ROR", '2.82','-60.672'
+        code, latitude, longitude = "ROR", '2.82', '-60.672'
     elif affiliate == "Porto Velho":
-        code, latitude, longitude = "RON", '-8.76194','-63.90389'
+        code, latitude, longitude = "RON", '-8.76194', '-63.90389'
     elif affiliate == "Auto":
         city, latitude, longitude = get_ip_coordinates()
         code = None
@@ -526,33 +612,119 @@ def get_coordinates(affiliate):
 
 
 def get_ip_coordinates():
-    from urllib2 import urlopen
+    import requests
 
     url = 'http://ipinfo.io/json'
-    response = urlopen(url)
-    data = json.load(response)
+    response = requests.get(url)
+    data = response.json()
 
     loc = data['loc']
     city = data['city']
     loc = loc.split(',')
 
-    latitude = loc[0]
-    longitude = loc[1]
+    latitude = loc[0] or ''
+    longitude = loc[1] or ''
 
-    return city, latitude, longitude
+    return city, latitude.strip(), longitude.strip()
 
 
 def get_affiliates_by_id(id):
 
-    all_affiliates = ['Custom','Auto','Rio de Janeiro','Sao Paulo','Brasilia','Belo Horizonte','Recife','Manaus','Rio Branco','Boa Vista','Porto Velho','Macapa','Goiania','Belem','Salvador','Florianopolis','Sao Luis','Vitoria','Fortaleza','Porto Alegre','Natal','Curitiba']
+    all_affiliates = ['Custom', 'Auto', 'Rio de Janeiro', 'Sao Paulo', 'Brasilia', 'Belo Horizonte', 'Recife', 'Manaus', 'Rio Branco', 'Boa Vista', 'Porto Velho', 'Macapa', 'Goiania', 'Belem', 'Salvador', 'Florianopolis', 'Sao Luis', 'Vitoria', 'Fortaleza', 'Porto Alegre', 'Natal', 'Curitiba']
 
     if id == 0:  # All
         return all_affiliates
 
-    id = id -1
+    id = id - 1
 
     if len(all_affiliates) > id >= 0:
         return [all_affiliates[id]]
 
     # Default Rio de Janeiro
-    return [all_affiliates[0]]
+    return [all_affiliates[2]]
+
+
+INFO_LABELS = [
+    'genre',
+    'country',
+    'year',
+    'episode',
+    'season',
+    'sortepisode',
+    'sortseason',
+    'episodeguide',
+    'showlink',
+    'top250',
+    'setid',
+    'tracknumber',
+    'rating',
+    'userrating',
+    'watched',
+    'playcount',
+    'overlay',
+    'cast',
+    'castandrole',
+    'director',
+    'mpaa',
+    'plot',
+    'plotoutline',
+    'title',
+    'originaltitle',
+    'sorttitle',
+    'duration',
+    'studio',
+    'tagline',
+    'writer',
+    'tvshowtitle',
+    'premiered',
+    'status',
+    'set',
+    'setoverview',
+    'tag',
+    'imdbnumber',
+    'code',
+    'aired',
+    'credits',
+    'lastplayed',
+    'album',
+    'artist',
+    'votes',
+    'path',
+    'trailer',
+    'dateadded',
+    'mediatype',
+    'dbid'
+]
+
+
+def filter_info_labels(info_labels):
+    labels = {}
+
+    for key in info_labels.keys():
+        if key in INFO_LABELS:
+            labels[key] = info_labels[key]
+
+    return labels
+
+
+def to_timestamp(date):
+    return int((time.mktime(date.timetuple()) + date.microsecond / 1000000.0))
+
+
+def run_plugin_url(params=None):
+
+    if params is None:
+        params = {}
+
+    return 'RunPlugin(%s?%s)' % (sysaddon, urllib.urlencode(params))
+
+
+def get_weekday_name(date):
+    diff = (datetime.datetime.today().date() - date.date()).days
+    if diff == 0:  # Today
+        return lang(34153).encode('utf-8')
+    elif diff == 1:  # Yesterday
+        return lang(34154).encode('utf-8')
+    else:
+        weekday = date.weekday()
+        return lang(34157 + weekday).encode('utf-8')

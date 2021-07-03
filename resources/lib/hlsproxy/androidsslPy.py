@@ -11,11 +11,11 @@ __license__ = 'GPL v3'
 class IGNOBLEError(Exception):
     pass
 
+
 def _load_crypto_libcrypto():
     from ctypes import POINTER, c_char_p, c_int, c_long, \
         Structure, c_ulong, create_string_buffer
     import ctypes
-
 
     libcrypto = ctypes.cdll.LoadLibrary("libcrypto.so")
     AES_MAXNR = 14
@@ -64,6 +64,7 @@ def _load_crypto_libcrypto():
             return out.raw
 
     return AES
+
 
 class AESDecrypter():
 

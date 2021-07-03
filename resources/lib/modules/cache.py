@@ -1,11 +1,23 @@
 # -*- coding: utf-8 -*-
 
-import re,hashlib,time
+import re
+import hashlib
+import time
+import datetime
+import traceback
+import inspect
 
-try: from sqlite3 import dbapi2 as database
-except: from pysqlite2 import dbapi2 as database
+try:
+    from sqlite3 import dbapi2 as database
+except:
+    from pysqlite2 import dbapi2 as database
 
 from resources.lib.modules import control
+
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 try:
     from collections import OrderedDict
@@ -14,21 +26,31 @@ except ImportError:
     OrderedDict = None
 
 
-def get(function, timeout, *args, **table):
+def get(function, timeout_hour, *args, **kargs):
     # try:
     response = None
+
+    force_refresh = kargs['force_refresh'] if 'force_refresh' in kargs else False
+    kargs.pop('force_refresh', None)
+
+    lock_obj = kargs['lock_obj'] if 'lock_obj' in kargs else None
+    kargs.pop('lock_obj', None)
 
     f = repr(function)
     f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
 
     a = hashlib.md5()
     for i in args: a.update(str(i))
+    for key in kargs:
+        if key != 'table':
+            a.update('%s=%s' % (key, str(kargs[key])))
     a = str(a.hexdigest())
     # except:
     #     pass
 
     try:
-        table = table['table']
+        table = kargs['table']
+        kargs.pop('table')
     except:
         table = 'rel_list'
 
@@ -36,21 +58,106 @@ def get(function, timeout, *args, **table):
         control.makeFile(control.dataPath)
         dbcon = database.connect(control.cacheFile)
         dbcur = dbcon.cursor()
-        dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-        match = dbcur.fetchone()
 
-        response = eval(match[2].encode('utf-8'))
+        if not force_refresh:
+            response, found = __get_from_cache(dbcur, table, f, a, timeout_hour)
+            if found:
+                return response
+        else:
+            control.log('BYPASSING CACHE')
+    except:
+        control.log(traceback.format_exc(), control.LOGERROR)
+        control.log('NO CACHE FOUND')
+
+    if lock_obj:
+        id = time.time()
+        control.log('About to lock code (%s)...' % id)
+
+        found = False
+
+        with lock_obj:
+            control.log('Executing locked (%s)' % id)
+
+            try:
+                result, found = __get_from_cache(dbcur, table, f, a, timeout_hour)
+            except:
+                control.log(traceback.format_exc(), control.LOGERROR)
+
+            if not found:
+                control.log('NO CACHE FOUND')
+                result = __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs)
+
+        control.log('Lock released (%s)' % id)
+        return result
+
+    else:
+        return __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs)
+
+
+def clear_item(function, *args, **kargs):
+    f = repr(function)
+    f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
+
+    a = hashlib.md5()
+    for i in args: a.update(str(i))
+    for key in kargs:
+        if key != 'table':
+            a.update('%s=%s' % (key, str(kargs[key])))
+    a = str(a.hexdigest())
+
+    try:
+        table = kargs['table']
+        kargs.pop('table')
+    except:
+        table = 'rel_list'
+
+    try:
+        control.makeFile(control.dataPath)
+        dbcon = database.connect(control.cacheFile)
+        dbcur = dbcon.cursor()
+
+        dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
+
+        dbcon.commit()
+
+        control.log('CACHE DELETED FOR %s - %s' % (table, f))
+    except:
+        control.log(traceback.format_exc(), control.LOGERROR)
+        control.log('NO CACHE FOUND')
+
+
+def __get_from_cache(dbcur, table, f, a, timeout_hour):
+    dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
+    match = dbcur.fetchone()
+    if match and len(match) > 3:
+        response = pickle.loads(str(match[2]))
 
         t1 = int(match[3])
         t2 = int(time.time())
-        update = timeout and (abs(t2 - t1) / 3600) >= int(timeout)
-        if update == False:
-            return response
-    except:
-        pass
+        update = timeout_hour and (abs(t2 - t1) / 3600) >= int(timeout_hour)
+        if update is False:
+            control.log('RESULT FROM CACHE: %s' % table)
+            return response, True
+        control.log('CACHE EXPIRED')
+    else:
+        control.log('NO CACHE FOUND')
 
+    return None, False
+
+
+def __execute_origin(dbcur, dbcon, function, table, f, a, response, *args, **kargs):
     # try:
-    r = function(*args)
+    start_time = time.time()
+    if kargs:
+        r = function(*args, **kargs)
+    else:
+        r = function(*args)
+    end_time = time.time()
+
+    if control.log_enabled:
+        control.log('EXECUTED (%s.%s) IN %s' % (
+        inspect.getmodule(function).__name__, f, str(datetime.timedelta(seconds=end_time - start_time))))
+
     if (r is None or r == []) and response is not None:
         return response
     elif r is None or r == []:
@@ -58,49 +165,26 @@ def get(function, timeout, *args, **table):
     # except:
     #     return
 
+    control.log('CACHING RESULTS TO %s' % table)
+
     # try:
-    r = repr(r)
+    # r = repr(r)
+    r_raw = r
+    r = pickle.dumps(r, 0)
     t = int(time.time())
-    dbcur.execute("CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response TEXT, ""added TEXT, ""UNIQUE(func, args)"");" % table)
+    dbcur.execute(
+        "CREATE TABLE IF NOT EXISTS %s (""func TEXT, ""args TEXT, ""response BLOB, ""added TEXT, ""UNIQUE(func, args)"");" % table)
     dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-    dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, r, t))
+    dbcur.execute("INSERT INTO %s Values (?, ?, ?, ?)" % table, (f, a, buffer(r), t))
     dbcon.commit()
     # except:
     #     pass
 
     # try:
-    return eval(r.encode('utf-8'))
+    # return eval(r.encode('utf-8'))
+    return r_raw
     # except:
-    #     pass
-
-
-def timeout(function, *args, **table):
-    try:
-        response = None
-
-        f = repr(function)
-        f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
-
-        a = hashlib.md5()
-        for i in args: a.update(str(i))
-        a = str(a.hexdigest())
-    except:
-        pass
-
-    try:
-        table = table['table']
-    except:
-        table = 'rel_list'
-
-    try:
-        control.makeFile(control.dataPath)
-        dbcon = database.connect(control.cacheFile)
-        dbcur = dbcon.cursor()
-        dbcur.execute("SELECT * FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
-        match = dbcur.fetchone()
-        return int(match[3])
-    except:
-        return
+    #     return eval(r)
 
 
 def delete_file():
@@ -121,6 +205,6 @@ def clear(table=None):
                 dbcur.execute("VACUUM")
                 dbcon.commit()
             except:
-                pass
+                control.log(traceback.format_exc(), control.LOGERROR)
     except:
-        pass
+        control.log(traceback.format_exc(), control.LOGERROR)

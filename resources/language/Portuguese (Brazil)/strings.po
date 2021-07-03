@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 
 msgctxt "#31200"
-msgid "Globosat Play"
-msgstr "Globosat Play"
+msgid "Canais Globo"
+msgstr "Canais Globo"
 
 msgctxt "#31110"
 msgid "User"
@@ -36,6 +36,10 @@ msgctxt "#31100"
 msgid "Globo Play"
 msgstr "Globo Play"
 
+msgctxt "#31101"
+msgid "Enable Globo Play"
+msgstr "Habilitar Globo Play"
+
 msgctxt "#31111"
 msgid "Affiliate"
 msgstr "Afiliada"
@@ -59,6 +63,10 @@ msgstr "Belo Horizonte"
 msgctxt "#31116"
 msgid "All"
 msgstr "Todas"
+
+msgctxt "#31108"
+msgid "Show Globo Internacional"
+msgstr "Exibir Globo Internacional"
 
 msgctxt "#31117"
 msgid "Recife"
@@ -230,7 +238,7 @@ msgstr "Remover do Assistir Mais Tarde do Globosat"
 
 msgctxt "#32080"
 msgid "Featured"
-msgstr "Destaques Globosat"
+msgstr "Destaques"
 
 msgctxt "#32090"
 msgid "Favorites"
@@ -297,8 +305,8 @@ msgid "Show Full Videos Only"
 msgstr "Exibir apenas vídeos na íntegra"
 
 msgctxt "#33401"
-msgid "Show Adult Content"
-msgstr "Exibir conteúdo adulto"
+msgid "Enable Sexyhot Play"
+msgstr "Habilitar Sexyhot Play"
 
 msgctxt "#33402"
 msgid "Use Pagination"
@@ -405,12 +413,12 @@ msgid "4K - HDR"
 msgstr "4K - HDR"
 
 msgctxt "#34108"
-msgid "Enable Globosat Play"
-msgstr "Habilitar Globosat Play"
+msgid "Enable Canais Globo"
+msgstr "Habilitar Canais Globo"
 
 msgctxt "#34109"
-msgid "Use Globoplay Credentials for Globosat Play"
-msgstr "Usar as credenciais Globoplay para o Globosat Play"
+msgid "Use Globoplay Credentials for Canais Globo"
+msgstr "Usar as credenciais Globoplay para o Canais Globo"
 
 msgctxt "#34110"
 msgid "Latitude"
@@ -423,3 +431,208 @@ msgstr "Longitude"
 msgctxt "#34112"
 msgid "Custom"
 msgstr "Personalizada"
+
+msgctxt "#34113"
+msgid "Enable Oi Play"
+msgstr "Habilitar Oi Play"
+
+msgctxt "#34114"
+msgid "Enable 4K when available"
+msgstr "Habilitar 4k UHD quando disponível"
+
+msgctxt "#34115"
+msgid "Enable HDR when available"
+msgstr "Habilitar HDR quando disponível"
+
+msgctxt "#34116"
+msgid "Enable high resolution images when available"
+msgstr "Habilitar imagens em alta resolução quando disponíveis"
+
+msgctxt "#34117"
+msgid "Enable InputStream.Adaptive"
+msgstr "Ativar InputStream.Adaptive"
+
+msgctxt "#34118"
+msgid "Prefer SmoothStreaming for DRM"
+msgstr "Preferir SmoothStreaming para conteúdos com DRM"
+
+msgctxt "#34119"
+msgid "Prefer PlayReady for DRM"
+msgstr "Preferir PlayReady para conteúdos com DRM"
+
+msgctxt "#34120"
+msgid "Prefer Dash over HLS"
+msgstr "Preferir Dash ao invés de HLS"
+
+msgctxt "#34121"
+msgid "Play multi part videos as playlist"
+msgstr "Reproduzir videos com múltiplas partes como uma playlist"
+
+msgctxt "#34122"
+msgid "Debug Log"
+msgstr "Registro de depuração"
+
+msgctxt "#34123"
+msgid "Enable TNT Play"
+msgstr "Habilitar TNT Play"
+
+msgctxt "#34124"
+msgid "Provider"
+msgstr "Operadora"
+
+msgctxt "#34125"
+msgid "ENG"
+msgstr "POR"
+
+msgctxt "#34126"
+msgid "All Genres"
+msgstr "Todos os Gêneros"
+
+msgctxt "#34127"
+msgid "Series"
+msgstr "Séries"
+
+msgctxt "#34128"
+msgid "Movies"
+msgstr "Filmes"
+
+
+msgctxt "#34129"
+msgid "Provider not implemented"
+msgstr "Provedor não implementado"
+
+msgctxt "#34130"
+msgid "Enable Now Online"
+msgstr "Habilitar Now Online"
+
+msgctxt "#34131"
+msgid "Enable Telecine Play"
+msgstr "Habilitar Telecine Play"
+
+msgctxt "#34132"
+msgid "Highlights"
+msgstr "Destaques"
+
+msgctxt "#34133"
+msgid "Coming Soon"
+msgstr "Em Breve"
+
+msgctxt "#34134"
+msgid "History"
+msgstr "Histórico"
+
+msgctxt "#34135"
+msgid "Home"
+msgstr "Início"
+
+msgctxt "#34136"
+msgid "See More"
+msgstr "Veja Mais"
+
+msgctxt "#34137"
+msgid "Season"
+msgstr "Temporada"
+
+msgctxt "#34138"
+msgid "Advanced"
+msgstr "Avançado"
+
+msgctxt "#34139"
+msgid "Default Profile"
+msgstr "Perfil Padrão"
+
+msgctxt "#34140"
+msgid "Invalid credentials. Try again"
+msgstr "Dados inválidos. Tente novamente."
+
+msgctxt "#34141"
+msgid "No Search Results"
+msgstr "Nenhum resultado para a pesquisa"
+
+msgctxt "#34142"
+msgid "You may like..."
+msgstr "Você pode gostar..."
+
+msgctxt "#34143"
+msgid "Like"
+msgstr "Curtir"
+
+msgctxt "#34144"
+msgid "Dislike"
+msgstr "Desgostar"
+
+msgctxt "#34145"
+msgid "Remove Like"
+msgstr "Remover curtida"
+
+msgctxt "#34146"
+msgid "Remove Dislike"
+msgstr "Remover desgostar"
+
+msgctxt "#34147"
+msgid "Enable Globoplay + canais ao vivo"
+msgstr "Habilitar Globoplay + canais ao vivo"
+
+msgctxt "#34148"
+msgid "Enable SBT"
+msgstr "Habilitar SBT"
+
+msgctxt "#34149"
+msgid "Ignore Daylight Saving Time"
+msgstr "Ignorar Horário de Verão"
+
+msgctxt "#34150"
+msgid "Enable Pluto TV"
+msgstr "Habilitar Pluto TV"
+
+msgctxt "#34151"
+msgid "Excerpts"
+msgstr "Trechos"
+
+msgctxt "#34152"
+msgid "Most viewed"
+msgstr "Mais vistos de"
+
+msgctxt "#34153"
+msgid "Today"
+msgstr "Hoje"
+
+msgctxt "#34154"
+msgid "Yesterday"
+msgstr "Ontem"
+
+msgctxt "#34155"
+msgid "Most viewed"
+msgstr "Mais vistos"
+
+msgctxt "#34156"
+msgid "Continue watching"
+msgstr "Continue assistindo"
+
+msgctxt "#34157"
+msgid "Monday"
+msgstr "Segunda-feira"
+
+msgctxt "#34158"
+msgid "Tuesday"
+msgstr "Terça-feira"
+
+msgctxt "#34159"
+msgid "Wednesday"
+msgstr "Quarta-feira"
+
+msgctxt "#34160"
+msgid "Thursday"
+msgstr "Quinta-feira"
+
+msgctxt "#34161"
+msgid "Friday"
+msgstr "Sexta-feira"
+
+msgctxt "#34162"
+msgid "Saturday"
+msgstr "Sábado"
+
+msgctxt "#34163"
+msgid "Sunday"
+msgstr "Domingo"

@@ -1,666 +1,552 @@
 # -*- coding: utf-8 -*-
 
-# from resources.lib.modules import control
-from resources.lib.modules import client
-from resources.lib.modules.globosat import auth_helper
-import urllib
-import requests
+from resources.lib.modules import control
+from resources.lib.modules.globosat import request_query
+import time
+import player
+import pfc
+from pfc import PREMIERE_LOGO, PREMIERE_FANART
 
-GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
-GLOBOSAT_SEARCH = 'https://globosatplay.globo.com/busca/pagina/%s.json?q=%s'
-GLOBOSAT_FEATURED = 'https://api.vod.globosat.tv/globosatplay/featured.json'
-GLOBOSAT_TRACKS = 'https://api.vod.globosat.tv/globosatplay/tracks.json'
-GLOBOSAT_TRACKS_ITEM = 'https://api.vod.globosat.tv/globosatplay/tracks/%s.json'
 
-GLOBOSAT_CHANNELS = 'https://api-vod.globosat.tv/globosatplay/channels.json'
-GLOBOSAT_CARDS = 'https://api-vod.globosat.tv/globosatplay/cards.json?&channel_id_globo_videos=%s&page=%s'
-GLOBOSAT_PROGRAMS = 'https://api-vod.globosat.tv/globosatplay/programs.json?&id_globo_videos=%s&page=%s'
-GLOBOSAT_EPISODES_SEASON = 'https://api-vod.globosat.tv/globosatplay/episodes.json?program_id=%s&season_id=%s&page=%s'
-GLOBOSAT_EPISODES = 'https://api-vod.globosat.tv/globosatplay/episodes.json?&program_id=%s&page=%s'
+FANART = 'https://canaisglobo.globo.com/_next/static/images/canaisglobo-e3e629829ab01851d983aeaec3377807.png'
 
-GLOBOSAT_BASE_FAVORITES = 'https://api.vod.globosat.tv/globosatplay/watch_favorite.json?token=%s'
-GLOBOSAT_FAVORITES = GLOBOSAT_BASE_FAVORITES + '&page=%s&per_page=%s'
-GLOBOSAT_DEL_FAVORITES = GLOBOSAT_BASE_FAVORITES + '&id=%s'
 
-GLOBOSAT_BASE_WATCH_LATER = 'https://api.vod.globosat.tv/globosatplay/watch_later.json?token=%s'
-GLOBOSAT_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&page=%s&per_page=%s'
-GLOBOSAT_DEL_WATCH_LATER = GLOBOSAT_BASE_WATCH_LATER + '&id=%s'
+CHANNEL_MAP = {
+    1995: 936,
+    2065: 692,
+    2006: 692
+}
 
-GLOBOSAT_WATCH_HISTORY = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s&page=%s&per_page=%s'
+PLAYER_HANDLER = player.__name__
 
 
 def get_authorized_channels():
-    token = auth_helper.get_globosat_token()
+    query = 'query%20getChannelsList%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20broadcastChannels%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20filtersInput%3A%20%7Bfilter%3A%20WITH_PAGES%7D%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20perPage%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%20%20%20%20trimmedLogo%0A%20%20%20%20%20%20color%0A%20%20%20%20%20%20requireUserTeam%0A%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A'
+    variables = '{"page":1,"perPage":100}'
 
-    if not token:
-        return []
+    query_response = request_query(query, variables)
 
-    client_id = "85014160-e953-4ddb-bbce-c8271e4fde74"
-    channels_url = "https://gsatmulti.globo.com/oauth/sso/login/?chave=%s&token=%s" % (client_id, token)
+    resources = query_response['data']['broadcastChannels']['resources']
 
-    channels = []
+    for broadcast in resources:
+        if broadcast['pageIdentifier'] == 'premiere':
+            continue
 
-    pkgs_response = client.request(channels_url, headers={"Accept-Encoding": "gzip"})
+        yield {
+                'handler': __name__,
+                'method': 'get_channel_programs',
+                "id": broadcast['id'],
+                "adult": broadcast['id'] in [2065, 2006],
+                'art': {
+                    'thumb': broadcast['trimmedLogo'],
+                    'fanart': FANART
+                },
+                'slug': broadcast['pageIdentifier'],
+                "label": broadcast['name']
+            }
 
-    # control.log("-- PACKAGES: %s" % repr(pkgs_response))
-
-    pkgs = pkgs_response['pacotes']
-
-    channel_ids = []
-    for pkg in pkgs:
-        for channel in pkg['canais']:
-            if channel['id_globo_videos'] not in channel_ids:
-                channel_ids.append(channel['id_globo_videos'])
-                channels.append({
-                    "id": channel['id_globo_videos'],
-                    # "channel_id": channel['id_globo_videos'],
-                    "id_cms": channel['id_cms'],
-                    "logo": channel['logo_fundo_claro'],
-                    "name": channel['nome'],
-                    "slug": channel['slug'],
-                    "adult": channel['slug'] == 'sexyhot' or channel['slug'] == 'sexy-hot',
-                    "vod": "vod" in channel['acls'],
-                    "live": "live" in channel['acls']
-                })
-
-    return channels
-
-
-def get_channel_programs(channel_id):
-    base_url = 'https://api.vod.globosat.tv/globosatplay/cards.json?channel_id=%s&page=%s'
-    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
-
-    page = 1
-    url = base_url % (channel_id, page)
-    result = client.request(url, headers=headers)
-
-    next = result['next'] if 'next' in result else None
-    programs_result = result['results'] or []
-
-    while next:
-        page = page + 1
-        url = base_url % (channel_id, page)
-        result = client.request(url, headers=headers)
-        next = result['next'] if 'next' in result else None
-        programs_result = programs_result + result['results']
-
-    programs = []
-
-    for program in programs_result:
-        programs.append({
-            'id': program['id_globo_videos'],
-            'title': program['title'],
-            'name': program['title'],
-            'fanart': program['background_image_tv_cropped'],
-            'poster': program['image'],
-            'plot': program['description'],
-            'kind': program['kind'] if 'kind' in program else None
-        })
-
-    return programs
-
-
-def get_channel_cards(channel_id_globo_videos):
-    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
-
-    page = 1
-    url = GLOBOSAT_CARDS % (channel_id_globo_videos, page)
-    result = client.request(url, headers=headers)
-
-    next = result['next'] if 'next' in result else None
-    programs_result = result['results'] or []
-
-    while next:
-        page = page + 1
-        url = GLOBOSAT_CARDS % (channel_id_globo_videos, page)
-        result = client.request(url, headers=headers)
-        next = result['next'] if 'next' in result else None
-        programs_result = programs_result + result['results']
-
-    programs = []
-
-    for program in programs_result:
-        programs.append({
-            'id': program['id'],
-            'id_globo_videos': program['id_globo_videos'],
-            'title': program['title'],
-            'name': program['title'],
-            'fanart': program['background_image_tv_cropped'],
-            'poster': program['image'],
-            'plot': program['description'],
-            'kind': program['kind'] if 'kind' in program else None
-        })
-
-    return programs
-
-
-def get_card_seasons(id_globo_videos):
-    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
-
-    page = 1
-    url = GLOBOSAT_PROGRAMS % (id_globo_videos, page)
-    result = client.request(url, headers=headers)
-
-    next = result['next'] if 'next' in result else None
-    programs_response = result['results'] or []
-
-    while next:
-        page = page + 1
-        url = GLOBOSAT_PROGRAMS % (id_globo_videos, page)
-        result = client.request(url, headers=headers)
-        next = result['next'] if 'next' in result else None
-        programs_response = programs_response + result['results']
-
-    card_data = programs_response[0] if programs_response and len(programs_response) > 0 else None
-    seasons_response = card_data['seasons'] if card_data and 'seasons' in card_data else []
-
-    if not card_data:
-        return {
-            'id': None,
-            'title': None,
-            'name': None,
-            'fanart': None,
-            'poster': None,
-            'plot': None,
-            'kind': None
-        }
-
-    seasons = []
-
-    card = {
-        'id': card_data['id'],
-        'id_globo_videos': card_data['id_globo_videos'],
-        'title': card_data['title'],
-        'name': card_data['title'],
-        'fanart': card_data['background_image_tv_cropped'],
-        'poster': card_data['poster_image'],
-        'logo': card_data['logo_image'],
-        'plot': card_data['description'],
-        'kind': card_data['kind'] if 'kind' in seasons else None,
-        'season': len(seasons_response),
+    yield {
+        'handler': pfc.__name__,
+        'method': 'get_premiere_cards',
+        "id": 1995,
+        "adult": False,
+        'art': {
+            'thumb': PREMIERE_LOGO,
+            'fanart': PREMIERE_FANART
+        },
+        "label": 'Premiere'
     }
 
-    for season in seasons_response:
-        seasons.append({
-            'id': season['id'],
-            'title': season['title'],
-            'description': season['description'],
-            'episodes_number': season['episodes_number'],
-            'number': season['number'],
-            'year': season['year']
-        })
 
-    card['seasons'] = seasons
+def get_channel_programs(slug, art=None):
+    if art is None:
+        art = {}
 
-    return card
+    variables = '{{"id":"{id}","filter":"HOME"}}'.format(id=slug)
+    query = 'query%20getPageOffers%28%24id%3A%20ID%21%2C%20%24filter%3A%20PageType%29%20%7B%0A%20%20page%3A%20page%28id%3A%20%24id%2C%20filter%3A%20%7Btype%3A%20%24filter%7D%29%20%7B%0A%20%20%20%20offerItems%20%7B%0A%20%20%20%20%20%20...%20on%20PageOffer%20%7B%0A%20%20%20%20%20%20%20%20offerId%0A%20%20%20%20%20%20%20%20title%0A%20%20%20%20%20%20%20%20navigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20...%20on%20URLNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20url%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20...%20on%20CategoriesPageNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20identifier%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
+    offers = request_query(query, variables).get('data', {}).get('page', {}).get('offerItems', [])
 
+    for offer in offers:
+        if not offer:
+            continue
 
-def get_card_episodes(program_id, season_id=None):
-    headers = {'Authorization': GLOBOSAT_API_AUTHORIZATION, 'Accept-Encoding': 'gzip'}
+        if offer.get('componentType') == 'TAKEOVER':
+            continue
 
-    page = 1
-    url = GLOBOSAT_EPISODES_SEASON % (program_id, season_id, page) if season_id else GLOBOSAT_EPISODES % (program_id, page)
-    result = client.request(url, headers=headers)
-
-    next = result['next'] if 'next' in result else None
-    programs_result = result['results'] or []
-
-    while next:
-        page = page + 1
-        url = GLOBOSAT_EPISODES_SEASON % (program_id, season_id, page) if season_id else GLOBOSAT_EPISODES % (program_id, page)
-        result = client.request(url, headers=headers)
-        next = result['next'] if 'next' in result else None
-        programs_result = programs_result + result['results']
-
-    episodes = []
-
-    for episode in programs_result:
-
-        if episode['number'] and 'season' in episode and episode['season'] and 'number' in episode['season']:
-            title = 'S%sE%s - %s' % (episode['season']['number'], episode['number'], episode['title'])
-        else:
-            title = episode['title']
-
-        if 'program' in episode and episode['program']:
-            tvshowtitle = episode['program']['title']
-        else:
-            tvshowtitle = title
-
-        data = {
-            'id': episode['id_globo_videos'],
-            'id_globo_videos': episode['id_globo_videos'],
-            'title': title,
-            'name': episode['title'],
-            'fanart': episode['background_image_tv_cropped'],
-            'thumb': episode['thumb_image'],
-            'poster': episode['image'],
-            'plot': episode['description'],
-            'plotoutline': episode['description'],
-            'kind': episode['kind'] if 'kind' in episode else None,
-            'duration': episode['duration_in_milliseconds'] / 1000.0,
-            'brplayprovider': 'globosat',
-            'tvshowtitle': tvshowtitle,
-            # 'episode': episode['number'],
-            # 'season': episode['season']['number'] if 'season' in episode and episode['season'] and 'number' in episode['season'] else None,
-            'country': episode['country'],
-            'genre': episode['categories'],
-            'tag': episode['tags'],
-            'mpaa': episode['content_rating'],
-            'mediatype': 'episode'
+        yield {
+            'handler': __name__,
+            'method': 'get_offer',
+            'id': offer.get('offerId'),
+            'component_type': offer.get('componentType'),
+            'label': offer.get('title', ''),
+            'art': {
+                'thumb': art.get('thumb'),
+                'fanart': FANART
+            }
         }
 
-        if 'director' in episode and episode['director'] and len(episode['director']) > 0:
-            data['director'] = [director['name'] for director in episode['director']]
 
-        if 'cast' in episode and episode['cast'] and len(episode['cast']) > 0:
-            data['cast'] = [director['name'] for director in episode['cast']]
+def get_offer(id, component_type):
+    # if component_type == 'THUMB':
+    #     return get_thumb_offer(id)
+    #
+    # if component_type == 'CONTINUEWATCHING':
+    #     return get_continue_watching()
+    #
+    # if component_type == 'OFFERHIGHLIGHT':
+    #     return get_offer_highlight(id)
+    #
+    # if component_type == 'CATEGORYBACKGROUND':
+    #     return get_category_offer(id)
 
-        episodes.append(data)
+    if component_type == 'BROADCASTTHUMB':
+        return get_broadcastthumb_offer(id)
 
-    return episodes
+    # Default
+    return get_generic_offer(id)
+
+
+def get_generic_offer(id, page=1):
+
+    control.log('Globosat - GET OFFER: %s | page: %s' % (id, page))
+
+    variables = '{{"id":"{id}","page":{page},"perPage":200}}'.format(id=id, page=page)
+    query = 'query%20getOffer%28%24id%3A%20ID%21%2C%20%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20genericOffer%28id%3A%20%24id%29%20%7B%0A%20%20%20%20...%20on%20Offer%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20items%3A%20paginatedItems%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20perPage%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20...VideoFragment%0A%20%20%20%20%20%20%20%20%20%20...TitleFragment%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20VideoFragment%20on%20Video%20%7B%0A%20%20id%0A%20%20availableFor%0A%20%20headline%0A%20%20description%0A%20%20kind%0A%20%20duration%0A%20%20formattedDuration%0A%20%20thumb%0A%20%20liveThumbnail%0A%20%20title%20%7B%0A%20%20%20%20titleId%0A%20%20%20%20originProgramId%0A%20%20%20%20headline%0A%20%20%20%20description%0A%20%20%20%20slug%0A%20%20%20%20type%0A%20%20%20%20contentRating%0A%20%20%20%20contentRatingCriteria%0A%20%20%20%20releaseYear%0A%20%20%20%20countries%0A%20%20%20%20genresNames%0A%20%20%20%20directorsNames%0A%20%20%20%20artDirectorsNames%0A%20%20%20%20authorsNames%0A%20%20%20%20castNames%0A%20%20%20%20screenwritersNames%0A%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%7D%0Afragment%20TitleFragment%20on%20Title%20%7B%0A%20%20titleId%0A%20%20originVideoId%0A%20%20originProgramId%0A%20%20slug%0A%20%20headline%0A%20%20originalHeadline%0A%20%20description%0A%20%20type%0A%20%20format%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20releaseYear%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20poster%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20countries%0A%20%20genresNames%0A%20%20directorsNames%0A%20%20artDirectorsNames%0A%20%20authorsNames%0A%20%20castNames%0A%20%20screenwritersNames%0A%7D'
+    generic_offer = request_query(query, variables).get('data', {}).get('genericOffer', {})
+
+    content_type = generic_offer.get('contentType')
+    items = generic_offer.get('items', {})
+
+    resources = items.get('resources', [])
+    for resource in resources:
+
+        if content_type == 'VIDEO':
+            title = resource.get('title', {})
+            video_id = resource.get('id')
+        else:
+            title = resource
+            video_id = title.get('originVideoId')
+
+        playable = title.get('type') == 'MOVIE' or content_type == 'VIDEO'
+
+        yield {
+            'handler': PLAYER_HANDLER if playable else __name__,
+            'method': 'playlive' if playable else 'get_title',
+            'id': video_id,
+            'IsPlayable': playable,
+            'title_id': title.get('titleId'),
+            'label': resource.get('headline', title.get('headline')),
+            'title': resource.get('headline', title.get('headline')),
+            'tvshowtitle': title.get('headline') if title.get('type') in ['SERIE', 'TV_PROGRAM'] else None,
+            'plot': resource.get('description', title.get('description')),
+            'year': title.get('releaseYear'),
+            'originaltitle': title.get('originalHeadline', ''),
+            'country': title.get('countries', []) or [],
+            'genre': title.get('genresNames', []) or [],
+            'cast': title.get('castNames', []) or [],
+            'director': title.get('directorsNames', []) or [],
+            'writer': title.get('screenwritersNames', []) or [],
+            'credits': title.get('artDirectorsNames', []) or [],
+            'tag': title.get('contentRatingCriteria'),
+            'mpaa': title.get('contentRating'),
+            'studio': title.get('channel', {}).get('name'),
+            'duration': resource.get('duration', 0) / 1000,
+            'mediatype': 'episode' if resource.get('kind') == 'episode' else 'movie' if title.get('type') == 'MOVIE' else 'tvshow',
+            'art': {
+                'clearlogo': (title.get('logo', {}) or {}).get('web'),
+                'thumb': resource.get('thumb'),
+                'poster': resource.get('poster', {}).get('web') if resource.get('kind') != 'episode' else None,
+                'tvshow.poster': title.get('poster', {}).get('web') if resource.get('kind') == 'episode' else None,
+                'fanart': title.get('cover', {}).get('landscape', FANART)
+            }
+        }
+
+    has_next_page = items.get('hasNextPage', False)
+    page = items.get('nextPage', 0)
+
+    if has_next_page:
+        yield {
+            'handler': __name__,
+            'method': 'get_offer',
+            'id': id,
+            'page': page,
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
+
+
+# BROADCASTTHUMB
+def get_broadcastthumb_offer(id, page=1, per_page=200):
+    query = 'query%20getLocalizedOffer%28%24id%3A%20ID%21%2C%20%24affiliateCode%3A%20String%29%20%7B%0A%20%20localizedOffer%28id%3A%20%24id%2C%20affiliateCode%3A%20%24affiliateCode%29%20%7B%0A%20%20%20%20__typename%0A%20%20%20%20...%20on%20LocalizedOffer%20%7B%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20paginatedItems%20%7B%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20...%20on%20Broadcast%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20transmissionId%0A%20%20%20%20%20%20%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20%20%20%20%20%20%20channelId%0A%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20assets%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20previewUrl%28format%3A%20MP4%2C%20scale%3A%20X216%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20teaserUrl%28format%3A%20MP4%2C%20scale%3A%20X360%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20thumbUrl%28format%3A%20JPEG%2C%20scale%3A%20X360%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20media%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20thumb%28size%3A%201080%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20liveThumbnail%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20mutedMediaId%0A%20%20%20%20%20%20%20%20%20%20%20%20promotionalMediaId%0A%20%20%20%20%20%20%20%20%20%20%20%20logo%3A%20trimmedLogo%28scale%3A%20X56%29%0A%20%20%20%20%20%20%20%20%20%20%20%20trimmedLogo%0A%20%20%20%20%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20logo%3A%20trimmedLogo%28scale%3A%20X56%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20pageIdentifier%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20epgCurrentSlots%28limit%3A%201%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20programId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20portrait%3A%20portrait%28scale%3A%20X768%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20landscape%3A%20landscape%28scale%3A%20X720%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20imageOnAir%3A%20imageOnAir%28scale%3A%20X720%29%0A%20%20%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20perPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
+    variables = '{{"id":"{id}","affiliateCode":null,"page":{page},"perPage":{per_page}}}'.format(id=id, page=page, per_page=per_page)
+    page = request_query(query, variables).get('data', {}).get('localizedOffer', {}).get('paginatedItems', {})
+
+    for item in page.get('resources', []):
+        media = item.get('media', {}) or {}
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'playlive',
+            'IsPlayable': True,
+            'livefeed': True,
+            'id': item.get('mediaId'),
+            'label': media.get('headline', ''),
+            'title': media.get('headline', ''),
+            'mediatype': 'video',
+            'art': {
+                'thumb': '%s?v=%s' % (media.get('liveThumbnail', FANART) or FANART, str(int(time.time()))),
+                'fanart': item.get('imageOnAir', FANART),
+                'icon': item.get('logo')
+            }
+        }
+
+    if page.get('hasNextPage', False):
+        yield {
+            'handler': __name__,
+            'method': 'get_broadcastthumb_offer',
+            'id': id,
+            'page': page.get('nextPage'),
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
+
+
+def get_title(title_id, page=1):
+    if not title_id:
+        return
+
+    control.log('get_title: %s | page %s' % (title_id, page))
+    variables = '{{"titleId":"{id}", "episodeTitlePage": {page}, "userIsLoggedIn": true}}'.format(id=title_id, page=page)
+    query = 'query%20getTitleFavorited%28%24titleId%3A%20String%2C%20%24episodeTitlePage%3A%20Int%2C%20%24episodeTitlePerPage%3A%20Int%20%3D%20300%2C%20%24userIsLoggedIn%3A%20Boolean%21%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20...titleFragment%0A%20%20%20%20...continueWatchingTitleFragment%0A%20%20%20%20favorited%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0Afragment%20titleFragment%20on%20Title%20%7B%0A%20%20titleId%0A%20%20slug%0A%20%20headline%0A%20%20originalHeadline%0A%20%20description%0A%20%20originVideoId%0A%20%20originProgramId%0A%20%20type%0A%20%20format%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20releaseYear%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20poster%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20countries%0A%20%20genresNames%0A%20%20directorsNames%0A%20%20artDirectorsNames%0A%20%20authorsNames%0A%20%20castNames%0A%20%20screenwritersNames%0A%20%20structure%20%7B%0A%20%20%20%20%20%20...seasonedStructureFragment%0A%20%20%20%20%20%20...filmPlaybackStructureFragment%0A%20%20%20%20%20%20...episodeListStructureFragment%0A%20%20%20%20%7D%0A%7D%0Afragment%20seasonedStructureFragment%20on%20SeasonedStructure%20%7B%0A%20%20seasons%20%7B%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20totalEpisodes%0A%20%20%20%20%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20filmPlaybackStructureFragment%20on%20FilmPlaybackStructure%20%7B%0A%20%20videoPlayback%20%7B%0A%20%20%20%20id%0A%20%20%20%20exhibitedAt%0A%20%20%20%20encrypted%0A%20%20%20%20availableFor%0A%20%20%20%20headline%0A%20%20%20%20description%0A%20%20%20%20thumb%0A%20%20%20%20duration%0A%20%20%7D%0A%7D%0Afragment%20episodeListStructureFragment%20on%20EpisodeListStructure%20%7B%0A%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20continueWatchingTitleFragment%20on%20Title%20%7B%0A%20%20structure%20%7B%0A%20%20%20%20...%20on%20SeasonedStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20FilmPlaybackStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20EpisodeListStructure%20%7B%0A%20%20%20%20%20%20continueWatching%20%40include%28if%3A%20%24userIsLoggedIn%29%20%7B%0A%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20...continueWatchingVideoFragment%0A%20%20%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20__typename%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20__typename%0A%20%20%20%20%7D%0A%20%20%20%20__typename%0A%20%20%7D%0A%20%20__typename%0A%7D%0Afragment%20continueWatchingVideoFragment%20on%20Video%20%7B%0A%20%20id%0A%20%20headline%0A%20%20description%0A%20%20watchedProgress%0A%20%20duration%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20__typename%0A%7D'
+    title = request_query(query, variables)['data']['title']
+
+    if not title.get('structure', {}):
+        return
+
+    structure = title['structure']
+
+    page = 0
+
+    is_favorite = title.get('favorited', False)
+
+    if 'videoPlayback' in structure:
+        video = title['structure']['videoPlayback']
+
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'playlive',
+            'id': video.get('id', ''),
+            'title_id': title.get('titleId'),
+            'label': title.get('headline', ''),
+            'title': title.get('headline'),
+            'originaltitle': title.get('originalHeadline'),
+            'plot': title.get('description'),
+            'year': title.get('releaseYear'),
+            'country': title.get('countries', []),
+            'genre': title.get('genresNames', []),
+            'cast': title.get('castNames', []),
+            'director': title.get('directorsNames', []),
+            'writer': title.get('screenwritersNames', []),
+            'credits': title.get('artDirectorsNames', []),
+            'mpaa': title.get('contentRating'),
+            'studio': title.get('channel', {}).get('name'),
+            'mediatype': 'movie',
+            'IsPlayable': True,
+            'art': {
+                'clearlogo': title.get('logo', {}).get('web'),
+                'poster': title.get('poster', {}).get('web'),
+                'fanart': title.get('cover', {}).get('landscape', FANART)
+            }
+        }
+
+    elif 'episodes' in structure:
+        episodes = structure.get('episodes', {})
+        page = episodes.get('nextPage', 0) if episodes.get('hasNextPage', False) else 0
+
+        for resource in episodes.get('resources', []):
+            video = resource.get('video', {})
+            yield {
+                'handler': PLAYER_HANDLER,
+                'method': 'playlive',
+                'IsPlayable': True,
+                'id': video.get('id'),
+                'label': video.get('headline', ''),
+                'title': video.get('headline', ''),
+                'originaltitle': title.get('originalHeadline'),
+                'plot': video.get('description', ''),
+                'duration': video.get('duration', 0) / 1000,
+                'episode': resource.get('number'),
+                'season': resource.get('seasonNumber'),
+                'mediatype': 'episode',
+                'tvshowtitle': title.get('headline'),
+                'year': title.get('releaseYear'),
+                'country': title.get('countries', []),
+                'genre': title.get('genresNames', []),
+                'cast': title.get('castNames', []),
+                'director': title.get('directorsNames', []),
+                'writer': title.get('screenwritersNames', []),
+                'credits': title.get('artDirectorsNames', []),
+                'mpaa': title.get('contentRating'),
+                'studio': title.get('channel', {}).get('name'),
+                'aired': (video.get('exhibitedAt', '') or '').split('T')[0],
+                'art': {
+                    'thumb': video.get('thumb'),
+                    'fanart': title.get('cover', {}).get('landscape', FANART),
+                    'tvshow.poster': title.get('poster', {}).get('web'),
+                },
+                'sort': control.SORT_METHOD_EPISODE if resource.get('number') and resource.get('seasonNumber') else None
+            }
+
+    elif 'seasons' in structure:
+
+        seasons = structure.get('seasons', {}).get('resources', []) or []
+        if len(seasons) == 1:
+            season = seasons[0]
+            for episode in season.get('episodes', {}).get('resources', []):
+                video = episode.get('video', {})
+                yield {
+                    'handler': PLAYER_HANDLER,
+                    'method': 'playlive',
+                    'IsPlayable': True,
+                    'id': video.get('id'),
+                    'label': video.get('headline', ''),
+                    'title': video.get('headline', ''),
+                    'originaltitle': title.get('originalHeadline'),
+                    'plot': video.get('description', ''),
+                    'duration': video.get('duration', 0) / 1000,
+                    'episode': episode.get('number'),
+                    'season': episode.get('seasonNumber'),
+                    'mediatype': 'episode',
+                    'tvshowtitle': title.get('headline'),
+                    'year': title.get('releaseYear'),
+                    'country': title.get('countries', []),
+                    'genre': title.get('genresNames', []),
+                    'cast': title.get('castNames', []),
+                    'director': title.get('directorsNames', []),
+                    'writer': title.get('screenwritersNames', []),
+                    'credits': title.get('artDirectorsNames', []),
+                    'mpaa': title.get('contentRating'),
+                    'studio': title.get('channel', {}).get('name'),
+                    'aired': (video.get('exhibitedAt', '') or '').split('T')[0],
+                    'art': {
+                        'thumb': video.get('thumb'),
+                        'fanart': title.get('cover', {}).get('landscape', FANART),
+                        'tvshow.poster': title.get('poster', {}).get('web'),
+                    },
+                    'sort': control.SORT_METHOD_EPISODE
+                }
+        else:
+            for season in structure.get('seasons', {}).get('resources', []) or []:
+                yield {
+                    'handler': __name__,
+                    'method': 'get_episodes',
+                    'title_id': title_id,
+                    'label': '%s %s' % (control.lang(34137).encode('utf-8'), season.get('number', 0)),
+                    'sort': [(control.SORT_METHOD_LABEL, '%Y')],
+                    'season': season.get('number', 0),
+                    'mediatype': 'season',
+                    'art': {
+                        'clearlogo': title.get('logo', {}).get('web'),
+                        'poster': title.get('poster', {}).get('web'),
+                        'fanart': title.get('cover', {}).get('landscape', FANART)
+                    }
+                }
+
+    else:
+        control.log('@@@@@ globosat - unsupported structure: %s' % structure)
+
+    if page > 0:
+        yield {
+            'handler': __name__,
+            'method': 'get_title',
+            'title_id': title_id,
+            'page': page,
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
+
+
+def get_episodes(title_id, season, page=1):
+    variables = '{{"titleId":"{id}", "episodeTitlePage": {page}}}'.format(id=title_id, page=page)
+    query = 'query%20fetchTitleQuery%28%24titleId%3A%20String%2C%20%24episodeTitlePage%3A%20Int%2C%20%24episodeTitlePerPage%3A%20Int%20%3D%20300%29%20%7B%0A%20%20title%28titleId%3A%20%24titleId%29%20%7B%0A%20%20%20%20...titleFragment%0A%20%20%7D%0A%7D%0Afragment%20titleFragment%20on%20Title%20%7B%0A%20%20titleId%0A%20%20slug%0A%20%20headline%0A%20%20description%0A%20%20originProgramId%0A%20%20type%0A%20%20format%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20releaseYear%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20poster%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20countries%0A%20%20directors%20%7B%0A%20%20%20%20name%0A%20%20%7D%0A%20%20cast%20%7B%0A%20%20%20%20name%0A%20%20%7D%0A%20%20genres%20%7B%0A%20%20%20%20name%0A%20%20%7D%0A%20%20structure%20%7B%0A%20%20%20%20%20%20...seasonedStructureFragment%0A%20%20%20%20%20%20...filmPlaybackStructureFragment%0A%20%20%20%20%20%20...episodeListStructureFragment%0A%20%20%20%20%7D%0A%7D%0Afragment%20seasonedStructureFragment%20on%20SeasonedStructure%20%7B%0A%20%20seasons%20%7B%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20totalEpisodes%0A%20%20%20%20%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20number%0A%20%20%20%20%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20filmPlaybackStructureFragment%20on%20FilmPlaybackStructure%20%7B%0A%20%20videoPlayback%20%7B%0A%20%20%20%20id%0A%20%20%20%20exhibitedAt%0A%20%20%20%20encrypted%0A%20%20%20%20availableFor%0A%20%20%20%20headline%0A%20%20%20%20description%0A%20%20%20%20thumb%0A%20%20%20%20duration%0A%20%20%7D%0A%7D%0Afragment%20episodeListStructureFragment%20on%20EpisodeListStructure%20%7B%0A%20%20episodes%28page%3A%20%24episodeTitlePage%2C%20perPage%3A%20%24episodeTitlePerPage%29%20%7B%0A%20%20%20%20page%0A%20%20%20%20hasNextPage%0A%20%20%20%20nextPage%0A%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20number%0A%20%20%20%20%20%20seasonNumber%0A%20%20%20%20%20%20seasonId%0A%20%20%20%20%20%20video%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20exhibitedAt%0A%20%20%20%20%20%20%20%20encrypted%0A%20%20%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20thumb%0A%20%20%20%20%20%20%20%20duration%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
+    title = request_query(query, variables)['data']['title']
+
+    if not title.get('structure', {}):
+        return
+
+    structure = title['structure']
+
+    if 'seasons' not in structure:
+        return
+
+    season_resource = next((s for s in structure.get('seasons', {}).get('resources', []) if s.get('number', 0) == season), {})
+
+    if not season_resource:
+        return
+
+    episodes = (season_resource.get('episodes', {}) or {})
+
+    for episode in episodes.get('resources', []):
+        video = episode.get('video', {})
+        yield {
+            'handler': PLAYER_HANDLER,
+            'method': 'playlive',
+            'IsPlayable': True,
+            'id': video.get('id'),
+            'label': video.get('headline', ''),
+            'title': video.get('headline', ''),
+            'plot': video.get('description', ''),
+            'duration': video.get('duration', 0) / 1000,
+            'episode': episode.get('number'),
+            'season': episode.get('seasonNumber'),
+            'mediatype': 'episode',
+            'tvshowtitle': title.get('headline'),
+            'year': title.get('releaseYear'),
+            'country': [c.get('name') for c in title.get('countries', []) if 'name' in c and c['name']],
+            'genre': [c.get('name') for c in title.get('genres', []) if 'name' in c and c['name']],
+            'cast': [c.get('name') for c in title.get('cast', []) if 'name' in c and c['name']],
+            'director': [c.get('name') for c in title.get('directors', []) if 'name' in c and c['name']],
+            'mpaa': title.get('contentRating'),
+            'studio': title.get('channel', {}).get('name'),
+            'dateadded': video.get('exhibitedAt', '').replace('Z', '').replace('T', ' '),
+            'aired': (video.get('exhibitedAt', '') or '').split('T')[0],
+            'sort': control.SORT_METHOD_EPISODE,
+            'art': {
+                'thumb': video.get('thumb'),
+                'fanart': title.get('cover', {}).get('landscape', FANART),
+                'tvshow.poster': title.get('poster', {}).get('web'),
+            }
+        }
+
+    page = episodes.get('nextPage', 0) if episodes.get('hasNextPage', False) else 0
+
+    if page > 0:
+        yield {
+            'handler': __name__,
+            'method': 'get_episodes',
+            'title_id': title_id,
+            'season': season,
+            'page': page,
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
+            }
+        }
 
 
 def search(term, page=1):
-    try:
-        page = int(page)
-    except:
-        page = 1
+    if not term:
+        return
 
-    videos = []
-    headers = {'Accept-Encoding': 'gzip'}
-    data = client.request(GLOBOSAT_SEARCH % (page, urllib.quote_plus(term)), headers=headers)
-    total = data['total']
-    next_page = page + 1 if len(data['videos']) < total else None
+    query = 'query%20search%28%24query%3A%20String%21%2C%20%24page%3A%20Int%29%20%7B%0A%20%20search%20%7B%0A%20%20%20%20titles%28query%3A%20%24query%2C%20page%3A%20%24page%29%20%7B%0A%20%20%20%20%20%20...titlesCollection%0A%20%20%20%20%7D%0A%20%20%20%20videos%28query%3A%20%24query%2C%20page%3A%20%24page%29%20%7B%0A%20%20%20%20%20%20...videosCollection%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20titlesCollection%20on%20TitleCollection%20%7B%0A%20%20page%0A%20%20perPage%0A%20%20hasNextPage%0A%20%20nextPage%0A%20%20total%0A%20%20resources%20%7B%0A%20%20%20%20id%0A%20%20%20%20titleId%0A%20%20%20%20slug%0A%20%20%20%20headline%0A%20%20%20%20originalHeadline%0A%20%20%20%20description%0A%20%20%20%20originVideoId%0A%20%20%20%20originProgramId%0A%20%20%20%20type%0A%20%20%20%20format%0A%20%20%20%20contentRating%0A%20%20%20%20contentRatingCriteria%0A%20%20%20%20releaseYear%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%7D%0A%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20countries%0A%20%20%20%20genresNames%0A%20%20%20%20directorsNames%0A%20%20%20%20artDirectorsNames%0A%20%20%20%20authorsNames%0A%20%20%20%20castNames%0A%20%20%20%20screenwritersNames%0A%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20videosCollection%20on%20VideoCollection%20%7B%0A%20%20page%0A%20%20perPage%0A%20%20hasNextPage%0A%20%20nextPage%0A%20%20total%0A%20%20resources%20%7B%0A%20%20%20%20id%0A%20%20%20%20kind%0A%20%20%20%20headline%0A%20%20%20%20liveThumbnail%0A%20%20%20%20thumb%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20originalHeadline%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20originVideoId%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%7D%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20availableFor%0A%20%20%20%20duration%0A%20%20%20%20formattedDuration%0A%20%20%20%20exhibitedAt%0A%20%20%7D%0A%7D'
+    variables = '{{"query":"{term}","page":{page}}}'.format(term=term, page=page)
 
-    for item in data['videos']:
-        video = {
-            'id': item['id'],
-            'label': item['canal'] + ' - ' + item['programa'] + ' - ' + item['titulo'],
-            'title': item['titulo'],
-            'tvshowtitle': item['programa'],
-            'studio': item['canal'],
-            'plot': item['descricao'],
-            'duration': sum(int(x) * 60 ** i for i, x in
-                            enumerate(reversed(item['duracao'].split(':')))) if item['duracao'] else 0,
-            'thumb': item['thumb_large'],
-            'fanart': item['thumb_large'],
-            'mediatype': 'episode',
-            'brplayprovider': 'globosat'
-        }
+    response = request_query(query, variables).get('data', {}).get('search', {})
 
-        videos.append(video)
+    titles = response.get('titles', {})
 
-    return videos, next_page, total
+    provider = control.lang(31200).encode('utf-8')
 
+    for title in titles.get('resources', []):
+        playable = True if title.get('originVideoId') else False
+        yield {
+                'handler': PLAYER_HANDLER if playable else __name__,
+                'method': 'playlive' if playable else 'get_title',
+                'title_id': title.get('titleId'),
+                'id': title.get('originVideoId'),
+                'program_id': title.get('originProgramId'),
+                'IsPlayable': playable,
+                'label': title.get('headline', ''),
+                'title': title.get('headline', ''),
+                'studio': title.get('channel', {}).get('name', provider),
+                'year': title.get('releaseYear', ''),
+                'originaltitle': title.get('originalHeadline', ''),
+                'country': title.get('countries', []),
+                'genre': title.get('genresNames', []),
+                'cast': title.get('castNames', []),
+                'director': title.get('directorsNames', []),
+                'writer': title.get('screenwritersNames', []),
+                'credits': title.get('artDirectorsNames', []),
+                'tag': title.get('contentRatingCriteria'),
+                'mpaa': title.get('contentRating', ''),
+                'plot': title.get('description', ''),
+                'mediatype': 'movie' if title.get('type', '') == 'MOVIE' else 'tvshow',
+                # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+                'art': {
+                    'poster': title.get('poster', {}).get('web'),
+                    'clearlogo': title.get('logo', {}).get('web'),
+                    'fanart': title.get('cover', {}).get('web', FANART)
+                }
+            }
 
-def get_featured(channel_id=None):
-    headers = {
-        'Accept-Encoding': 'gzip',
-        'Authorization': GLOBOSAT_API_AUTHORIZATION
-    }
-    channel_filter = '?channel_id=%s' % channel_id if channel_id else ''
-    featured_list = client.request(GLOBOSAT_FEATURED + channel_filter, headers=headers)
+    videos = response.get('videos', {}) or {}
 
-    results = featured_list['results']
-
-    while featured_list['next'] is not None:
-        featured_list = client.request(featured_list['next'], headers=headers)
-        results += featured_list['results']
-
-    videos = []
-
-    for item in results:
-
-        media = item['media']
-
-        if media:
-            video = {
-                'id': item['id_globo_videos'],
-                'label': media['channel']['title'] + ' - ' + item['title'] + ' - ' + media['title'],
-                'title': media['title'],
-                'tvshowtitle': item['title'],
-                'studio': media['channel']['title'],
-                'plot': media['description'],
-                'tagline': item['subtitle'],
-                'duration': float(media['duration_in_milliseconds']) / 1000.0,
-                'logo': media['program']['logo_image'] if 'program' in media and media['program'] else item['channel'][
-                    'color_logo'],
-                'clearlogo': media['program']['logo_image'] if 'program' in media and media['program'] else
-                item['channel']['color_logo'],
-                'poster': media['program']['poster_image'] if 'program' in media and media['program'] else media[
-                    'card_image'],
-                'thumb': media['thumb_image'],
-                'fanart': media['background_image_tv_cropped'] if 'program' in media and media['program'] else media[
-                    'background_image'],
+    for video in videos.get('resources', []):
+        title = video.get('title', {})
+        yield {
+                'handler': PLAYER_HANDLER,
+                'method': 'playlive',
+                'id': video.get('id'),
+                'program_id': title.get('originProgramId'),
+                'IsPlayable': True,
+                'label': video.get('headline', ''),
+                'title': video.get('headline', ''),
+                'tvshowtitle': title.get('headline', ''),
+                'studio': (title.get('channel', {}) or {}).get('name', provider),
+                'year': title.get('releaseYear', ''),
+                'originaltitle': title.get('originalHeadline', ''),
+                'country': title.get('countries', []),
+                'genre': title.get('genresNames', []),
+                'cast': title.get('castNames', []) or [],
+                'director': title.get('directorsNames', []),
+                'writer': title.get('screenwritersNames', []),
+                'credits': title.get('artDirectorsNames', []),
+                'tag': title.get('contentRatingCriteria'),
+                'mpaa': title.get('contentRating', ''),
+                'plot': title.get('description', ''),
                 'mediatype': 'episode',
-                'brplayprovider': 'globosat'
-            }
-        else:
-            video = {
-                'id': item['id_globo_videos'],
-                'label': item['channel']['title'] + ' - ' + item['title'],
-                'title': item['title'],
-                'tvshowtitle': item['title'],
-                'studio': item['channel']['title'],
-                'plot': item['subtitle'],
-                # 'tagline': item['subtitle'],
-                # 'duration': float(media['duration_in_milliseconds']) / 1000.0,
-                # 'logo': media['program']['logo_image'],
-                # 'clearlogo': media['program']['logo_image'],
-                # 'poster': media['program']['poster_image'],
-                'thumb': item['background_image'],
-                'fanart': item['background_image'],
-                'mediatype': 'episode',
-                'brplayprovider': 'globosat'
+                # "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+                'art': {
+                    'thumb': video.get('thumb', FANART) or FANART,
+                    'tvshow.poster': title.get('poster', {}).get('web'),
+                    'clearlogo': (title.get('logo', {}) or {}).get('web'),
+                    'fanart': (title.get('cover', {}) or {}).get('web', FANART)
+                }
             }
 
-        videos.append(video)
-
-    return videos
-
-
-def get_tracks(channel_id=None):
-    headers = {
-        'Accept-Encoding': 'gzip',
-        'Authorization': GLOBOSAT_API_AUTHORIZATION
-    }
-    channel_filter = '?channel_id=%s' % channel_id if channel_id else ''
-    tracks_response = client.request(GLOBOSAT_TRACKS + channel_filter, headers=headers)
-
-    results = tracks_response['results']
-
-    tracks = []
-
-    for item in results:
-        video = {
-            'id': item['id'],
-            'label': item['title'],
-            'title': item['title'],
-            'kind': item['kind']
-        }
-
-        tracks.append(video)
-
-    return tracks
-
-
-def get_track_list(id):
-    videos = []
-
-    headers = {
-        'Accept-Encoding': 'gzip',
-        'Authorization': GLOBOSAT_API_AUTHORIZATION
-    }
-    track_list = client.request(GLOBOSAT_TRACKS_ITEM % id, headers=headers)
-
-    results = track_list['results'] if track_list and 'results' in track_list else None
-
-    if results is None:
-        return videos
-
-    while (track_list['next'] if track_list and 'next' in track_list else None) is not None:
-        track_list = client.request(track_list['next'], headers=headers)
-        results += track_list['results']
-
-    for item in results:
-        media = item['media']
-        if media:
-            video = {
-                'id': item['id_globo_videos'],
-                'id_globo_videos': item['id_globo_videos'],
-                'label': media['channel']['title'] + ' - ' + media['title'],
-                'title': media['title'],
-                'tvshowtitle': media['program']['title'] if 'program' in media and media['program'] else None,
-                'studio': media['channel']['title'],
-                'plot': media['description'],
-                'tagline': media['subtitle'],
-                'duration': float(media['duration_in_milliseconds']) / 1000.0,
-                'logo': media['program']['logo_image'] if 'program' in media and media['program'] else media['channel'][
-                    'color_logo'],
-                'clearlogo': media['program']['logo_image'] if 'program' in media and media['program'] else
-                media['channel']['color_logo'],
-                'poster': media['program']['poster_image'] if 'program' in media and media['program'] else media[
-                    'card_image'],
-                'thumb': media['thumb_image'],
-                'fanart': media['background_image_tv_cropped'],
-                'mediatype': 'episode',
-                'brplayprovider': 'globosat'
+    if videos.get('hasNextPage', False) or titles.get('hasNextPage', False):
+        yield {
+            'handler': __name__,
+            'method': 'search',
+            'term': term,
+            'page': videos.get('nextPage', titles.get('nextPage')),
+            'label': '%s (%s)' % (control.lang(34136).encode('utf-8'), page),
+            'art': {
+                'poster': control.addonNext(),
+                'fanart': FANART
+            },
+            'properties': {
+                'SpecialSort': 'bottom'
             }
-        else:
-            program = item['program']
-            video = {
-                'id': item['id_globo_videos'],
-                'id_globo_videos': item['id_globo_videos'],
-                'label': program['title'],
-                'title': program['title'],
-                'tvshowtitle': program['title'],
-                'studio': program['channel']['title'],
-                'plot': program['description'],
-                'tagline': None,
-                'logo': program['logo_image'],
-                'clearlogo': program['logo_image'],
-                'poster': program['poster_image'],
-                'thumb': None,
-                'fanart': program['background_image_tv_cropped'],
-                'mediatype': 'tvshow',
-                'isplayable': False,
-                'brplayprovider': 'globosat'
-            }
-        videos.append(video)
-
-    return videos
-
-
-def get_favorites(page=1):
-    headers = {
-        'Accept-Encoding': 'gzip',
-        'Authorization': GLOBOSAT_API_AUTHORIZATION,
-        'Version': 2
-    }
-
-    token = auth_helper.get_globosat_token()
-
-    favorites_list = client.request(GLOBOSAT_FAVORITES % (token, page, 50), headers=headers)
-
-    results = favorites_list['data']
-
-    while favorites_list['next'] is not None:
-        favorites_list = client.request(favorites_list['next'], headers=headers)
-        results += favorites_list['data']
-
-    videos = []
-
-    for item in results:
-
-        video = {
-            'id': item['id_globo_videos'],
-            'label': item['channel']['title'] + (' - ' + item['program']['title'] if 'program' in item and item['program'] else '') + ' - ' + item['title'],
-            'title': item['title'],
-            'tvshowtitle': item['program']['title'] if 'program' in item and item['program'] else item['title'],
-            'studio': item['channel']['title'],
-            'plot': item['description'],
-            'tagline': item['subtitle'],
-            'duration': float(item['duration_in_milliseconds']) / 1000.0,
-            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel'][
-                'color_logo'],
-            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else
-            item['channel']['color_logo'],
-            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item[
-                'card_image'],
-            'thumb': item['thumb_image'],
-            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item[
-                'background_image_tv_cropped'],
-            'mediatype': 'episode',
-            'brplayprovider': 'globosat'
         }
-
-        videos.append(video)
-
-    return videos
-
-
-def add_favorites(video_id):
-    post_data = {
-        'id': video_id
-    }
-
-    token = auth_helper.get_globosat_token()
-
-    url = GLOBOSAT_BASE_FAVORITES % token
-    headers = {
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "version": "2",
-        "Authorization": GLOBOSAT_API_AUTHORIZATION
-    }
-
-    post_data = urllib.urlencode(post_data)
-
-    client.request(url, headers=headers, post=post_data)
-
-
-def del_favorites(video_id):
-
-    token = auth_helper.get_globosat_token()
-
-    url = GLOBOSAT_DEL_FAVORITES % (token, video_id)
-    headers = {
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "version": "2",
-        "Authorization": GLOBOSAT_API_AUTHORIZATION
-    }
-
-    requests.delete(url=url, headers=headers)
-
-
-def get_watch_later(page=1):
-    headers = {
-        'Accept-Encoding': 'gzip',
-        'Authorization': GLOBOSAT_API_AUTHORIZATION,
-        'Version': 2
-    }
-
-    token = auth_helper.get_globosat_token()
-
-    watch_later_list = client.request(GLOBOSAT_WATCH_LATER % (token, page, 50), headers=headers)
-
-    results = watch_later_list['data']
-
-    while watch_later_list['next'] is not None:
-        watch_later_list = client.request(GLOBOSAT_WATCH_LATER % (token, watch_later_list['next'], 50), headers=headers)
-        results += watch_later_list['data']
-
-    videos = []
-
-    for item in results:
-
-        video = {
-            'id': item['id_globo_videos'],
-            'label': item['channel']['title'] + (' - ' + item['program']['title'] if 'program' in item and item['program'] else '') + ' - ' + item['title'],
-            'title': item['title'],
-            'tvshowtitle': item['program']['title'] if 'program' in item and item['program'] else item['title'],
-            'studio': item['channel']['title'],
-            'plot': item['description'],
-            'tagline': None,
-            'duration': float(item['duration_in_milliseconds']) / 1000.0,
-            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
-            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
-            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item['card_image'],
-            'thumb': item['thumb_image'],
-            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item['background_image_tv_cropped'],
-            'mediatype': 'episode',
-            'brplayprovider': 'globosat'
-        }
-
-        videos.append(video)
-
-    return videos
-
-
-def add_watch_later(video_id):
-    post_data = {
-        'id': video_id
-    }
-
-    token = auth_helper.get_globosat_token()
-
-    url = GLOBOSAT_BASE_WATCH_LATER % token
-    headers = {
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "version": "2",
-        "Authorization": GLOBOSAT_API_AUTHORIZATION
-    }
-
-    post_data = urllib.urlencode(post_data)
-
-    client.request(url, headers=headers, post=post_data)
-
-
-def del_watch_later(video_id):
-
-    token = auth_helper.get_globosat_token()
-
-    url = GLOBOSAT_DEL_WATCH_LATER % (token, video_id)
-    headers = {
-        "Accept-Encoding": "gzip",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "version": "2",
-        "Authorization": GLOBOSAT_API_AUTHORIZATION
-    }
-
-    requests.delete(url=url, headers=headers)
-
-
-def get_watch_history(page=1):
-
-    page_size = 50
-
-    headers = {
-        'Accept-Encoding': 'gzip',
-        'Authorization': GLOBOSAT_API_AUTHORIZATION,
-        'Version': 2
-    }
-
-    token = auth_helper.get_globosat_token()
-
-    watch_later_list = client.request(GLOBOSAT_WATCH_HISTORY % (token, page, page_size), headers=headers)
-
-    results = watch_later_list['data']
-
-    while watch_later_list['next'] is not None:
-        watch_later_list = client.request(GLOBOSAT_WATCH_HISTORY % (token, watch_later_list['next'], page_size), headers=headers)
-        results += watch_later_list['data']
-
-    videos = []
-
-    results = sorted(results, key=lambda x: x['watched_date'], reverse=True)
-
-    for item in results:
-        channel_title = item['channel']['title'] or ''
-        program_title = item['program']['title'] if 'program' in item and item['program'] else ''
-        title = item['title'] or 'No Title'
-        label = channel_title + (' - ' + program_title) + ' - ' + title
-        video = {
-            'id': item['id_globo_videos'],
-            'label': label,
-            'title': item['title'],
-            'tvshowtitle': item['program']['title'] if 'program' in item and item['program'] else item['title'],
-            'studio': channel_title,
-            'plot': item['description'],
-            'tagline': None,
-            'duration': float(item['duration_in_milliseconds']) / 1000.0,
-            'logo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
-            'clearlogo': item['program']['logo_image'] if 'program' in item and item['program'] else item['channel']['color_logo'],
-            'poster': item['program']['poster_image'] if 'program' in item and item['program'] else item['card_image'],
-            'thumb': item['thumb_image'],
-            'fanart': item['program']['background_image_tv_cropped'] if 'program' in item and item['program'] else item['background_image'],
-            'mediatype': 'episode',
-            'brplayprovider': 'globosat',
-            'milliseconds_watched': int(item['watched_seconds']) * 1000
-        }
-
-        videos.append(video)
-
-    return videos
