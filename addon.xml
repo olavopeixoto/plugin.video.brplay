@@ -1,55 +1,81 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.brplay" version="0.0.34" name="BR play" provider-name="brplayer">
+	<addon id="plugin.video.brplay" version="1.0.23" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0" />
-		<import addon="script.module.beautifulsoup" version="3.2.1"/>
-		<import addon="script.module.requests" version="0.13.2"/>
+		<import addon="script.module.requests" version="0.13.2"/>§
 		<import addon="script.module.buggalo" version="1.1.6"/>
 		<import addon="script.module.pytz" version="2014.2"/>
+<!--		<import addon="script.module.pil" version="5.1.0"/>-->
 	</requires>
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
 	</extension>
 	<extension point="xbmc.addon.metadata">
-		<summary>Globo Play, Globosat Play and Premium Channels on Kodi</summary>
-		<description>Brazilian video streaming services for subscribers</description>
+		<summary lang="en_GB">Brazilian video streaming services for subscribers</summary>
+		<summary lang="pt_BR">Serviços brasileiros de streaming de video para assinantes</summary>
+		<description lang="en_GB">Globoplay, Canais Globo, Telecine, Oi Play, Now Online, TNT Play, Pluto TV and premium channels on Kodi</description>
+		<description lang="pt_BR">Globoplay, Canais Globo, Telecine, Oi Play, Now Online, TNT Play, Pluto TV entre outros serviços no Kodi</description>
+		<disclaimer lang="en_GB">Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
+		<disclaimer lang="pt_BR">Partes deste addon podem não ser legais no seu país de residência, por favor verifique as leis locais antes de instalar.</disclaimer>
 		<platform>all</platform>
 		<license>GPL3</license>
 		<source>https://github.com/olavopeixoto/plugin.video.brplay</source>
 		<assets>
 			<icon>icon.png</icon>
 			<fanart>fanart.jpg</fanart>
+			<clearlogo>clearlogo.png</clearlogo>
+			<banner>banner.jpg</banner>
 			<screenshot>resources/screenshots/screenshot-01.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
-		<news>0.0.31
-			- Support for 4k HDR content
-			- Support for local programming
-			- Support for Futura Live Channel
-			- Suport for BBB (Globosat and GloboPlay)
-			- Suport for Universal Channel Live
-			- Support for Globosat Play Geolocation
-			- Updated Combate scraper logic
-			- Added more Combate content
-			- Globosat Play and Sexyhot Play now use Globo Play credentials (must be associated to the provider in the website)
-			- Support for additional Globo affiliates
-			- update Globoplay epg API
-			- option to set different credentials for Globosat play
-			- option to disable Globosat play
-			- Fix Globosat authentication
-			- Updated Globosat VOD API to work with seasons and episodes
-			- Fix for separated Globoplay x Globosat credentials
-			- Added support for SexyHot live channel
-			- Fixed SexyHot VOD videos
-			- Added support for GloboPlay affiliate based on IP geo location
-			- Added support for custom GloboPlay affiliate using latidute and longitude settings
-			- Fix for Futura Live Channel
-			- Fix PFC Live games
-			- Fix issue with UFC vod videos
-			- Option to hide PFC games
-			- Option to hide BBB channels
-			- Fix search engine
+		<news>
+1.0.23
+- Fix Globoplay excerpts nos showing
+1.0.22
+- Individual Globo login service id for Canais Globo and Globoplay
+- Code bug fixes
+1.0.21
+- Fix version number
+- Restored adult filter setting
+1.0.2
+- Changed Globoplay/Canais Globo authentication method
+- Option to choose the desired Globoplay/Canais Globo CDN
+- Fix for SBT live channel
+- Changed cache implementation to use double checked locking (should speed things up)
+1.0.14
+- Support for live channels without epg (BBB)
+- Fixed duplicated Premiere Vod Channel
+- Restored live thumbnails for Canais Globo
+- Updated Canais Globo (Globosat) broadcast epg api and player to support geofenced channels
+1.0.13
+- Fix SBT live channel
+- Fix Canais Globo live DRM issue
+1.0.12
+- Removed python locale dependency to avoid translations issues
+1.0.11
+- Implemented video excerpts for Globoplay
+- Fix Globo affiliated without epg were being hidden
+1.0.10
+- Fix Telecine Play Oi Login
+1.0.9
+- Implemented Pluto TV Live and VOD
+- TNT search
+1.0.8
+- Huge performance gain when rendering items using Kodi >17 (ListItem offscreen)
+- Workaround to fix Dash playback from Globoplay and Canais Globo that was not working using only inputstream.adaptive
+- Implemented SBT live channel
+- Better support (using the new internal proxy server) for TNT Play streams
+1.0.7
+- Support for Globoplay mais canais ao vivo
+1.0.6
+- Fix globoplay navigation issues for some content types
+1.0.5
+- Fix live channels player issues
+- Implemented optional channel authorization check to allow hide channels not playable
+- Changes to live channels display information
+1.0.4
+- Implemented Now Online search
         </news>
 	</extension>
 </addon>

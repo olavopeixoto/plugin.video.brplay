@@ -679,9 +679,9 @@ def find_key(keydata, keylist):
     for key in keylist:
         if key:
             # Check the intersection of keys and values
-            if keydata.get('uri', None) == key.uri and \
+            if keydata.get('uri') == key.uri and \
                keydata.get('method', 'NONE') == key.method and \
-               keydata.get('iv', None) == key.iv:
+               keydata.get('iv') == key.iv:
                 return key
     raise KeyError("No key found for key data")
 

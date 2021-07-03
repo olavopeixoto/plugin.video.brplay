@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 
 msgctxt "#31200"
-msgid "Globosat Play"
+msgid "Canais Globo"
 msgstr ""
 
 msgctxt "#31110"
@@ -36,6 +36,10 @@ msgctxt "#31100"
 msgid "Globo Play"
 msgstr ""
 
+msgctxt "#31101"
+msgid "Enable Globo Play"
+msgstr ""
+
 msgctxt "#31111"
 msgid "Affiliate"
 msgstr ""
@@ -58,6 +62,10 @@ msgstr ""
 
 msgctxt "#31116"
 msgid "All"
+msgstr ""
+
+msgctxt "#31108"
+msgid "Show Globo Internacional"
 msgstr ""
 
 msgctxt "#31117"
@@ -297,7 +305,7 @@ msgid "Show Full Videos Only"
 msgstr ""
 
 msgctxt "#33401"
-msgid "Show Adult Content"
+msgid "Enable Sexyhot Play"
 msgstr ""
 
 msgctxt "#33402"
@@ -405,11 +413,11 @@ msgid "4K - HDR"
 msgstr ""
 
 msgctxt "#34108"
-msgid "Enable Globosat Play"
+msgid "Enable Canais Globo"
 msgstr ""
 
 msgctxt "#34109"
-msgid "Use Globoplay Credentials for Globosat Play"
+msgid "Use Globoplay Credentials for Canais Globo"
 msgstr ""
 
 msgctxt "#34110"
@@ -422,4 +430,209 @@ msgstr ""
 
 msgctxt "#34112"
 msgid "Custom"
+msgstr ""
+
+msgctxt "#34113"
+msgid "Enable Oi Play"
+msgstr ""
+
+msgctxt "#34114"
+msgid "Enable 4K when available"
+msgstr ""
+
+msgctxt "#34115"
+msgid "Enable HDR when available"
+msgstr ""
+
+msgctxt "#34116"
+msgid "Enable high resolution images when available"
+msgstr ""
+
+msgctxt "#34117"
+msgid "Enable InputStream.Adaptive"
+msgstr ""
+
+msgctxt "#34118"
+msgid "Prefer SmoothStreaming for DRM"
+msgstr ""
+
+msgctxt "#34119"
+msgid "Prefer PlayReady for DRM"
+msgstr ""
+
+msgctxt "#34120"
+msgid "Prefer Dash over HLS"
+msgstr ""
+
+msgctxt "#34121"
+msgid "Play multi part videos as playlist"
+msgstr ""
+
+msgctxt "#34122"
+msgid "Debug Log"
+msgstr ""
+
+msgctxt "#34123"
+msgid "Enable TNT Play"
+msgstr ""
+
+msgctxt "#34124"
+msgid "Provider"
+msgstr ""
+
+msgctxt "#34125"
+msgid "ENG"
+msgstr ""
+
+msgctxt "#34126"
+msgid "All Genres"
+msgstr ""
+
+msgctxt "#34127"
+msgid "Series"
+msgstr ""
+
+msgctxt "#34128"
+msgid "Movies"
+msgstr ""
+
+
+msgctxt "#34129"
+msgid "Provider not implemented"
+msgstr ""
+
+msgctxt "#34130"
+msgid "Enable Now Online"
+msgstr ""
+
+msgctxt "#34131"
+msgid "Enable Telecine Play"
+msgstr ""
+
+msgctxt "#34132"
+msgid "Highlights"
+msgstr ""
+
+msgctxt "#34133"
+msgid "Coming Soon"
+msgstr ""
+
+msgctxt "#34134"
+msgid "History"
+msgstr ""
+
+msgctxt "#34135"
+msgid "Home"
+msgstr ""
+
+msgctxt "#34136"
+msgid "See More"
+msgstr ""
+
+msgctxt "#34137"
+msgid "Season"
+msgstr ""
+
+msgctxt "#34138"
+msgid "Advanced"
+msgstr ""
+
+msgctxt "#34139"
+msgid "Default Profile"
+msgstr ""
+
+msgctxt "#34140"
+msgid "Invalid credentials. Try again"
+msgstr ""
+
+msgctxt "#34141"
+msgid "No Search Results"
+msgstr ""
+
+msgctxt "#34142"
+msgid "You may like..."
+msgstr ""
+
+msgctxt "#34143"
+msgid "Like"
+msgstr ""
+
+msgctxt "#34144"
+msgid "Dislike"
+msgstr ""
+
+msgctxt "#34145"
+msgid "Remove Like"
+msgstr ""
+
+msgctxt "#34146"
+msgid "Remove Dislike"
+msgstr ""
+
+msgctxt "#34147"
+msgid "Enable Globoplay + canais ao vivo"
+msgstr ""
+
+msgctxt "#34148"
+msgid "Enable SBT"
+msgstr ""
+
+msgctxt "#34149"
+msgid "Ignore Daylight Saving Time"
+msgstr ""
+
+msgctxt "#34150"
+msgid "Enable Pluto TV"
+msgstr ""
+
+msgctxt "#34151"
+msgid "Excerpts"
+msgstr ""
+
+msgctxt "#34152"
+msgid "Most viewed"
+msgstr ""
+
+msgctxt "#34153"
+msgid "Today"
+msgstr ""
+
+msgctxt "#34154"
+msgid "Yesterday"
+msgstr ""
+
+msgctxt "#34155"
+msgid "Most viewed"
+msgstr ""
+
+msgctxt "#34156"
+msgid "Continue watching"
+msgstr ""
+
+msgctxt "#34157"
+msgid "Monday"
+msgstr ""
+
+msgctxt "#34158"
+msgid "Tuesday"
+msgstr ""
+
+msgctxt "#34159"
+msgid "Wednesday"
+msgstr ""
+
+msgctxt "#34160"
+msgid "Thursday"
+msgstr ""
+
+msgctxt "#34161"
+msgid "Friday"
+msgstr ""
+
+msgctxt "#34162"
+msgid "Saturday"
+msgstr ""
+
+msgctxt "#34163"
+msgid "Sunday"
 msgstr ""

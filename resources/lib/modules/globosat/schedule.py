@@ -1,10 +1,10 @@
 import datetime
-from resources.lib.modules import client
+import requests
 from resources.lib.modules import util
 from resources.lib.modules import workers
 
 
-class schedule:
+class Schedule:
 
     def get_schedule(self):
 
@@ -28,13 +28,13 @@ class schedule:
         }
 
         page = 1
-        response = client.request(globosat_schedule_url % page, headers=headers)
+        response = requests.get(globosat_schedule_url % page, headers=headers).json()
 
         results = response['results']
 
         while response['next'] != None:
             page += 1
-            response = client.request(globosat_schedule_url % page, headers=headers)
+            response = requests.get(globosat_schedule_url % page, headers=headers).json()
             results += response['results']
 
         for result in results:
@@ -65,13 +65,13 @@ class schedule:
         }
 
         page = 1
-        response = client.request(globosat_schedule_url % page, headers=headers)
+        response = requests.get(globosat_schedule_url % page, headers=headers).json()
 
         results = response['results']
 
         while response['next'] is not None:
             page += 1
-            response = client.request(globosat_schedule_url % page, headers=headers)
+            response = requests.get(globosat_schedule_url % page, headers=headers).json()
             results += response['results']
 
         for result in results:

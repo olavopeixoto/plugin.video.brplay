@@ -1,26 +1,25 @@
 # -*- coding: utf-8 -*-
 
-import json
 import re
 import sys
-import urllib
 from urlparse import urlparse
-
+import traceback
 from resources.lib.modules import util
-from resources.lib.modules import client
+import requests
 from resources.lib.modules import control
 from resources.lib.modules import hlshelper
+from resources.lib.hlsproxy.simpleproxy import MediaProxy
 from resources.lib.modules.globoplay import resourceshelper
 from resources.lib.modules.globosat import auth_helper
 
 import xbmc
 import threading
-import scraper_live
 
 
 HISTORY_URL_API = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s'
 PLAYER_SLUG = 'android'
 PLAYER_VERSION = '1.1.24'
+GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
 
 
 class Player(xbmc.Player):
@@ -35,11 +34,26 @@ class Player(xbmc.Player):
 
     def playlive(self, id, meta):
 
+        meta = meta or {}
+
         control.log("Globosat Play - play_stream: id=%s | meta=%s" % (id, meta))
 
         if id is None: return
 
-        info = resourceshelper.get_video_info(id)
+        self.isLive = meta.get('livefeed', False)
+
+        cdn = control.setting('globosat_cdn')
+        if cdn:
+            cdn = cdn.lower() if cdn.lower() != 'auto' else None
+
+        if meta.get('geofencing') and meta.get('lat') and meta.get('long'):
+            info = resourceshelper.get_geofence_video_info(id, meta.get('lat'), meta.get('long'), auth_helper.get_credentials(), cdn)
+        elif not meta.get('router', True) or cdn:
+            info = resourceshelper.get_video_info(id, cdn=cdn)
+        else:
+            info = resourceshelper.get_video_router(id, self.isLive, cdn)
+            if not info:
+                info = resourceshelper.get_video_info(id, cdn=cdn)
 
         control.log("INFO: %s" % repr(info))
 
@@ -47,9 +61,15 @@ class Player(xbmc.Player):
             return
 
         try:
-            hash, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'])
+            hash_token = info.get('hash_token')
+            user = info.get('user')
+
+            if not hash_token:
+                control.log('Signing resource: %s' % info['resource_id'])
+                hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'], cdn)
         except Exception as ex:
-            control.log("ERROR: %s" % repr(ex))
+            control.log(traceback.format_exc(), control.LOGERROR)
+            control.log("PLAYER ERROR: %s" % repr(ex))
             return
 
         encrypted = 'encrypted' in info and info['encrypted']
@@ -58,67 +78,52 @@ class Player(xbmc.Player):
             control.okDialog(control.lang(31200), control.lang(34103).encode('utf-8'))
             return
 
-        title = info['channel']
-
         query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
 
         query_string = query_string % {
-            'hash': hash,
+            'hash': hash_token,
             'key': 'app',
-            'openClosed': 'F' if info['subscriber_only'] else 'A',
-            'user': user if info['subscriber_only'] else ''
+            'openClosed': 'F' if info['subscriber_only'] and user else 'A',
+            'user': user if info['subscriber_only'] and user else '',
+            'token': hash_token
         }
 
         url = '?'.join([info['url'], query_string])
 
         control.log("live media url: %s" % url)
 
-        try:
-            meta = json.loads(meta)
-        except:
-            meta = {
-                "playcount": 0,
-                "overlay": 6,
-                "title": title,
-                "thumb": info["thumbUri"],
-                "mediatype": "video",
-                "aired": info["exhibited_at"]
-            }
-
-        meta.update({
-            "genre": info["category"],
-            "plot": info["title"],
-            "plotoutline": info["title"]
-        })
-
-        poster = meta['poster'] if 'poster' in meta else control.addonPoster()
-        thumb = meta['thumb'] if 'thumb' in meta else info["thumbUri"]
-
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
-
-        self.isLive = 'livefeed' in meta and meta['livefeed'] == 'true'
 
         parsed_url = urlparse(url)
         if parsed_url.path.endswith(".m3u8"):
-            self.url, mime_type, stopEvent, cookies = hlshelper.pick_bandwidth(url)
+            self.url, mime_type, stop_event, cookies = hlshelper.pick_bandwidth(url)
+        elif parsed_url.path.endswith(".mpd") and not self.isLive:
+            proxy_handler = MediaProxy()
+            self.url = proxy_handler.resolve(url)
+            stop_event = proxy_handler.stop_event
+            mime_type = None
+            cookies = None
         else:
             self.url = url
-            mime_type, stopEvent, cookies = 'video/mp4', None, None
+            mime_type, stop_event, cookies = 'video/mp4', None, None
 
         if self.url is None:
-            if stopEvent:
+            if stop_event:
                 control.log("Setting stop event for proxy player")
-                stopEvent.set()
+                stop_event.set()
             control.infoDialog(control.lang(34100).encode('utf-8'), icon='ERROR')
             return
 
         control.log("Resolved URL: %s" % repr(self.url))
         control.log("Parsed URL: %s" % repr(parsed_url))
 
-        item = control.item(path=self.url)
-        item.setArt({'icon': thumb, 'thumb': thumb, 'poster': poster, 'tvshow.poster': poster, 'season.poster': poster})
+        if control.supports_offscreen:
+            item = control.item(path=self.url, offscreen=True)
+        else:
+            item = control.item(path=self.url)
+        item.setArt(meta.get('art', {}))
         item.setProperty('IsPlayable', 'true')
-        item.setInfo(type='Video', infoLabels=meta)
+        item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))
 
         item.setContentLookup(False)
 
@@ -184,9 +189,9 @@ class Player(xbmc.Player):
                         self.save_video_progress(self.token, self.video_id, current_time)
             control.sleep(1000)
 
-        if stopEvent:
+        if stop_event:
             control.log("Setting stop event for proxy player")
-            stopEvent.set()
+            stop_event.set()
 
         control.log("Done playing. Quitting...")
 
@@ -209,7 +214,7 @@ class Player(xbmc.Player):
         if self.stopPlayingEvent:
             self.stopPlayingEvent.set()
 
-    def sign_resource(self, provider_id, resource_id, video_id, player, version):
+    def sign_resource(self, provider_id, resource_id, video_id, player, version, cdn=None):
         proxy = control.proxy_url
         proxy = None if proxy is None or proxy == '' else {
             'http': proxy,
@@ -219,7 +224,15 @@ class Player(xbmc.Player):
         credentials = auth_helper.get_globosat_cookie(provider_id)
 
         hash_url = 'https://security.video.globo.com/videos/%s/hash?resource_id=%s&version=%s&player=%s' % (video_id, resource_id, PLAYER_VERSION, PLAYER_SLUG)
-        hash_json = client.request(hash_url, cookie=credentials, mobile=True, headers={"Accept-Encoding": "gzip"}, proxy=proxy)
+        if cdn:
+            hash_url = hash_url + '&cdn=' + cdn
+        control.log('GET %s' % hash_url)
+        response = requests.get(hash_url, cookies=credentials, headers={"Accept-Encoding": "gzip"}, proxies=proxy)
+        response.raise_for_status()
+
+        hash_json = response.json()
+
+        control.log(hash_json)
 
         if not hash_json or hash_json is None or 'message' in hash_json and hash_json['message']:
             message = hash_json['message'] if hash_json and 'message' in hash_json else control.lang(34102)
@@ -227,9 +240,9 @@ class Player(xbmc.Player):
             control.infoDialog(message=message.encode('utf-8'), sound=True, icon='ERROR')
             raise Exception(message)
 
-        hash = util.get_signed_hashes(hash_json['hash'])[0]
-
-        return hash, hash_json["user"] if 'user' in hash_json else None, credentials
+        hash_token = util.get_signed_hashes(hash_json['hash'])[0] if 'hash' in hash_json else hash_json['token']
+        user = hash_json["user"] if 'user' in hash_json else None
+        return hash_token, user, credentials
 
     def save_video_progress(self, token, video_id, watched_seconds):
 
@@ -238,7 +251,7 @@ class Player(xbmc.Player):
                 return
 
             post_data = {
-                'watched_seconds': int(round((watched_seconds))),
+                'watched_seconds': int(round(watched_seconds)),
                 'id': video_id
             }
 
@@ -247,12 +260,13 @@ class Player(xbmc.Player):
                 "Accept-Encoding": "gzip",
                 "Content-Type": "application/x-www-form-urlencoded",
                 "version": "2",
-                "Authorization": scraper_live.GLOBOSAT_API_AUTHORIZATION
+                "Authorization": GLOBOSAT_API_AUTHORIZATION
             }
 
-            post_data = urllib.urlencode(post_data)
+            response = requests.post(url, headers=headers, data=post_data)
 
-            client.request(url, error=True, mobile=True, headers=headers, post=post_data)
+            response.raise_for_status()
 
         except Exception as ex:
-            control.log("ERROR SAVING VIDEO PROGRESS (GLOBO PLAY): %s" % repr(ex))
+            control.log(traceback.format_exc(), control.LOGERROR)
+            control.log("ERROR SAVING VIDEO PROGRESS (GLOBOSAT PLAY): %s" % repr(ex))
