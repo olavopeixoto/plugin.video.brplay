@@ -55,6 +55,8 @@ def get_channels():
             'content': 'tvshows',    # 'content': 'tvshows',  # content: files, songs, artists, albums, movies, tvshows, episodes, musicvideos
             'mediatype': 'episode',  # 'mediatype': "video", "movie", "tvshow", "season", "episode" or "musicvideo"
         })
+        if channel.get('cast') is None:
+            channel['cast'] = []
         properties = channel.get('properties', {})
         if not properties:
             channel['properties'] = properties
