@@ -241,7 +241,7 @@ class Auth:
                                  json=payload,
                                  headers=headers, table='globoplay')
 
-        if response.status_code == 500:
+        if response.status_code == 500 or response.status_code == 498:
             control.setSetting('globoplay_instance_id', None)
             if retry > 0:
                 return self._authenticate(username, password, service_id, retry-1)

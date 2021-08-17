@@ -47,10 +47,13 @@ class Player(xbmc.Player):
             cdn = cdn.lower() if cdn.lower() != 'auto' else None
 
         if meta.get('geofencing') and meta.get('lat') and meta.get('long'):
+            control.log('Selecting Geo Fencing Video - lat: %s | long: %s' % (meta.get('lat'), meta.get('long')))
             info = resourceshelper.get_geofence_video_info(id, meta.get('lat'), meta.get('long'), auth_helper.get_credentials(), cdn)
         elif not meta.get('router', True) or cdn:
+            control.log('Selecting video using Playlist')
             info = resourceshelper.get_video_info(id, cdn=cdn)
         else:
+            control.log('Selecting video using Router')
             info = resourceshelper.get_video_router(id, self.isLive, cdn)
             if not info:
                 info = resourceshelper.get_video_info(id, cdn=cdn)

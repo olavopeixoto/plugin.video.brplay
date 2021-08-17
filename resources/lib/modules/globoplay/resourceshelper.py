@@ -382,8 +382,33 @@ def get_geofence_video_info(video_id, latitude, longitude, credentials, cdn=None
         "url": hash_json.get("url"),
         "query_string_template": hash_json.get('query_string_template') or "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
         "thumbUri": hash_json.get("thumbUri"),
-        "hash_token": util.get_signed_hashes(hash_json.get('hash'))[0] if 'hash' in hash_json else hash_json['token'],
+        "hash_token": util.get_signed_hashes(hash_json.get('hash'))[0] if 'hash' in hash_json else hash_json.get('token'),
         "user": hash_json.get("user"),
         "credentials": credentials,
         "encrypted": hash_json.get('encrypted', False)
     }
+
+
+def get_session(video_id, token):
+    proxy = control.proxy_url
+    proxy = None if proxy is None or proxy == '' else {
+        'http': proxy,
+        'https': proxy,
+    }
+
+    url = 'https://playback.video.globo.com/v1/video-session'
+    data = {
+        'content_protection': "widevine",
+        'player_type': "app",  # "desktop",
+        'quality': "max",
+        'video_id': video_id
+    }
+
+    headers = {
+                "Accept-Encoding": "gzip",
+                "authorization": "Bearer " + token,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "Canais Globo (Globosat Play)/444 (iPhone)"
+            }
+
+    requests.post(url, json=data, headers=headers, proxies=proxy)
