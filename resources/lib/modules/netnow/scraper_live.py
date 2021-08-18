@@ -1,14 +1,65 @@
 import requests
 import datetime
+import traceback
+from auth import login
 from auth import PLATFORM
 import player
+import resources.lib.modules.control as control
 
 PLAYER_HANDLER = player.__name__
 
+proxy = control.proxy_url
+proxy = None if proxy is None or proxy == '' else {
+    'http': proxy,
+    'https': proxy,
+}
+
 
 def get_live_channels():
+
+    try:
+        credentials = login()
+        return get_live_channels_user_only(credentials)
+
+    except Exception as ex:
+        control.log(traceback.format_exc(), control.LOGERROR)
+        control.okDialog(u'Now Online', str(ex))
+        return []
+        # return get_live_channels_all()
+
+
+def get_live_channels_user_only(credentials):
+    avs_cookie = credentials['cookies']['avs_cookie']
+    login_info = credentials['cookies']['LoginInfo']
+
+    cookies = {
+        'avs_cookie': avs_cookie,
+        'LoginInfo': login_info
+    }
+
+    header = {}
+
+    if PLATFORM == 'PCTV':
+        header['x-xsrf-token'] = credentials['headers']['X-Xsrf-Token']
+
+    url = 'https://www.nowonline.com.br/avsclient/1.1/epg/livechannels?channel={platform}&channelIds=&numberOfSchedules=2&includes=images&onlyUserContent=Y'.format(
+        platform=PLATFORM)
+    response = requests.get(url, headers=header, cookies=cookies, proxies=proxy).json()
+
+    control.log(response)
+
+    for channel in (response.get('response', {}) or {}).get('liveChannels', []) or []:
+        yield hydrate_channel(channel)
+
+
+def get_live_channels_all():
     url = 'https://www.nowonline.com.br/avsclient/epg/livechannels?channel={platform}&channelIds=&numberOfSchedules=2&includes=images'.format(platform=PLATFORM)
+
+    control.log('GET %s' % url)
+
     response = requests.get(url).json()
+
+    control.log(response)
 
     for channel in response.get('response', []):
         yield hydrate_channel(channel)

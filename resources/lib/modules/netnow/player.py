@@ -118,7 +118,7 @@ class Player:
 
             license_key = '%s|%s|R{SSM}|' % (licence_url, urllib.urlencode(key_headers))
             item.setProperty('inputstream.adaptive.license_key', license_key)
-            item.setProperty('inputstream.adaptive.stream_headers', user_agent)
+            item.setProperty('inputstream.adaptive.stream_headers', 'User-Agent=%s' % user_agent)
 
             control.log('license_key: %s' % license_key)
 
@@ -164,6 +164,8 @@ class Player:
 
         # response.raise_for_status()
 
+        cookies = response.cookies
+
         response = response.json() or {}
 
         control.log(response)
@@ -178,7 +180,8 @@ class Player:
             raise Exception('%s: %s' % (status, message))
 
         if PLATFORM == 'PCTV':
-            device_id = self.get_device_id(id, avs_cookie, login_info, xsrf)
+            # device_id = self.get_device_id(id, avs_cookie, login_info, xsrf)
+            device_id = cookies.get('avs_browser_id', domain='www.nowonline.com.br', path='/')
 
         return src, avs_cookie, login_info, xsrf, device_id, sc_id, cdn_token
 
@@ -197,7 +200,7 @@ class Player:
 
         control.log(response.content)
 
-        return response.cookies.get('avs_browser_id')
+        return response.cookies.get('avs_browser_id', domain='www.nowonline.com.br', path='/')
 
     def keep_alive(self, avs_cookie, login_info, xsrf, sc_id=None):
         # https://www.nowonline.com.br/avsclient/playback/keepalive?scId=4df59745-4568-4057-9324-7a2c158a04ae&noRefresh=N&channel=PCTV
