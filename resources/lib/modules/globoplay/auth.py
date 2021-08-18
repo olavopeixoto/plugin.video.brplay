@@ -67,7 +67,7 @@ class Auth:
             control.log('username/password set. trying to authenticate')
             self.credentials = self._authenticate(username, password, service_id)
 
-            success = self.credentials.get('success')
+            success = self.credentials.get('success', False)
             if success is False:
                 error_message = self.credentials.get('error_message')
                 control.log('authentication error: %s' % error_message)
@@ -208,7 +208,7 @@ class Auth:
 
         return globoplay_instance_id
 
-    def _authenticate(self, username, password, service_id):
+    def _authenticate(self, username, password, service_id, retry=1):
 
         instance_id = self.get_instance_id()
 
@@ -235,6 +235,17 @@ class Auth:
         control.log(response)
 
         success = response.status_code < 400
+
+        if not success:
+            cache.clear_item(requests.post, self.ENDPOINT_URL,
+                                 json=payload,
+                                 headers=headers, table='globoplay')
+
+        if response.status_code == 500 or response.status_code == 498:
+            control.setSetting('globoplay_instance_id', None)
+            if retry > 0:
+                return self._authenticate(username, password, service_id, retry-1)
+
         try:
             message = (response.json().get('userMessage') or '')
         except:

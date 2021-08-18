@@ -198,7 +198,7 @@ __inputstream_addon_available = None
 
 ignore_channel_authorization = xbmcaddon.Addon().getSetting('ignore_channel_authorization') == 'true'
 
-is_4k_enabled =  xbmcaddon.Addon().getSetting('enable_4k') == 'true'
+is_4k_enabled = xbmcaddon.Addon().getSetting('enable_4k') == 'true'
 
 is_4k_images_enabled = xbmcaddon.Addon().getSetting('enable_4k_fanart') == 'true'
 

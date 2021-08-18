@@ -422,8 +422,8 @@ def get_globoplay_broadcasts(media_id, latitude, longitude):
 
         title = epg.get('name', '')
         description = title_obj.get('description') or epg.get('description', '')
-        fanart = title_obj.get('cover', {}).get('landscape', fanart) or fanart
-        poster = title_obj.get('poster', {}).get('web')
+        fanart = (title_obj.get('cover', {}) or {}).get('landscape', fanart) or fanart
+        poster = (title_obj.get('poster', {}) or {}).get('web')
 
         label = '[B]' + channel_name + '[/B]' + ('[I] - ' + title + '[/I]' if title else '')
 
@@ -456,12 +456,12 @@ def get_globoplay_broadcasts(media_id, latitude, longitude):
             'sorttitle': title,
             'studio': 'Globoplay',
             'year': title_obj.get('releaseYear'),
-            'country': title_obj.get('countries', []),
-            'genre': title_obj.get('genresNames', []),
-            'cast': title_obj.get('castNames', []),
-            'director': title_obj.get('directorsNames', []),
-            'writer': title_obj.get('screenwritersNames', []),
-            'credits': title_obj.get('artDirectorsNames', []),
+            'country': title_obj.get('countries', []) or [],
+            'genre': title_obj.get('genresNames', []) or [],
+            'cast': title_obj.get('castNames', []) or [],
+            'director': title_obj.get('directorsNames', []) or [],
+            'writer': title_obj.get('screenwritersNames', []) or [],
+            'credits': title_obj.get('artDirectorsNames', []) or [],
             'mpaa': epg.get('contentRating'),
             "art": {
                 'icon': logo,
@@ -528,8 +528,8 @@ def get_globo_americas():
 
         title = epg.get('name', '')
         description = title_obj.get('description') or epg.get('description', '')
-        fanart = title_obj.get('cover', {}).get('landscape', fanart) or fanart
-        poster = title_obj.get('poster', {}).get('web')
+        fanart = (title_obj.get('cover', {}) or {}).get('landscape', fanart) or fanart
+        poster = (title_obj.get('poster', {}) or {}).get('web')
 
         label = '[B]' + channel_name + '[/B]' + ('[I] - ' + title + '[/I]' if title else '')
 
@@ -569,12 +569,12 @@ def get_globo_americas():
             'sorttitle': title,
             'studio': 'Globoplay Americas',
             'year': title_obj.get('releaseYear'),
-            'country': title_obj.get('countries', []),
-            'genre': title_obj.get('genresNames', []),
-            'cast': title_obj.get('castNames', []),
-            'director': title_obj.get('directorsNames', []),
-            'writer': title_obj.get('screenwritersNames', []),
-            'credits': title_obj.get('artDirectorsNames', []),
+            'country': title_obj.get('countries', []) or [],
+            'genre': title_obj.get('genresNames', []) or [],
+            'cast': title_obj.get('castNames', []) or [],
+            'director': title_obj.get('directorsNames', []) or [],
+            'writer': title_obj.get('screenwritersNames', []) or [],
+            'credits': title_obj.get('artDirectorsNames', []) or [],
             'mpaa': epg.get('contentRating'),
             "art": {
                 'icon': logo,
@@ -615,7 +615,7 @@ def get_mais_canais():
         control.log('EPG: %s' % epg)
 
         logo = channel.get('logo')
-        channel_name = broadcast.get('media', {}).get('headline', '').replace('Agora no ', '').replace('Agora na ', '').strip()  #channel.get('name', '')
+        channel_name = (broadcast.get('media', {}) or {}).get('headline', '').replace('Agora no ', '').replace('Agora na ', '').strip()  #channel.get('name', '')
         fanart = broadcast.get('imageOnAir')
         channel_id = channel.get('id', 0)
         service_id = broadcast.get('media', {}).get('serviceId', 0)
@@ -627,8 +627,8 @@ def get_mais_canais():
 
         title = epg.get('name', '')
         description = title_obj.get('description') or epg.get('description', '')
-        fanart = title_obj.get('cover', {}).get('landscape', fanart) or fanart
-        poster = title_obj.get('poster', {}).get('web')
+        fanart = (title_obj.get('cover', {}) or {}).get('landscape', fanart) or fanart
+        poster = (title_obj.get('poster', {}) or {}).get('web')
         thumb = THUMBS.get(str(broadcast.get('transmissionId')))
         thumb = (SNAPSHOT_URL.format(transmission=thumb) + '?=' + str(int(time.time()))) if thumb else fanart
 
@@ -670,12 +670,12 @@ def get_mais_canais():
             'sorttitle': title,
             'studio': 'Globoplay',
             'year': title_obj.get('releaseYear'),
-            'country': title_obj.get('countries', []),
-            'genre': title_obj.get('genresNames', []),
-            'cast': title_obj.get('castNames', []),
-            'director': title_obj.get('directorsNames', []),
-            'writer': title_obj.get('screenwritersNames', []),
-            'credits': title_obj.get('artDirectorsNames', []),
+            'country': title_obj.get('countries', []) or [],
+            'genre': title_obj.get('genresNames', []) or [],
+            'cast': title_obj.get('castNames', []) or [],
+            'director': title_obj.get('directorsNames', []) or [],
+            'writer': title_obj.get('screenwritersNames', []) or [],
+            'credits': title_obj.get('artDirectorsNames', []) or [],
             'mpaa': epg.get('contentRating'),
             "art": {
                 'icon': logo,

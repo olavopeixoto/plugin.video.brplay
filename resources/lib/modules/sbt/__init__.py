@@ -11,7 +11,7 @@ def get_authorization():
 
     control.log('SBT - Getting new auth token')
 
-    url = 'https://www.sbt.com.br/main.js'
+    url = 'https://www.sbt.com.br/main-es2015.js'
 
     response = requests.get(url, verify=False)
 

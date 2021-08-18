@@ -181,7 +181,7 @@ def create_directory(items, current=None, cache_to_disk=True):
                 custom_title = data.get('custom_title', None)
 
             if data.get('setCast', None):
-                item.setCast(data.get('setCast', None))
+                item.setCast(data.get('setCast', []))
 
             control.addItem(handle=syshandle, url=url, listitem=item, isFolder=is_folder)
 

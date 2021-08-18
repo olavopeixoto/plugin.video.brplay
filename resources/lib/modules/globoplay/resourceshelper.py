@@ -382,7 +382,7 @@ def get_geofence_video_info(video_id, latitude, longitude, credentials, cdn=None
         "url": hash_json.get("url"),
         "query_string_template": hash_json.get('query_string_template') or "h={{hash}}&k={{key}}&a={{openClosed}}&u={{user}}",
         "thumbUri": hash_json.get("thumbUri"),
-        "hash_token": get_signed_hashes(hash_json.get('hash')) if 'hash' in hash_json else hash_json['token'],
+        "hash_token": get_signed_hashes(hash_json.get('hash'))[0] if 'hash' in hash_json else hash_json.get('token'),
         "user": hash_json.get("user"),
         "credentials": credentials,
         "encrypted": hash_json.get('encrypted', False)

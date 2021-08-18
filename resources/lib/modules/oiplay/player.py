@@ -2,7 +2,7 @@
 
 import requests
 import sys
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 import threading
 from .auth import gettoken
 from .auth import get_default_profile
@@ -92,13 +92,21 @@ class Player(xbmc.Player):
 
         if encrypted:
             control.log("DRM: com.widevine.alpha")
+
+            key_headers = {
+                'Referer': 'https://oiplay.tv/',
+                'Origin': 'https://oiplay.tv',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36'
+            }
+
             # licence_url = data['drm']['licenseUrl'] + '&token=' + data['drm']['jwtToken']
             if data.get('drm', {}).get('jwtToken'):
                 licence_url = '%s&token=%s' % (data.get('drm', {}).get('licenseUrl'), data.get('drm', {}).get('jwtToken'))
             else:
                 licence_url = data.get('drm', {}).get('licenseUrl')
             item.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
-            item.setProperty('inputstream.adaptive.license_key', licence_url + "||R{SSM}|")
+            item.setProperty('inputstream.adaptive.license_key', licence_url + "|%s|R{SSM}|" % urlencode(key_headers))
+            item.setProperty('inputstream.adaptive.stream_headers', 'User-Agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36')
 
         if mime_type:
             item.setMimeType(mime_type)
