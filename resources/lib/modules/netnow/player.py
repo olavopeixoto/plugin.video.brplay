@@ -117,7 +117,7 @@ class Player:
 
             license_key = '%s|%s|R{SSM}|' % (licence_url, urlencode(key_headers))
             item.setProperty('inputstream.adaptive.license_key', license_key)
-            item.setProperty('inputstream.adaptive.stream_headers', 'User-Agent=' % user_agent)
+            item.setProperty('inputstream.adaptive.stream_headers', 'User-Agent=%s' % user_agent)
 
             control.log('license_key: %s' % license_key)
 
