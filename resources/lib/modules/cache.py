@@ -99,11 +99,11 @@ def clear_item(function, *args, **kargs):
     f = re.sub('.+\smethod\s|.+function\s|\sat\s.+|\sof\s.+', '', f)
 
     a = hashlib.md5()
-    for i in args: a.update(str(i))
+    for i in args: a.update(str(i).encode('utf-8'))
     for key in kargs:
         if key != 'table':
-            a.update('%s=%s' % (key, str(kargs[key])))
-    a = str(a.hexdigest())
+            a.update((u'%s=%s' % (key, str(kargs[key]))).encode('utf-8'))
+    a = str(a.hexdigest()).encode('utf-8')
 
     try:
         table = kargs['table']
@@ -116,7 +116,7 @@ def clear_item(function, *args, **kargs):
         dbcon = database.connect(control.cacheFile)
         dbcur = dbcon.cursor()
 
-        dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a))
+        dbcur.execute("DELETE FROM %s WHERE func = '%s' AND args = '%s'" % (table, f, a.decode('utf-8')))
 
         dbcon.commit()
 
