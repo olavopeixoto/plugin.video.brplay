@@ -19,7 +19,7 @@ PREMIERE_NEXT_MATCHES_JSON = 'https://api-soccer.globo.com/v1/premiere/matches?s
 def get_premiere_cards():
     return [{
             'handler': __name__,
-            'method': 'get_premiere_games',
+            'method': get_premiere_games.__name__,
             'title': u'\u2063Veja a Programação',
             'label': u'[B]\u2063Próximos Jogos[/B]',
             'plot': 'Veja os jogos programados',

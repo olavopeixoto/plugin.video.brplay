@@ -16,7 +16,7 @@ def get_channels():
 
     return [{
         'handler': __name__,
-        'method': 'get_categories',
+        'method': get_categories.__name__,
         'label': 'Sexyhot',
         'art': {
             'thumb': LOGO,
@@ -29,7 +29,7 @@ def get_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_home',
+        'method': get_home.__name__,
         'label': control.lang(34135),
         'art': {
             'thumb': LOGO,
@@ -39,7 +39,7 @@ def get_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_videos',
+        'method': get_videos.__name__,
         'label': u'+ Vídeos',
         'slug': 'mais-videos',
         'art': {
@@ -50,7 +50,7 @@ def get_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_videos',
+        'method': get_videos.__name__,
         'label': u'Originais',
         'plot': u'O Sexy Hot Produções é o nosso selo de filmes próprios e exclusivos de alta qualidade.',
         'slug': 'originais',
@@ -62,7 +62,7 @@ def get_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_genres',
+        'method': get_genres.__name__,
         'id': '4828a3a4-1c97-4e27-86b5-3e8a872152f1',
         'label': u'Categorias',
         'art': {
@@ -73,7 +73,7 @@ def get_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_genres',
+        'method': get_genres.__name__,
         'id': 'b9d07874-d4fc-491b-979e-6c9d2fb11bff',
         'label': u'Porn Stars',
         'art': {
@@ -84,7 +84,7 @@ def get_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_videos',
+        'method': get_videos.__name__,
         'label': u'Filmes',
         'slug': 'filmes',
         'art': {
@@ -95,7 +95,7 @@ def get_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_videos',
+        'method': get_videos.__name__,
         'label': u'Séries',
         'plot': 'Confira todas as séries do Sexy Hot.',
         'slug': 'series',
@@ -117,7 +117,7 @@ def get_home():
 
         yield {
             'handler': __name__,
-            'method': 'get_offer',
+            'method': get_offer.__name__,
             'label': item.get('callText', item.get('headline', item.get('title', ''))),
             'id': item.get('offerId', item.get('highlightId')),
             'component_type': item.get('componentType'),
@@ -152,7 +152,7 @@ def get_genres(id, page=1):
 
         yield {
             'handler': __name__,
-            'method': 'get_videos',
+            'method': get_videos.__name__,
             'label': resource.get('name', ''),
             'slug': resource.get('navigation', {}).get('identifier'),
             'art': {
@@ -165,7 +165,7 @@ def get_genres(id, page=1):
 
         yield {
                 'handler': __name__,
-                'method': 'get_genres',
+                'method': get_genres.__name__,
                 'page': categories.get('nextPage'),
                 'id': id,
                 'label': '%s (%s)' % (control.lang(34136), page),
@@ -215,7 +215,7 @@ def get_thumb_offer(id, page=1, per_page=200):
     for item in items.get('resources', []):
         yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'playlive',
+                'method': player.Player.playlive.__name__,
                 'IsPlayable': True,
                 'custom_title': custom_title,
                 'tagline': custom_title,
@@ -247,7 +247,7 @@ def get_thumb_offer(id, page=1, per_page=200):
     if items.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'get_thumb_offer',
+            'method': get_thumb_offer.__name__,
             'id': id,
             'page': items.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -276,7 +276,7 @@ def get_poster_offer(id, page=1, per_page=40):
         playable = True if resource.get('originVideoId') else False
         yield {
             'handler': PLAYER_HANDLER if playable else __name__,
-            'method': 'playlive' if playable else 'get_title',
+            'method': player.Player.playlive.__name__ if playable else get_title.__name__,
             'id': resource.get('originVideoId', resource.get('titleId')) or resource.get('titleId'),
             'IsPlayable': playable,
             'custom_title': custom_title,
@@ -308,7 +308,7 @@ def get_poster_offer(id, page=1, per_page=40):
     if items.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'get_poster_offer',
+            'method': get_poster_offer.__name__,
             'id': id,
             'page': items.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -345,7 +345,7 @@ def get_title(id, season=None, page=1):
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'playlive',
+            'method': player.Player.playlive.__name__,
             'id': video.get('id', ''),
             'label': title.get('headline', ''),
             'title': title.get('headline'),
@@ -378,7 +378,7 @@ def get_title(id, season=None, page=1):
             video = resource.get('video', {})
             yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'playlive',
+                'method': player.Player.playlive.__name__,
                 'IsPlayable': True,
                 'id': video.get('id'),
                 'label': video.get('headline', ''),
@@ -420,7 +420,7 @@ def get_title(id, season=None, page=1):
                 video = episode.get('video', {})
                 yield {
                         'handler': PLAYER_HANDLER,
-                        'method': 'playlive',
+                        'method': player.Player.playlive.__name__,
                         'IsPlayable': True,
                         'id': video.get('id'),
                         'label': video.get('headline', ''),
@@ -452,7 +452,7 @@ def get_title(id, season=None, page=1):
             for season in structure.get('seasons', {}).get('resources', []):
                 yield {
                     'handler': __name__,
-                    'method': 'get_title',
+                    'method': get_title.__name__,
                     'id': id,
                     'label': '%s %s' % (control.lang(34137), season.get('number', 0)),
                     'season': season.get('number', 0),
@@ -483,7 +483,7 @@ def get_title(id, season=None, page=1):
     if page > 0:
         yield {
             'handler': __name__,
-            'method': 'get_title',
+            'method': get_title.__name__,
             'id': id,
             'page': page,
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -511,7 +511,7 @@ def get_continue_watching(page=1, per_page=40):
         title = resource.get('title', {}) or {}
         yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'playlive',
+                'method': player.Player.playlive.__name__,
                 'id': str(resource.get('id', '')),
                 'type': (resource.get('title', {}) or {}).get('type'),
                 'label': resource.get('headline', ''),
@@ -556,7 +556,7 @@ def get_offer_highlight(id):
     playable = True if title.get('originVideoId') else False
     yield {
         'handler': PLAYER_HANDLER if playable else __name__,
-        'method': 'playlive' if playable else 'get_title',
+        'method': player.Player.playlive.__name__ if playable else get_title.__name__,
         'id': title.get('originVideoId', title.get('titleId')) or title.get('titleId'),
         'IsPlayable': playable,
         # 'type': resource.get('type'),

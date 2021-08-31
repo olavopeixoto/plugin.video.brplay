@@ -119,7 +119,7 @@ def search(query, page=1):
     if has_next_page:
         yield {
             'handler': __name__,
-            'method': 'search',
+            'method': search.__name__,
             'query': query,
             'page': page+1,
             'label': '%s (%s)' % (control.lang(34136), page+1),

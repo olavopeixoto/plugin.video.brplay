@@ -23,6 +23,7 @@ LOGO_BBB = 'https://s.glbimg.com/pc/gm/media/dc0a6987403a05813a7194cd0fdb05be/20
 FANART_BBB = 'http://s01.video.glbimg.com/x1080/244881.jpg'
 
 PLAYER_HANDLER = player.__name__
+PLAYSTREAM_METHOD = player.Player.play_stream.__name__
 
 
 GLOBO_LIVE_MEDIA_ID = 4452349
@@ -128,7 +129,7 @@ def __get_affiliate_live_channels(affiliate):
     program_name = '%s%s' % (title, tvshowtitle)
     item.update({
         'handler': PLAYER_HANDLER,
-        'method': 'play_stream',
+        'method': PLAYSTREAM_METHOD,
         'lat': latitude,
         'long': longitude,
         'affiliate_code': code,
@@ -437,7 +438,7 @@ def get_globoplay_broadcasts(media_id, latitude, longitude):
 
         result.append({
             'handler': PLAYER_HANDLER,
-            'method': 'play_stream',
+            'method': PLAYSTREAM_METHOD,
             'IsPlayable': True,
             'id': media_id,
             'channel_id': channel_id,
@@ -549,7 +550,7 @@ def get_globo_americas():
 
         result.append({
             'handler': PLAYER_HANDLER,
-            'method': 'play_stream',
+            'method': PLAYSTREAM_METHOD,
             'IsPlayable': True,
             'id': media_id,
             'channel_id': channel_id,
@@ -650,7 +651,7 @@ def get_mais_canais():
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'play_stream',
+            'method': PLAYSTREAM_METHOD,
             'IsPlayable': True,
             'id': media_id,
             'channel_id': channel_id,

@@ -6,6 +6,7 @@ import datetime
 from . import player
 
 PLAYER_HANDLER = player.__name__
+PLAYLIVE_METHOD = player.Player.playlive.__name__
 
 
 def get_live_channels():
@@ -61,7 +62,7 @@ def get_channel_epg_now(channel):
 
     return {
         'handler': PLAYER_HANDLER,
-        'method': 'playlive',
+        'method': PLAYLIVE_METHOD,
         'id': response['prgSvcId'],
         'IsPlayable': True,
         'livefeed': True,

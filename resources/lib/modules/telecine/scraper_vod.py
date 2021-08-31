@@ -19,7 +19,7 @@ def get_channels():
 
     return [{
         'handler': HANDLER,
-        'method': 'get_channel_categories',
+        'method': get_channel_categories.__name__,
         'label': 'Telecine',
         'id': 1966,
         'art': {
@@ -43,7 +43,7 @@ def get_channel_categories():
 
     yield {
             'handler': HANDLER,
-            'method': 'get_page',
+            'method': get_page.__name__,
             'label': control.lang(34135),
             'path': '/',
             'art': {
@@ -54,7 +54,7 @@ def get_channel_categories():
 
     yield {
         'handler': HANDLER,
-        'method': 'get_page',
+        'method': get_page.__name__,
         'label': control.lang(34134),
         'path': '/account/profile/watched/list',
         'art': {
@@ -68,7 +68,7 @@ def get_channel_categories():
         if item.get('children', []):
             yield {
                 'handler': HANDLER,
-                'method': 'get_channel_sub_category',
+                'method': get_channel_sub_category.__name__,
                 'label': item.get('name'),
                 'path': item.get('path'),
                 'art': {
@@ -79,7 +79,7 @@ def get_channel_categories():
         else:
             yield {
                 'handler': HANDLER,
-                'method': 'get_page',
+                'method': get_page.__name__,
                 'label': item.get('name'),
                 'path': item.get('path'),
                 'art': {
@@ -100,7 +100,7 @@ def get_channel_sub_category(label):
     for child in children:
         yield {
                 'handler': HANDLER,
-                'method': 'get_page',
+                'method': get_page.__name__,
                 'label': child.get('name'),
                 'path': child.get('path'),
                 'art': {
@@ -152,7 +152,7 @@ def get_page(path, absolute=False):
 
                 yield {
                     'handler': HANDLER,
-                    'method': 'get_film' if item.get('path').startswith('/filme/') else 'get_page',
+                    'method': get_film.__name__ if item.get('path').startswith('/filme/') else get_page.__name__,
                     'id': item.get('id'),
                     'path': item.get('path'),
                     'label': item.get('name'),
@@ -176,7 +176,7 @@ def get_page(path, absolute=False):
             if url and use_pagination:
                 yield {
                     'handler': HANDLER,
-                    'method': 'get_page',
+                    'method': get_page.__name__,
                     'absolute': True,
                     'path': list_obj.get('paging', {}).get('next'),
                     'label': control.lang(34136),
@@ -209,7 +209,7 @@ def get_page(path, absolute=False):
 
                 yield {
                     'handler': HANDLER,
-                    'method': 'get_page',
+                    'method': get_page.__name__,
                     'path': path,
                     'label': item.get('title', item.get('text', '')) or control.lang(34132),
                     'plot': response.get('description'),
@@ -263,7 +263,7 @@ def get_film(path, overlay=4):
     if playable:
         film_item.update({
             'handler': PLAYER_HANDLER,
-            'method': 'playlive'
+            'method': player.Player.playlive.__name__
         })
 
     yield film_item
@@ -271,7 +271,7 @@ def get_film(path, overlay=4):
     for extra in item.get('entries', []):
         yield {
             'handler': HANDLER,
-            'method': 'get_film_extra',
+            'method': get_film_extra.__name__,
             'label': extra.get('title'),
             'path': path,
             'content': 'movies',
@@ -301,7 +301,7 @@ def get_film_extra(path, label):
 
                 data = {
                     'handler': HANDLER,
-                    'method': 'get_film' if is_film else 'get_page',
+                    'method': get_film.__name__ if is_film else get_page.__name__,
                     'path': item.get('path'),
                     'label': item.get('name'),
                     'plot': item.get('mouseOverDescription', '')
@@ -328,7 +328,7 @@ def get_film_extra(path, label):
                 else:
                     data.update({
                         'handler': PLAYER_HANDLER,
-                        'method': 'playlive',
+                        'method': player.Player.playlive.__name__,
                         'IsPlayable': True
                     })
                     data['art'] = {
@@ -364,7 +364,7 @@ def search(term, page=1):
 
                 yield {
                     'handler': HANDLER,
-                    'method': 'get_film' if item.get('path').startswith('/filme/') else 'get_page',
+                    'method': get_film.__name__ if item.get('path').startswith('/filme/') else get_page.__name__,
                     'path': item.get('path'),
                     'label': item.get('name'),
                     'title': item.get('name'),
@@ -388,7 +388,7 @@ def search(term, page=1):
 
                 yield {
                     'handler': HANDLER,
-                    'method': 'get_page',
+                    'method': get_page.__name__,
                     'path': item.get('path'),
                     'label': item.get('name'),
                     'title': item.get('name'),

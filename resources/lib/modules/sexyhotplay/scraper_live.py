@@ -63,7 +63,7 @@ def get_broadcast():
 
     item = {
         'handler': PLAYER_HANDLER,
-        'method': 'playlive',
+        'method': player.Player.playlive.__name__,
         'id': broadcast['mediaId'],
         'IsPlayable': True,
         'channel_id': 2065,

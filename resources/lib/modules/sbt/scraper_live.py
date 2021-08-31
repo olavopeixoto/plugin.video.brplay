@@ -55,7 +55,7 @@ def get_live_channels():
 
     yield {
         'handler': PLAYER_HANDLER,
-        'method': 'playlive',
+        'method': player.Player.playlive.__name__,
         'IsPlayable': True,
         'livefeed': True,
         'studio': channel_name,

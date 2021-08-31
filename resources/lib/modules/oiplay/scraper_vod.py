@@ -22,7 +22,7 @@ def get_channels():
 
     return [{
         'handler': __name__,
-        'method': 'get_main_menu',
+        'method': get_main_menu.__name__,
         'label': 'Oi Play',
         'art': {
             'thumb': LOGO,
@@ -52,7 +52,7 @@ def get_main_menu():
 
             yield {
                 'handler': __name__,
-                'method': 'get_home',
+                'method': get_home.__name__,
                 'label': item.get('title'),
                 'id': item.get('id'),
                 'art': {
@@ -70,7 +70,7 @@ def get_home(id):
         if item.get('id') == id:
             for content in item.get('contentLists', []):
                 if content.get('listType') not in ['LiveChannels', 'Applications']:
-                    method = 'get_list' if content.get('listType') != 'Bookmarks' else 'get_bookmarks'
+                    method = get_list.__name__ if content.get('listType') != 'Bookmarks' else get_bookmarks.__name__
                     yield {
                         'handler': __name__,
                         'method': method,
@@ -87,7 +87,7 @@ def get_home(id):
                 if child.get('title') not in ['Ao Vivo']:
                     yield {
                         'handler': __name__,
-                        'method': 'open_menu',
+                        'method': open_menu.__name__,
                         'label': child.get('title'),
                         'id': child.get('id'),
                         'art': {
@@ -120,7 +120,7 @@ def open_menu(id):
 
             yield {
                 'handler': __name__,
-                'method': 'open_menu_item',
+                'method': open_menu_item.__name__,
                 'label': item.get('title'),
                 'menu_id': id,
                 'id': item.get('id'),
@@ -147,7 +147,7 @@ def open_menu_item(menu_id, id):
 
                     yield {
                         'handler': __name__,
-                        'method': 'get_content',
+                        'method': get_content.__name__,
                         'id': item.get('tmsId'),
                         'label': item.get('title'),
                         'title': item.get('title'),
@@ -185,7 +185,7 @@ def get_home_item(menu_id, id):
                     for item in content.get('items'):
                         yield {
                             'handler': __name__,
-                            'method': 'get_home_item',
+                            'method': get_home_item.__name__,
                             'tmdId': item.get('tmsId'),
                             'id': item.get('id'),
                             'label': item.get('title'),
@@ -229,7 +229,7 @@ def get_list(id, page=1, page_size=50):
 
         yield {
             'handler': __name__,
-            'method': 'get_content',
+            'method': get_content.__name__,
             'id': item.get('tmsId'),
             'label': item.get('title'),
             'title': item.get('title'),
@@ -258,7 +258,7 @@ def get_list(id, page=1, page_size=50):
     if len(response.get('items', [])) >= page_size:
         yield {
             'handler': __name__,
-            'method': 'get_list',
+            'method': get_list.__name__,
             'id': id,
             'page': page + 1,
             'label': control.lang(34136),
@@ -294,7 +294,7 @@ def get_content(id):
                 'action': 'generic',
                 'meta': json.dumps({
                     'handler': __name__,
-                    'method': 'like_content',
+                    'method': like_content.__name__,
                     'id': item.get('tmsId'),
                     'like': True
                 })
@@ -305,14 +305,14 @@ def get_content(id):
                 'action': 'generic',
                 'meta': json.dumps({
                     'handler': __name__,
-                    'method': 'like_content',
+                    'method': like_content.__name__,
                     'id': item.get('tmsId'),
                     'like': False
                 })
             })))
 
         handler = __name__ if item.get('itemType') == 'Serie' else PLAYER_HANDLER
-        method = 'get_seasons' if item.get('itemType') == 'Serie' else 'playlive'
+        method = get_seasons.__name__ if item.get('itemType') == 'Serie' else player.Player.playlive.__name__
 
         yield {
             'handler': handler,
@@ -354,7 +354,7 @@ def get_content(id):
 
         yield {
             'handler': __name__,
-            'method': 'get_content_recommendations',
+            'method': get_content_recommendations.__name__,
             'id': id,
             'label': control.lang(34142),
             'art': {
@@ -389,7 +389,7 @@ def _get_seasons(seasons, serie, art):
     for item in seasons:
         yield {
             'handler': __name__,
-            'method': 'get_episodes',
+            'method': get_episodes.__name__,
             'label': '%s %s' % (control.lang(34137), item.get('title')),
             'serie': serie,
             'season': item.get('seasonId'),
@@ -418,7 +418,7 @@ def get_episodes(serie, season, art=None):
 
         yield {
             'handler': __name__,
-            'method': 'get_content',
+            'method': get_content.__name__,
             'id': item.get('tmsId'),
             'provider': provider_id,
             'studio': provider.get('name'),
@@ -459,7 +459,7 @@ def get_content_recommendations(id):
     for item in response:
         yield {
             'handler': __name__,
-            'method': 'get_content',
+            'method': get_content.__name__,
             'id': item.get('tmsId'),
             'label': item.get('title'),
             'title': item.get('title'),
@@ -510,7 +510,7 @@ def get_bookmarks():
         item = bookmark.get('cmsContentItem', {})
         yield {
             'handler': __name__,
-            'method': 'get_content',
+            'method': get_content.__name__,
             'id': item.get('tmsId'),
             'label': item.get('title'),
             'title': item.get('title'),
@@ -592,7 +592,7 @@ def search(term, page=1, limit=20):
 
         yield {
             'handler': __name__,
-            'method': 'get_content',
+            'method': get_content.__name__,
             'id': item.get('tmsId'),
             'studio': u'Oi Play',
             'label': item.get('title'),
@@ -623,7 +623,7 @@ def search(term, page=1, limit=20):
     if len(response) >= limit:
         yield {
             'handler': __name__,
-            'method': 'search',
+            'method': search.__name__,
             'term': term,
             'page': page + 1,
             'limit': limit,

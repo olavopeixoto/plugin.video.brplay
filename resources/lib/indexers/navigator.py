@@ -12,22 +12,22 @@ addonFanart = control.addonFanart()
 def root():
     if control.is_live_available():
         handler = live.__name__
-        method = 'get_channels'
+        method = live.get_channels.__name__
         yield add_directory_item(handler, method, 32001, 'live.png')
 
     if control.is_vod_available():
         handler = vod.__name__
-        method = 'get_vod_channels_directory'
+        method = vod.get_vod_channels_directory.__name__
         yield add_directory_item(handler, method, 32002, 'ondemand.png')
 
     if not control.is_live_available() and not control.is_vod_available():
         handler = __name__
-        method = 'open_settings'
+        method = open_settings.__name__
         yield add_directory_item(handler, method, 32005, 'tools.png')
 
     if control.is_globosat_available() or control.is_globoplay_available() or control.is_telecine_available() or control.is_oiplay_available() or control.is_nowonline_available() or control.is_tntplay_available():
         handler = __name__
-        method = 'search'
+        method = search.__name__
         yield add_directory_item(handler, method, 32010, 'search.png')
 
 

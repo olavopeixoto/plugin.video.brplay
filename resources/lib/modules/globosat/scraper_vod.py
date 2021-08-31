@@ -34,7 +34,7 @@ def get_authorized_channels():
 
         yield {
                 'handler': __name__,
-                'method': 'get_channel_programs',
+                'method': get_channel_programs.__name__,
                 "id": broadcast['id'],
                 "adult": broadcast['id'] in [2065, 2006],
                 'art': {
@@ -47,7 +47,7 @@ def get_authorized_channels():
 
     yield {
         'handler': pfc.__name__,
-        'method': 'get_premiere_cards',
+        'method': pfc.get_premiere_cards.__name__,
         "id": 1995,
         "adult": False,
         'art': {
@@ -75,7 +75,7 @@ def get_channel_programs(slug, art=None):
 
         yield {
             'handler': __name__,
-            'method': 'get_offer',
+            'method': get_offer.__name__,
             'id': offer.get('offerId'),
             'component_type': offer.get('componentType'),
             'label': offer.get('title', ''),
@@ -131,7 +131,7 @@ def get_generic_offer(id, page=1):
 
         yield {
             'handler': PLAYER_HANDLER if playable else __name__,
-            'method': 'playlive' if playable else 'get_title',
+            'method': player.Player.playlive.__name__ if playable else get_title.__name__,
             'id': video_id,
             'IsPlayable': playable,
             'title_id': title.get('titleId'),
@@ -167,7 +167,7 @@ def get_generic_offer(id, page=1):
     if has_next_page:
         yield {
             'handler': __name__,
-            'method': 'get_offer',
+            'method': get_offer.__name__,
             'id': id,
             'page': page,
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -191,7 +191,7 @@ def get_broadcastthumb_offer(id, page=1, per_page=200):
         media = item.get('media', {}) or {}
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'playlive',
+            'method': player.Player.playlive.__name__,
             'IsPlayable': True,
             'livefeed': True,
             'id': item.get('mediaId'),
@@ -208,7 +208,7 @@ def get_broadcastthumb_offer(id, page=1, per_page=200):
     if page.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'get_broadcastthumb_offer',
+            'method': get_broadcastthumb_offer.__name__,
             'id': id,
             'page': page.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -245,7 +245,7 @@ def get_title(title_id, page=1):
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'playlive',
+            'method': player.Player.playlive.__name__,
             'id': video.get('id', ''),
             'title_id': title.get('titleId'),
             'label': title.get('headline', ''),
@@ -278,7 +278,7 @@ def get_title(title_id, page=1):
             video = resource.get('video', {})
             yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'playlive',
+                'method': player.Player.playlive.__name__,
                 'IsPlayable': True,
                 'id': video.get('id'),
                 'label': video.get('headline', ''),
@@ -317,7 +317,7 @@ def get_title(title_id, page=1):
                 video = episode.get('video', {})
                 yield {
                     'handler': PLAYER_HANDLER,
-                    'method': 'playlive',
+                    'method': player.Player.playlive.__name__,
                     'IsPlayable': True,
                     'id': video.get('id'),
                     'label': video.get('headline', ''),
@@ -350,7 +350,7 @@ def get_title(title_id, page=1):
             for season in structure.get('seasons', {}).get('resources', []) or []:
                 yield {
                     'handler': __name__,
-                    'method': 'get_episodes',
+                    'method': get_episodes.__name__,
                     'title_id': title_id,
                     'label': '%s %s' % (control.lang(34137), season.get('number', 0)),
                     'sort': [(control.SORT_METHOD_LABEL, '%Y')],
@@ -369,7 +369,7 @@ def get_title(title_id, page=1):
     if page > 0:
         yield {
             'handler': __name__,
-            'method': 'get_title',
+            'method': get_title.__name__,
             'title_id': title_id,
             'page': page,
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -407,7 +407,7 @@ def get_episodes(title_id, season, page=1):
         video = episode.get('video', {})
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'playlive',
+            'method': player.Player.playlive.__name__,
             'IsPlayable': True,
             'id': video.get('id'),
             'label': video.get('headline', ''),
@@ -440,7 +440,7 @@ def get_episodes(title_id, season, page=1):
     if page > 0:
         yield {
             'handler': __name__,
-            'method': 'get_episodes',
+            'method': get_episodes.__name__,
             'title_id': title_id,
             'season': season,
             'page': page,
@@ -472,7 +472,7 @@ def search(term, page=1):
         playable = True if title.get('originVideoId') else False
         yield {
                 'handler': PLAYER_HANDLER if playable else __name__,
-                'method': 'playlive' if playable else 'get_title',
+                'method': player.Player.playlive.__name__ if playable else get_title.__name__,
                 'title_id': title.get('titleId'),
                 'id': title.get('originVideoId'),
                 'program_id': title.get('originProgramId'),
@@ -506,7 +506,7 @@ def search(term, page=1):
         title = video.get('title', {})
         yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'playlive',
+                'method': player.Player.playlive.__name__,
                 'id': video.get('id'),
                 'program_id': title.get('originProgramId'),
                 'IsPlayable': True,
@@ -538,7 +538,7 @@ def search(term, page=1):
     if videos.get('hasNextPage', False) or titles.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'search',
+            'method': search.__name__,
             'term': term,
             'page': videos.get('nextPage', titles.get('nextPage')),
             'label': '%s (%s)' % (control.lang(34136), page),

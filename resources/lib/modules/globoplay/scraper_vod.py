@@ -28,7 +28,7 @@ def get_globoplay_channels():
 
     yield {
         'handler': __name__,
-        'method': 'get_categories',
+        'method': get_categories.__name__,
         "id": 196,
         "service_id": 4654,
         "adult": False,
@@ -54,7 +54,7 @@ def get_globoplay_channels():
 
                 yield {
                         'handler': __name__,
-                        'method': 'get_page',
+                        'method': get_page.__name__,
                         "id": broadcast.get('pageIdentifier'),
                         "type": 'CHANNELS',
                         "adult": False,
@@ -69,7 +69,7 @@ def get_globoplay_channels():
         if control.globoplay_ignore_channel_authorization() or auth_helper.is_service_allowed(auth_helper.CADUN_SERVICES.PREMIERE):
             yield {
                 'handler': pfc.__name__,
-                'method': 'get_premiere_cards',
+                'method': pfc.get_premiere_cards.__name__,
                 "id": 1995,
                 "adult": False,
                 'art': {
@@ -85,7 +85,7 @@ def get_categories(page=1, per_page=PAGE_SIZE):
 
     yield {
         'handler': __name__,
-        'method': 'get_page',
+        'method': get_page.__name__,
         'id': home,
         'type': None,
         'label': control.lang(34135),
@@ -103,7 +103,7 @@ def get_categories(page=1, per_page=PAGE_SIZE):
         fanart = 'https://' + 'https://'.join(resource.get('background').split('https://')[2:])  # try high resolution image
         yield {
             'handler': __name__,
-            'method': 'get_page' if resource.get('navigation', {}).get('identifier') else 'get_affiliate_states',
+            'method': get_page.__name__ if resource.get('navigation', {}).get('identifier') else get_affiliate_states.__name__,
             'id': resource.get('navigation', {}).get('identifier', ''),
             'label': resource.get('name', ''),
             'art': {
@@ -193,7 +193,7 @@ def get_page_offers(offers, premium, art=None, type=None):
         title_id = ((highlight.get('contentItem', {}) or {}).get('title', {}) or {}).get('titleId') or (highlight.get('contentItem', {}) or {}).get('titleId')
         yield {
             'handler': __name__,
-            'method': 'get_title' if title_id else 'get_offer',
+            'method': get_title.__name__ if title_id else get_offer.__name__,
             'label': label or highlight.get('headlineText'),
             'id': title_id or highlight.get('contentId'),
             'availableFor': (highlight.get('contentItem', {}) or {}).get('availableFor'),
@@ -208,7 +208,7 @@ def get_page_offers(offers, premium, art=None, type=None):
     for item in offers:
         yield {
                 'handler': __name__,
-                'method': 'get_offer',
+                'method': get_offer.__name__,
                 'label': item.get('title', item.get('headline', '')),
                 'plot': item.get('callText'),
                 'id': item.get('offerId') or item.get('highlightId'),
@@ -258,7 +258,7 @@ def get_thumb_offer(id, page=1, per_page=PAGE_SIZE):
     for item in filter(__filter_plus, resources):
         yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'play_stream',
+                'method': player.Player.play_stream.__name__,
                 'IsPlayable': True,
                 'custom_title': custom_title,
                 'tagline': custom_title,
@@ -291,7 +291,7 @@ def get_thumb_offer(id, page=1, per_page=PAGE_SIZE):
     if items.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'get_thumb_offer',
+            'method': get_thumb_offer.__name__,
             'id': id,
             'page': items.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -331,7 +331,7 @@ def get_poster_offer(id, page=1, per_page=PAGE_SIZE):
         playable = True if resource.get('originVideoId') else False
         yield {
             'handler': PLAYER_HANDLER if playable else __name__,
-            'method': 'play_stream' if playable else 'get_title',
+            'method': player.Player.play_stream.__name__ if playable else get_title.__name__,
             'id': resource.get('originVideoId', resource.get('titleId')) or resource.get('titleId'),
             'program_id': resource.get('originProgramId'),
             'IsPlayable': playable,
@@ -364,7 +364,7 @@ def get_poster_offer(id, page=1, per_page=PAGE_SIZE):
     if items.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'get_poster_offer',
+            'method': get_poster_offer.__name__,
             'id': id,
             'page': items.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -402,7 +402,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
 
         yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'play_stream',
+                'method': player.Player.play_stream.__name__,
                 'IsPlayable': True,
                 'id': video.get('id'),
                 'program_id': title.get('originProgramId'),
@@ -438,7 +438,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'play_stream',
+            'method': player.Player.play_stream.__name__,
             'id': video.get('id', ''),
             'program_id': title.get('originProgramId'),
             'label': title.get('headline', ''),
@@ -481,7 +481,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
             if excerpts_resources:
                 yield {
                     'handler': __name__,
-                    'method': 'get_excerpts',
+                    'method': get_excerpts.__name__,
                     'id': id,
                     'label': control.lang(34151),
                     'program_id': title.get('originProgramId'),
@@ -512,7 +512,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
 
             yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'play_stream',
+                'method': player.Player.play_stream.__name__,
                 'IsPlayable': True,
                 'id': video.get('id'),
                 'program_id': title.get('originProgramId'),
@@ -557,7 +557,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
                 video = episode.get('video', {})
                 yield {
                         'handler': PLAYER_HANDLER,
-                        'method': 'play_stream',
+                        'method': player.Player.play_stream.__name__,
                         'IsPlayable': True,
                         'id': video.get('id'),
                         'program_id': title.get('originProgramId'),
@@ -592,7 +592,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
             for season in structure.get('seasons', {}).get('resources', []):
                 yield {
                     'handler': __name__,
-                    'method': 'get_title',
+                    'method': get_title.__name__,
                     'id': id,
                     'label': '%s %s' % (control.lang(34137), season.get('number', 0)),
                     'season': season.get('number', 0),
@@ -623,7 +623,7 @@ def get_title(id, season=None, page=1, per_page=PAGE_SIZE):
     if page > 0:
         yield {
             'handler': __name__,
-            'method': 'get_title',
+            'method': get_title.__name__,
             'id': id,
             'season': season,
             'page': page,
@@ -670,7 +670,7 @@ def get_excerpts(id, art=None):
         if label:
             yield {
                 'handler': __name__,
-                'method': 'get_most_viewed_by_date',
+                'method': get_most_viewed_by_date.__name__,
                 'id': id,
                 'label': '%s %s' % (control.lang(34152), label.lower()),
                 'gte': date_str,
@@ -680,7 +680,7 @@ def get_excerpts(id, art=None):
 
     yield {
         'handler': __name__,
-        'method': 'get_most_viewed_by_date',
+        'method': get_most_viewed_by_date.__name__,
         'id': id,
         'label': control.lang(34155),
         'gte': None,
@@ -695,7 +695,7 @@ def get_excerpts(id, art=None):
 
         yield {
             'handler': __name__,
-            'method': 'get_excerpts_by_date',
+            'method': get_excerpts_by_date.__name__,
             'id': id,
             'label': label,
             'gte': date_str,
@@ -716,7 +716,7 @@ def get_excerpts_by_date(id, gte, lte):
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'play_stream',
+            'method': player.Player.play_stream.__name__,
             'IsPlayable': True,
             'id': video.get('id'),
             'program_id': title.get('originProgramId'),
@@ -765,7 +765,7 @@ def get_most_viewed_by_date(id, gte, lte, page=1, per_page=PAGE_SIZE):
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'play_stream',
+            'method': player.Player.play_stream.__name__,
             'IsPlayable': True,
             'id': video.get('id'),
             'program_id': title.get('originProgramId'),
@@ -798,7 +798,7 @@ def get_most_viewed_by_date(id, gte, lte, page=1, per_page=PAGE_SIZE):
     if page > 0:
         yield {
             'handler': __name__,
-            'method': 'get_most_viewed_by_date',
+            'method': get_most_viewed_by_date.__name__,
             'id': id,
             'gte': gte,
             'lte': lte,
@@ -828,7 +828,7 @@ def get_continue_watching(page=1, per_page=PAGE_SIZE):
         title = resource.get('title', {}) or {}
         yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'play_stream',
+                'method': player.Player.play_stream.__name__,
                 'id': resource.get('id'),
                 'program_id': title.get('originProgramId'),
                 'type': (resource.get('title', {}) or {}).get('type'),
@@ -871,7 +871,7 @@ def get_offer_highlight(id):
     playable = True if title.get('originVideoId') else False
     yield {
         'handler': PLAYER_HANDLER if playable else __name__,
-        'method': 'play_stream' if playable else 'get_title',
+        'method': player.Player.play_stream.__name__ if playable else 'get_title',
         'id': title.get('originVideoId', title.get('titleId')) or title.get('titleId'),
         'program_id': title.get('originProgramId'),
         'IsPlayable': playable,
@@ -911,7 +911,7 @@ def get_affiliate_states(art=None):
     for state in states:
         yield {
             'handler': __name__,
-            'method': 'get_regions',
+            'method': get_regions.__name__,
             'label': '%s (%s)' % (state.get('name', ''), state.get('acronym', '')),
             'acronym': state.get('acronym', ''),
             'art': {
@@ -946,7 +946,7 @@ def _iterate_regions(regions, art):
         label = '%s (%s)' % (region.get('name', ''), region.get('affiliateName', '')) if region.get('affiliateName', '') else region.get('name', '')
         yield {
             'handler': __name__,
-            'method': 'get_affiliate_region',
+            'method': get_affiliate_region.__name__,
             'label': label,
             'affiliate_name': region.get('affiliateName', region.get('name')),
             'slug': region.get('slug', ''),
@@ -967,7 +967,7 @@ def get_affiliate_region(slug, affiliate_name=None, page=1, per_page=PAGE_SIZE):
         playable = True if title.get('originVideoId') else False
         yield {
                 'handler': PLAYER_HANDLER if playable else __name__,
-                'method': 'play_stream' if playable else 'get_title',
+                'method': player.Player.play_stream.__name__ if playable else get_title.__name__,
                 'id': title.get('originVideoId', title.get('titleId')) or title.get('titleId'),
                 'program_id': title.get('originProgramId'),
                 'IsPlayable': playable,
@@ -1005,7 +1005,7 @@ def get_category_offer(id, page=1, per_page=PAGE_SIZE):
     for resource in page.get('resources', []):
         yield {
                 'handler': __name__,
-                'method': 'get_page' if resource.get('navigation', {}).get('identifier') else 'get_affiliate_states',
+                'method': get_page.__name__ if resource.get('navigation', {}).get('identifier') else get_affiliate_states.__name__,
                 'id': resource.get('navigation', {}).get('identifier', ''),
                 'label': resource.get('name', ''),
                 'art': {
@@ -1017,7 +1017,7 @@ def get_category_offer(id, page=1, per_page=PAGE_SIZE):
     if page.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'get_category_offer',
+            'method': get_category_offer.__name__,
             'id': id,
             'page': page.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -1041,7 +1041,7 @@ def get_broadcastthumb_offer(id, page=1, per_page=PAGE_SIZE):
         media = item.get('media', {}) or {}
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'play_stream',
+            'method': player.Player.play_stream.__name__,
             'IsPlayable': True,
             'live': True,
             'livefeed': True,
@@ -1062,7 +1062,7 @@ def get_broadcastthumb_offer(id, page=1, per_page=PAGE_SIZE):
     if page.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'get_broadcastthumb_offer',
+            'method': get_broadcastthumb_offer.__name__,
             'id': id,
             'page': page.get('nextPage'),
             'label': '%s (%s)' % (control.lang(34136), page),
@@ -1093,7 +1093,7 @@ def search(term, page=1):
         playable = True if title.get('originVideoId') else False
         yield {
                 'handler': PLAYER_HANDLER if playable else __name__,
-                'method': 'play_stream' if playable else 'get_title',
+                'method': player.Player.play_stream.__name__ if playable else get_title.__name__,
                 'id': title.get('originVideoId', title.get('titleId')) or title.get('titleId'),
                 'program_id': title.get('originProgramId'),
                 'IsPlayable': playable,
@@ -1127,7 +1127,7 @@ def search(term, page=1):
         title = video.get('title', {})
         yield {
                 'handler': PLAYER_HANDLER,
-                'method': 'play_stream',
+                'method': player.Player.play_stream.__name__,
                 'id': video.get('id'),
                 'program_id': title.get('originProgramId'),
                 'IsPlayable': True,
@@ -1160,7 +1160,7 @@ def search(term, page=1):
     if videos.get('hasNextPage', False) or titles.get('hasNextPage', False):
         yield {
             'handler': __name__,
-            'method': 'search',
+            'method': search.__name__,
             'term': term,
             'page': videos.get('nextPage', titles.get('nextPage')),
             'label': '%s (%s)' % (control.lang(34136), page),

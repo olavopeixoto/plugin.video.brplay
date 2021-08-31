@@ -98,7 +98,7 @@ def get_live_channels():
 
         results.append({
             'handler': PLAYER_HANDLER,
-            'method': 'playlive',
+            'method': player.Player.playlive.__name__,
             'id': channel.get('channelId', ''),
             'IsPlayable': True,
             'livefeed': True,

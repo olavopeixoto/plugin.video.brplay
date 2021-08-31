@@ -122,7 +122,7 @@ def get_live_channels():
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'playlive',
+            'method': player.Player.playlive.__name__,
             'id': media_id,
             'IsPlayable': True,
             'livefeed': True,

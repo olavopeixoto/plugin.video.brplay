@@ -56,7 +56,7 @@ THUMB = 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcScaBeflBdP6AdV2
 def get_channels():
     return [{
         'handler': __name__,
-        'method': 'get_channel_categories',
+        'method': get_channel_categories.__name__,
         "label": 'Now Online',
         "adult": False,
         'art': {
@@ -83,7 +83,7 @@ def get_channel_categories():
     for category in categories:
         yield {
             'handler': __name__,
-            'method': 'get_page',
+            'method': get_page.__name__,
             'category': category,
             'label': category,
             'art': {
@@ -123,7 +123,7 @@ def get_page(category):
         if item.get('type', '') not in CATEGORIES_HIDE:
             yield {
                 'handler': __name__,
-                'method': 'get_content',
+                'method': get_content.__name__,
                 'category': category,
                 'subcategory': item.get('title', ''),
                 'label': item.get('title', ''),
@@ -173,7 +173,7 @@ def _hydrate_content(content):
     playable = content.get('type', '') == 'movie' or content.get('type', '') == "episode"
     return {
                 'handler': PLAYER_HANDLER if playable else __name__,
-                'method': 'playlive' if playable else 'get_seasons',
+                'method': player.Player.playlive.__name__ if playable else get_seasons.__name__,
                 'IsPlayable': playable,
                 'id': content.get('id'),
                 'label': content.get('title', ''),
@@ -222,7 +222,7 @@ def get_seasons(id):
 
         yield {
             'handler': __name__,
-            'method': 'get_episodes',
+            'method': get_episodes.__name__,
             'id': id,
             'season_number': season.get('seasonNumber', 0),
             'label': 'Temporada %s' % season.get('seasonNumber', 0),
@@ -309,7 +309,7 @@ def search(term, page=1, limit=20):
     if has_more_pages:
         yield {
             'handler': __name__,
-            'method': 'search',
+            'method': search.__name__,
             'term': term,
             'page': page + 1,
             'limit': limit,

@@ -60,7 +60,7 @@ def get_channels():
 
     return [{
                 'handler': __name__,
-                'method': 'get_channel_categories',
+                'method': get_channel_categories.__name__,
                 'label': 'TNT',
                 'art': {
                     'thumb': LOGO_MAP['TNTLA_BR'],
@@ -73,7 +73,7 @@ def get_channel_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_genres',
+        'method': get_genres.__name__,
         'label': MOVIES,
         'category': MOVIES,
         'art': {
@@ -84,7 +84,7 @@ def get_channel_categories():
 
     yield {
         'handler': __name__,
-        'method': 'get_genres',
+        'method': get_genres.__name__,
         'label': SERIES,
         'category': SERIES,
         'art': {
@@ -103,7 +103,7 @@ def get_genres(category):
 
     yield {
         'handler': __name__,
-        'method': 'get_content',
+        'method': get_content.__name__,
         'label': FEATURED,
         'category': category,
         'genre': FEATURED,
@@ -118,7 +118,7 @@ def get_genres(category):
 
     yield {
         'handler': __name__,
-        'method': 'get_content',
+        'method': get_content.__name__,
         'label': ALL_GENRES,
         'category': category,
         'genre': ALL_GENRES,
@@ -134,7 +134,7 @@ def get_genres(category):
     for facet in result:
         yield {
                 'handler': __name__,
-                'method': 'get_content',
+                'method': get_content.__name__,
                 'label': facet.get('key').upper(),
                 'category': category,
                 'genre': facet.get('key').upper(),
@@ -181,7 +181,7 @@ def request_content(url):
 
         program = {
             'handler': PLAYER_HANDLER if playable else __name__,
-            'method': 'playlive' if playable else 'get_seasons',
+            'method': player.Player.playlive.__name__ if playable else get_seasons.__name__,
             'IsPlayable': playable,
             'id': item.get('id'),
             'label': metadata.get('title', ''),
@@ -245,7 +245,7 @@ def _get_seasons_internal(seasons, tvshow_name, show_poster, show_fanart):
 
         yield {
             'handler': __name__,
-            'method': 'get_episodes',
+            'method': get_episodes.__name__,
             'mediatype': 'season',
             'id': obj_meta.get('contentId'),
             'label': obj_meta.get('title', ''),
@@ -307,7 +307,7 @@ def get_episodes(id):
 
         yield {
             'handler': PLAYER_HANDLER,
-            'method': 'playlive',
+            'method': player.Player.playlive.__name__,
             'IsPlayable': True,
             'encrypted': metadata.get('isEncrypted', True),
             'mediatype': 'episode',

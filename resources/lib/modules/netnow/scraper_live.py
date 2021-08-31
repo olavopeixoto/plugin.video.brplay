@@ -101,7 +101,7 @@ def hydrate_channel(channel):
 
     return {
         'handler': PLAYER_HANDLER,
-        'method': 'playlive',
+        'method': player.Player.playlive.__name__,
         'id': id,
         'IsPlayable': True,
         'livefeed': True,

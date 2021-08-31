@@ -21,7 +21,7 @@ proxy = None if proxy is None or proxy == '' else {
 def get_channels():
     return [{
         'handler': __name__,
-        'method': 'get_main_menu',
+        'method': get_main_menu.__name__,
         'label': 'Pluto TV',
         'art': {
             'thumb': LOGO,
@@ -37,7 +37,7 @@ def get_main_menu():
     for genre in response.get('categories', []):
         yield {
             'handler': __name__,
-            'method': 'open_category',
+            'method': open_category.__name__,
             'id': genre.get('_id'),
             'label': genre.get('name'),
             'art': {
@@ -92,7 +92,7 @@ def open_category(id):
         else:
             yield {
                 'handler': __name__,
-                'method': 'get_series',
+                'method': get_series.__name__,
                 'id': item.get('_id'),
                 'label': item.get('name'),
                 'tvshowtitle': item.get('name'),
@@ -132,7 +132,7 @@ def hydrate_seasons(response, seasons):
     for season in seasons:
         yield {
             'handler': __name__,
-            'method': 'get_season',
+            'method': get_season.__name__,
             'id': response.get('_id'),
             'label': '%s %s' % (control.lang(34137), season.get('number')),
             'tvshowtitle': response.get('name'),
