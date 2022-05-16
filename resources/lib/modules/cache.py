@@ -63,6 +63,7 @@ def get(function, timeout_hour, *args, **kargs):
             response, found = __get_from_cache(dbcur, table, f, a, timeout_hour)
             if found:
                 return response
+            control.log('NO CACHE FOUND')
         else:
             control.log('BYPASSING CACHE')
     except:

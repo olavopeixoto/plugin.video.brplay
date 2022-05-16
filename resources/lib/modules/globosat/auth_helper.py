@@ -1,8 +1,10 @@
 from resources.lib.modules import control
-from resources.lib.modules.globoplay.auth import Auth as Authenticator
-from resources.lib.modules.globoplay.auth_helper import SUBSCRIPTION_TYPE, CADUN_SERVICES
+from resources.lib.modules.globoplay.auth_helper import SUBSCRIPTION_TYPE, CADUN_SERVICES, Authenticator
 
 GLOBOSAT_SERVICE_ID = 6905
+
+
+auth = Authenticator(GLOBOSAT_SERVICE_ID)
 
 
 def get_user_credentials():
@@ -16,27 +18,19 @@ def get_user_credentials():
     return username, password
 
 
-def get_authenticator():
-    # if control.setting('use_globoplay_credentials_for_globosat') != 'true':
-    #     return Authenticator('globosat')
-
-    return Authenticator()
-
-
-def get_credentials_from_authenticator(auth):
+def get_credentials_from_authenticator():
     username, password = get_user_credentials()
 
     if not username or not password or username == '' or password == '':
         return None
 
-    credentials, user_id = auth.authenticate(username, password, GLOBOSAT_SERVICE_ID)
+    credentials, user_id = auth.authenticate(username, password)
 
     return credentials
 
 
 def get_credentials():
-    auth = get_authenticator()
-    return get_credentials_from_authenticator(auth)
+    return get_credentials_from_authenticator()
 
 
 def get_globosat_token():
@@ -50,7 +44,6 @@ def get_globosat_cookie(provider_id):
 
 
 def get_service_data(service_id=None):
-    auth = get_authenticator()
     allowed, userdata = auth.check_service(service_id)
 
     return allowed, userdata
@@ -66,9 +59,7 @@ def is_subscribed():
 
 
 def is_logged_in():
-    username, password = get_user_credentials()
-
-    return get_authenticator().is_authenticated(username, password, GLOBOSAT_SERVICE_ID)
+    return auth.is_authenticated()
 
 
 def get_subscription_type():

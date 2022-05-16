@@ -191,7 +191,7 @@ def create_directory(items, current=None, cache_to_disk=True):
 
         for sort in sort_methods:
             if isinstance(sort, tuple):
-                control.addSortMethod(syshandle, sort[0], sort[1])
+                control.addSortMethod(syshandle, sort[0], sort[1], sort[2] if len(sort) > 2 else None)
             else:
                 control.addSortMethod(syshandle, sort)
 
@@ -226,3 +226,79 @@ def create_directory(items, current=None, cache_to_disk=True):
         succeeded = False
     finally:
         control.directory(syshandle, succeeded=succeeded, updateListing=False, cacheToDisc=cache_to_disk)
+
+
+# https://romanvm.github.io/Kodistubs/_autosummary/xbmcplugin.html#xbmcplugin.addSortMethod
+
+# /* LabelFormatter
+#  * ==============
+#  *
+#  * The purpose of this class is to parse a mask string of the form
+#  *
+#  *  [%N. ][%T] - [%A][ (%Y)]
+#  *
+#  * and provide methods to format up a CFileItem's label(s).
+#  *
+#  * The %N/%A/%B masks are replaced with the corresponding metadata (if available).
+#  *
+#  * Square brackets are treated as a metadata block.  Anything inside the block other
+#  * than the metadata mask is treated as either a prefix or postfix to the metadata. This
+#  * information is only included in the formatted string when the metadata is non-empty.
+#  *
+#  * Any metadata tags not enclosed with square brackets are treated as if it were immediately
+#  * enclosed - i.e. with no prefix or postfix.
+#  *
+#  * The special characters %, [, and ] can be produced using %%, %[, and %] respectively.
+#  *
+#  * Any static text outside of the metadata blocks is only shown if the blocks on either side
+#  * (or just one side in the case of an end) are both non-empty.
+#  *
+#  * Examples (using the above expression):
+#  *
+#  *   Track  Title  Artist  Year     Resulting Label
+#  *   -----  -----  ------  ----     ---------------
+#  *     10    "40"    U2    1983     10. "40" - U2 (1983)
+#  *           "40"    U2    1983     "40" - U2 (1983)
+#  *     10            U2    1983     10. U2 (1983)
+#  *     10    "40"          1983     "40" (1983)
+#  *     10    "40"    U2             10. "40" - U2
+#  *     10    "40"                   10. "40"
+#  *
+#  * Available metadata masks:
+#  *
+#  *  %A - Artist
+#  *  %B - Album
+#  *  %C - Programs count
+#  *  %D - Duration
+#  *  %E - episode number
+#  *  %F - FileName
+#  *  %G - Genre
+#  *  %H - season*100+episode
+#  *  %I - Size
+#  *  %J - Date
+#  *  %K - Movie/Game title
+#  *  %L - existing Label
+#  *  %M - number of episodes
+#  *  %N - Track Number
+#  *  %O - mpaa rating
+#  *  %P - production code
+#  *  %Q - file time
+#  *  %R - Movie rating
+#  *  %S - Disc Number
+#  *  %T - Title
+#  *  %U - studio
+#  *  %V - Playcount
+#  *  %W - Listeners
+#  *  %X - Bitrate
+#  *  %Y - Year
+#  *  %Z - tvshow title
+#  *  %a - Date Added
+#  *  %b - Total number of discs
+#  *  %c - Relevance - Used for actors' appearances
+#  *  %d - Date and Time
+#  *  %e - Original release date
+#  *  %f - bpm
+#  *  %p - Last Played
+#  *  %r - User Rating
+#  *  *t - Date Taken (suitable for Pictures)
+#  */

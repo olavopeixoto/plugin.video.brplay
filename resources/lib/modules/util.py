@@ -46,7 +46,7 @@ CI_MPAA_Dict = {
 
 # def clear_cookies():
 #     try:
-#         os.remove(xbmc.translatePath('special://temp/cookies.dat'))
+#         os.remove(xbmcvfs.translatePath('special://temp/cookies.dat'))
 #     except:
 #         return
 

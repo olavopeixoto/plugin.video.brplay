@@ -11,7 +11,19 @@ def get_authorization():
 
     control.log('SBT - Getting new auth token')
 
-    url = 'https://www.sbt.com.br/main-es2015.js'
+    main_url = 'https://www.sbt.com.br/'
+    response = requests.get(main_url)
+
+    response.raise_for_status()
+
+    match = re.search(r'src="(main-[^"]+\.js)"', response.text)
+
+    # src="main-es2015.e60433d0eb7853f03969.js"
+    module_name = match.group(1)
+
+    control.log('SBT MODULE NAME: %s' % module_name)
+
+    url = 'https://www.sbt.com.br/' + module_name
 
     response = requests.get(url, verify=False)
 

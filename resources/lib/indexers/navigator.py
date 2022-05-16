@@ -25,7 +25,7 @@ def root():
         method = open_settings.__name__
         yield add_directory_item(handler, method, 32005, 'tools.png')
 
-    if control.is_globosat_available() or control.is_globoplay_available() or control.is_telecine_available() or control.is_oiplay_available() or control.is_nowonline_available() or control.is_tntplay_available():
+    if control.is_globosat_available() or control.is_globoplay_available() or control.is_oiplay_available() or control.is_nowonline_available() or control.is_tntplay_available():
         handler = __name__
         method = search.__name__
         yield add_directory_item(handler, method, 32010, 'search.png')

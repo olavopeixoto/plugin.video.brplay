@@ -4,6 +4,7 @@ from resources.lib.modules import util
 from resources.lib.modules import cache
 import datetime
 from . import player
+from resources.lib.modules import control
 
 PLAYER_HANDLER = player.__name__
 PLAYLIVE_METHOD = player.Player.playlive.__name__
@@ -41,9 +42,11 @@ def get_channel_epg_now(channel):
 
     thumb = None
     fanart = None
+    poster = None
     if 'programImages' in program and len(program['programImages']) > 0:
         thumb = next((image['url'] for image in program['programImages'] if image['type'] == 'Thumbnail'), None)
         fanart = next((image['url'] for image in program['programImages'] if image['type'] == 'Backdrop'), thumb) or thumb
+        poster = next((image['url'] for image in program['programImages'] if image['type'] == 'Vertical'), thumb) or thumb
         thumb = thumb or fanart
 
     logo = response['positiveLogoUrl']
@@ -88,7 +91,7 @@ def get_channel_epg_now(channel):
         'art': {
             'icon': logo,
             'thumb': thumb,
-            'tvshow.poster': thumb,
+            'tvshow.poster': poster,
             'clearlogo': logo,
             'fanart': fanart
         }

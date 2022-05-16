@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-	<addon id="plugin.video.brplay" version="2.0.3" name="BR play" provider-name="brplayer">
+	<addon id="plugin.video.brplay" version="2.1.0" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -31,6 +31,14 @@
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
 		<news>
+2.1.0
+- Removed Telecine since it has been moved to Globoplay
+- Removed Sexyhot
+- Bug fixes on Globoplay authentication and authorization
+- Added Globoplay region selection (Brazil, USA, Portugal and Europe)
+- Added More Globo Affiliates ('Joao Pessoa', 'Aracaju', 'Teresina', 'Campo Grande', 'Cuiaba', 'Palmas')
+- Fixed search feature with improved search result and better display
+- Fixed SBT playback
 2.0.3
 - fix cache module decoding issue
 2.0.2

@@ -156,15 +156,15 @@ deleteDir = xbmcvfs.rmdir
 
 listDir = xbmcvfs.listdir
 
-transPath = xbmc.translatePath
+transPath = xbmcvfs.translatePath
 
-skinPath = xbmc.translatePath('special://skin/')
+skinPath = xbmcvfs.translatePath('special://skin/')
 
-tempPath = xbmc.translatePath('special://temp/')
+tempPath = xbmcvfs.translatePath('special://temp/')
 
-addonPath = xbmc.translatePath(addonInfo('path'))
+addonPath = xbmcvfs.translatePath(addonInfo('path'))
 
-dataPath = xbmc.translatePath(addonInfo('profile'))
+dataPath = xbmcvfs.translatePath(addonInfo('profile'))
 
 settingsFile = os.path.join(dataPath, 'settings.xml')
 
@@ -195,8 +195,6 @@ proxy_url = xbmcaddon.Addon().getSetting('proxy_url') if xbmcaddon.Addon().getSe
 show_adult_content = xbmcaddon.Addon().getSetting('show_adult') == 'true'
 
 __inputstream_addon_available = None
-
-ignore_channel_authorization = xbmcaddon.Addon().getSetting('ignore_channel_authorization') == 'true'
 
 is_4k_enabled = xbmcaddon.Addon().getSetting('enable_4k') == 'true'
 
@@ -292,7 +290,6 @@ def is_vod_available():
            or is_globoplay_available() \
            or is_tntplay_available() \
            or is_nowonline_available() \
-           or is_telecine_available() \
            or is_oiplay_available() \
            or is_pluto_available()
 
@@ -325,6 +322,8 @@ def is_globoplay_mais_canais_ao_vivo_available():
 def globoplay_ignore_channel_authorization():
     return setting('globoplay_ignore_channel_authorization') == 'true'
 
+globosat_ignore_channel_authorization = xbmcaddon.Addon().getSetting('globosat_ignore_channel_authorization') == 'true'
+
 
 def is_oiplay_available():
     username = setting('oiplay_account')
@@ -345,13 +344,6 @@ def is_nowonline_available():
     password = setting('nowonline_password')
 
     return setting('nowonline_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
-
-
-def is_telecine_available():
-    username = setting('telecine_account')
-    password = setting('telecine_password')
-
-    return setting('telecine_available') == 'true' and username and password and username.strip() != '' and password.strip() != ''
 
 
 def is_sbt_available():
@@ -519,18 +511,14 @@ def queueItem():
 
 
 def clear_credentials():
-    setSetting("sexyhot_credentials", u'')
-    setSetting("globosat_credentials", u'')
-    setSetting("globoplay_credentials", u'')
+    setSetting("4654_credentials", u'')
+    setSetting("4654_user_data", u'')
+    setSetting("6905_credentials", u'')
+    setSetting("6905_user_data", u'')
     setSetting("tntplay_token", u'')
     setSetting("oiplay_access_token_response", u'')
     setSetting("nowonline_credentials", u'')
-    setSetting("telecine_credentials", u'')
     setSetting('sbt_token', u'')
-
-
-def clear_globosat_credentials():
-    setSetting("globosat_credentials", u'')
 
 
 LOGDEBUG = 0
@@ -601,7 +589,7 @@ def get_coordinates(affiliate):
     elif affiliate == "Natal":
         code, latitude, longitude = "NAT", '-5.7793', '-35.2009'
     elif affiliate == "Boa Vista":
-        code, latitude, longitude = "ROR", '2.82', '-60.672'
+        code, latitude, longitude = "ROR", '3.18861', '-60.61212'
     elif affiliate == "Porto Velho":
         code, latitude, longitude = "RON", '-8.76194', '-63.90389'
     elif affiliate == "Auto":
@@ -640,7 +628,7 @@ def get_ip_coordinates():
 
 def get_affiliates_by_id(id):
 
-    all_affiliates = ['Custom', 'Auto', 'Rio de Janeiro', 'Sao Paulo', 'Brasilia', 'Belo Horizonte', 'Recife', 'Manaus', 'Rio Branco', 'Boa Vista', 'Porto Velho', 'Macapa', 'Goiania', 'Belem', 'Salvador', 'Florianopolis', 'Sao Luis', 'Vitoria', 'Fortaleza', 'Porto Alegre', 'Natal', 'Curitiba']
+    all_affiliates = ['Custom', 'Auto', 'Rio de Janeiro', 'Sao Paulo', 'Brasilia', 'Belo Horizonte', 'Recife', 'Manaus', 'Rio Branco', 'Boa Vista', 'Porto Velho', 'Macapa', 'Goiania', 'Belem', 'Salvador', 'Florianopolis', 'Sao Luis', 'Vitoria', 'Fortaleza', 'Porto Alegre', 'Natal', 'Curitiba', 'Joao Pessoa', 'Aracaju', 'Teresina', 'Campo Grande', 'Cuiaba', 'Palmas']
 
     if id == 0:  # All
         return all_affiliates

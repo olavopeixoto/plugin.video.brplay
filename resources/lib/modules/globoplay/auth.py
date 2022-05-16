@@ -3,18 +3,8 @@
 import requests
 from resources.lib.modules import control
 from . import cache
-import hashlib
 from threading import Lock
-
-try:
-    import HTMLParser
-except:
-    import html.parser as HTMLParser
-
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import json
 
 auth_lock = Lock()
 
@@ -26,46 +16,47 @@ class Auth:
     ENDPOINT_URL = 'https://login.globo.com/api/authentication/sdk'
     PROVIDER_ID = None
 
-    def __init__(self, tenant='globoplay'):
+    def __init__(self, service_id):
         try:
-            self.tenant = tenant
-            credentials = control.setting(self.get_credentials_key())
-            user_data = control.setting(self.get_userdata_key())
-            self.credentials = pickle.loads(credentials)
-            self.user_data = pickle.loads(user_data)
-        except:
+            control.log('Auth: Creating Authenticator for service %s' % service_id)
+            self.service_id = service_id
+            self._read_credentials()
+        except Exception as e:
+            control.log('ERROR Loading auth cache: %s' % e)
+            control.log('Auth: No cached auth token for service: %s' % service_id)
             self.credentials = {}
             self.user_data = {}
 
     def get_credentials_key(self):
-        return '%s_credentials' % self.tenant
+        return '%s_credentials' % self.service_id
 
     def get_userdata_key(self):
-        return '%s_user_data' % self.tenant
+        return '%s_user_data' % self.service_id
+
+    def _read_credentials(self):
+        credentials = control.setting(self.get_credentials_key())
+        user_data = control.setting(self.get_userdata_key())
+        self.credentials = json.loads(credentials)
+        self.user_data = json.loads(user_data)
 
     def _save_credentials(self):
-        control.setSetting(self.get_credentials_key(), pickle.dumps(self.credentials))
-        control.setSetting(self.get_userdata_key(), pickle.dumps(self.user_data))
+        control.setSetting(self.get_credentials_key(), json.dumps(self.credentials))
+        control.setSetting(self.get_userdata_key(), json.dumps(self.user_data))
 
-    def is_authenticated(self, username, password, service_id):
-        if self.credentials and 'GLBID' in self.credentials.keys() and 'brplay_id' in self.credentials.keys():
-            brplay_id = self.hash_user_credentials(username, password, service_id)
-            if brplay_id == self.credentials.get('brplay_id'):
-
-                if self.credentials.get('success') is False:
-                    control.log('Authentication has failed before')
-                    return True
-
-                is_authorized, userdata = self.check_service()
-                return is_authorized
+    def is_authenticated(self):
+        if self.credentials and 'GLBID' in self.credentials.keys():
+            if self.credentials.get('success') is False:
+                control.log('Authentication has failed before')
+                return False
+            return True
 
         return False
 
-    def authenticate(self, username, password, service_id):
+    def authenticate(self, username, password):
 
-        if not self.is_authenticated(username, password, service_id) and (username and password and service_id):
+        if not self.is_authenticated() and (username and password):
             control.log('username/password set. trying to authenticate')
-            self.credentials = self._authenticate(username, password, service_id)
+            self.credentials = self._authenticate(username, password)
 
             success = self.credentials.get('success', False)
             if success is False:
@@ -75,15 +66,15 @@ class Auth:
                 return {}, {}
 
             is_authenticated, self.user_data = self.check_service(bypass_cache=True)
-            if is_authenticated and self.is_authenticated(username, password, service_id):
+            if is_authenticated and self.is_authenticated():
                 control.log('successfully authenticated')
                 self._save_credentials()
             else:
-                control.log('wrong username or password')
+                control.log('wrong username [%s] or password [***]' % username)
                 message = '[%s] %s' % (self.__class__.__name__, control.lang(32003))
                 control.infoDialog(message, icon='ERROR')
                 return {}, {}
-        elif self.is_authenticated(username, password, service_id):
+        elif self.is_authenticated():
             control.log('[GLOBO AUTH] - already authenticated')
         else:
             control.log('no username set to authenticate', control.LOGWARNING)
@@ -95,7 +86,6 @@ class Auth:
         control.log(repr(self.credentials))
 
         returned_credentials = dict(self.credentials)
-        del returned_credentials['brplay_id']
         del returned_credentials['success']
         del returned_credentials['error_message']
 
@@ -208,7 +198,7 @@ class Auth:
 
         return globoplay_instance_id
 
-    def _authenticate(self, username, password, service_id, retry=1):
+    def _authenticate(self, username, password, retry=1):
 
         instance_id = self.get_instance_id()
 
@@ -216,7 +206,7 @@ class Auth:
             'payload': {
                 'email': username,
                 'password': password,
-                'serviceId': service_id
+                'serviceId': self.service_id
             }
         }
         headers = {'content-type': 'application/json; charset=UTF-8',
@@ -231,7 +221,7 @@ class Auth:
                                  json=payload,
                                  headers=headers, lock_obj=auth_lock, table='globoplay')
 
-        control.log('GLOBOPLAY AUTHENTICATION RESPONSE: %s' % response.status_code)
+        control.log('GLOBOPLAY (%s) AUTHENTICATION RESPONSE: %s' % (self.service_id, response.status_code))
         control.log(response)
 
         success = response.status_code < 400
@@ -244,18 +234,21 @@ class Auth:
         if response.status_code == 500 or response.status_code == 498:
             control.setSetting('globoplay_instance_id', None)
             if retry > 0:
-                return self._authenticate(username, password, service_id, retry-1)
+                return self._authenticate(username, password, retry-1)
 
         try:
             message = (response.json().get('userMessage') or '')
         except:
             message = response.text
 
-        brplay_id = self.hash_user_credentials(username, password, service_id)
-        return {'GLBID': response.cookies.get('GLBID'), 'brplay_id': brplay_id, 'success': success, 'error_message': message}
+        return {'GLBID': response.cookies.get('GLBID'), 'success': success, 'error_message': message}
 
     def check_service_api(self, service_id):
         token = self.credentials.get('GLBID')
+
+        if not token:
+            control.log('check_service_api: NO GLBID TOKEN')
+            return False
 
         url = 'https://login.globo.com/api/authorization/' + service_id
         control.log('HEAD %s' % url)
@@ -274,6 +267,7 @@ class Auth:
         token = self.credentials.get('GLBID')
 
         if not token:
+            control.log('check_service: NO GLBID TOKEN')
             return False, {}
 
         service_str = ''
@@ -291,18 +285,15 @@ class Auth:
                                                     'Cookie': 'GLBID=%s' % token
                                                 }, force_refresh=bypass_cache, lock_obj=lock, table='globoplay')
 
-        control.log('GLOBOPLAY SERVICE (%s | %s) CHECK RESPONSE: %s' % (self.tenant, service_id, response.status_code))
+        control.log('GLOBOPLAY SERVICE (%s) CHECK RESPONSE: %s' % (service_id, response.status_code))
         control.log(response.text)
 
         user_data = response.json()
         is_authenticated = user_data.get('status') == 'authorized'
 
-        control.log('is_authenticated (%s): %s' % (self.tenant, is_authenticated))
+        control.log('is_authenticated (%s): %s' % (service_id, is_authenticated))
 
         return is_authenticated, user_data
-
-    def hash_user_credentials(self, username, password, service_id):
-        return hashlib.sha256(('%s|%s|%s' % (username, password, service_id)).encode('utf-8')).hexdigest()
 
     def logout(self, token):
         # https://login.globo.com/logout?realm=globo.com
@@ -312,6 +303,10 @@ class Auth:
                                         'glbid': token,
                                         'user-agent': '	Globoplay/1 CFNetwork/1197 Darwin/20.0.0'
                                     })
+
+        self.credentials = {}
+        self.user_data = {}
+        self._save_credentials()
 
     def get_service_lock(self, token, service_id):
         key = '%s|%s' % (token, service_id)

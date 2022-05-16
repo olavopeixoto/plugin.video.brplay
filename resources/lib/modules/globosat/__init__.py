@@ -49,10 +49,15 @@ def get_authorized_services(service_ids):
     if control.setting('globosat_ignore_channel_authorization') == 'true':
         return service_ids
 
-    if len(service_ids) == 1:
-        return [service_id for index, service_id in enumerate(service_ids) if auth_helper.is_service_allowed(service_id)]
+    # if not auth_helper.is_logged_in():
+    #     auth_helper.get_credentials()
+
+    ids_set = set(service_ids)
+
+    if len(ids_set) == 1:
+        return [service_id for index, service_id in enumerate(ids_set) if auth_helper.is_service_allowed(service_id)]
     else:
-        threads = [workers.Thread(auth_helper.is_service_allowed, service_id) for service_id in service_ids]
+        threads = [workers.Thread(auth_helper.is_service_allowed, service_id) for service_id in ids_set]
         [t.start() for t in threads]
         [t.join() for t in threads]
-        return [service_id for index, service_id in enumerate(service_ids) if threads[index].get_result()]
+        return [service_id for index, service_id in enumerate(ids_set) if threads[index].get_result()]

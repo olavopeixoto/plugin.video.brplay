@@ -3,7 +3,7 @@
 import re
 import sys
 import xbmc
-from . import auth_helper
+from . import auth_helper, get_proxy
 import requests
 from urllib.parse import urlparse
 from resources.lib.modules import hlshelper
@@ -260,11 +260,7 @@ class Player(xbmc.Player):
 
     def __getLiveVideoInfo(self, id, latitude, longitude, cdn=None):
 
-        proxy = control.proxy_url
-        proxy = None if proxy is None or proxy == '' else {
-            'http': proxy,
-            'https': proxy,
-        }
+        proxy = get_proxy()
 
         credentials = auth_helper.get_credentials()
 
@@ -323,11 +319,7 @@ class Player(xbmc.Player):
         }
 
     def sign_resource(self, resource_id, video_id, player, version, anonymous=False, cdn=None):
-        proxy = control.proxy_url
-        proxy = None if proxy is None or proxy == '' else {
-            'http': proxy,
-            'https': proxy,
-        }
+        proxy = get_proxy()
 
         if not anonymous:
             # authenticate

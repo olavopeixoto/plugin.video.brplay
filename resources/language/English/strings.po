@@ -65,7 +65,7 @@ msgid "All"
 msgstr ""
 
 msgctxt "#31108"
-msgid "Show Globo Internacional"
+msgid "Region"
 msgstr ""
 
 msgctxt "#31117"
@@ -305,7 +305,7 @@ msgid "Show Full Videos Only"
 msgstr ""
 
 msgctxt "#33401"
-msgid "Enable Sexyhot Play"
+msgid "Enable Adult Content"
 msgstr ""
 
 msgctxt "#33402"
@@ -505,10 +505,6 @@ msgctxt "#34130"
 msgid "Enable Now Online"
 msgstr ""
 
-msgctxt "#34131"
-msgid "Enable Telecine Play"
-msgstr ""
-
 msgctxt "#34132"
 msgid "Highlights"
 msgstr ""
@@ -635,4 +631,28 @@ msgstr ""
 
 msgctxt "#34163"
 msgid "Sunday"
+msgstr ""
+
+msgctxt "#34164"
+msgid "Brazil"
+msgstr ""
+
+msgctxt "#34165"
+msgid "United Stated"
+msgstr ""
+
+msgctxt "#34166"
+msgid "Portugal"
+msgstr ""
+
+msgctxt "#34167"
+msgid "Europe"
+msgstr ""
+
+msgctxt "#34168"
+msgid "Brazil Beta"
+msgstr ""
+
+msgctxt "#34169"
+msgid "Noveller Home"
 msgstr ""

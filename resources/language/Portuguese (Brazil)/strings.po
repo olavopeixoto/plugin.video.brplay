@@ -65,8 +65,8 @@ msgid "All"
 msgstr "Todas"
 
 msgctxt "#31108"
-msgid "Show Globo Internacional"
-msgstr "Exibir Globo Internacional"
+msgid "Region"
+msgstr "Região"
 
 msgctxt "#31117"
 msgid "Recife"
@@ -305,8 +305,8 @@ msgid "Show Full Videos Only"
 msgstr "Exibir apenas vídeos na íntegra"
 
 msgctxt "#33401"
-msgid "Enable Sexyhot Play"
-msgstr "Habilitar Sexyhot Play"
+msgid "Enable Adult Content"
+msgstr "Exibir Conteúdo Adulto"
 
 msgctxt "#33402"
 msgid "Use Pagination"
@@ -505,10 +505,6 @@ msgctxt "#34130"
 msgid "Enable Now Online"
 msgstr "Habilitar Now Online"
 
-msgctxt "#34131"
-msgid "Enable Telecine Play"
-msgstr "Habilitar Telecine Play"
-
 msgctxt "#34132"
 msgid "Highlights"
 msgstr "Destaques"
@@ -636,3 +632,27 @@ msgstr "Sábado"
 msgctxt "#34163"
 msgid "Sunday"
 msgstr "Domingo"
+
+msgctxt "#34164"
+msgid "Brazil"
+msgstr "Brasil"
+
+msgctxt "#34165"
+msgid "United Stated"
+msgstr "Estados Unidos"
+
+msgctxt "#34166"
+msgid "Portugal"
+msgstr "Portugal"
+
+msgctxt "#34167"
+msgid "Europe"
+msgstr "Europa"
+
+msgctxt "#34168"
+msgid "Brazil Beta"
+msgstr "Brasil Beta"
+
+msgctxt "#34169"
+msgid "Noveller Home"
+msgstr "Início Noveleiros"

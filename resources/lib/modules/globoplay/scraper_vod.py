@@ -80,6 +80,23 @@ def get_globoplay_channels():
             }
 
 
+# PAGES: {
+#             HOME_ANONYMOUS: "home-anonimo",
+#             HOME_FREE: "home-free",
+#             HOME_SUBSCRIBER: "home-assinante",
+#             HOME_KIDS: "home-kids"
+#         },
+#         PAGE_IDS: {
+#             DEFAULT_SALES: "globoplay-web",
+#             HOME: "home",
+#             NOVELLER_HOME: "home-noveleiros"
+#         },
+#         PAGE_TYPES: {
+#             HOME: "HOME",
+#             SALES: "SALES",
+#             CATEGORIES: "CATEGORIES",
+#             CHANNELS: "CHANNELS"
+#         },
 def get_categories(page=1, per_page=PAGE_SIZE):
     home = 'home-assinante' if auth_helper.is_subscribed() else 'home-free' if auth_helper.is_logged_in() else 'home-anonimo'
 
@@ -94,6 +111,19 @@ def get_categories(page=1, per_page=PAGE_SIZE):
             'fanart': GLOBO_FANART
         }
     }
+
+    if auth_helper.is_subscribed():
+        yield {
+            'handler': __name__,
+            'method': get_page.__name__,
+            'id': 'home-noveleiros',
+            'type': None,
+            'label': control.lang(34169),
+            'art': {
+                'thumb': GLOBOPLAY_THUMB,
+                'fanart': GLOBO_FANART
+            }
+        }
 
     query = 'query%20getCategories%28%24page%3A%20Int%2C%20%24perPage%3A%20Int%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20categories%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%20hasNextPage%20nextPage%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename%20name%20background%20navigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20__typename...on%20MenuSlugNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D...on%20MenuPageNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20identifier%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D'
     variables = '{{"page":{page},"perPage":{per_page}}}'.format(page=page, per_page=per_page)
@@ -113,12 +143,6 @@ def get_categories(page=1, per_page=PAGE_SIZE):
         }
 
 
-def get_globoplay_home():
-    home = 'home-assinante' if auth_helper.is_subscribed() else 'home-free' if auth_helper.is_logged_in() else 'home-anonimo'
-
-    return get_page(home, type=None)
-
-
 def get_page(id, art=None, type='CATEGORIES'):
     if art is None:
         art = {}
@@ -127,7 +151,7 @@ def get_page(id, art=None, type='CATEGORIES'):
     if type:
         type_str = ',"type":"{type}"'.format(type=type)
 
-    query = 'query%20getPage%28%24id%3A%20ID%21%2C%20%24subscriptionType%3A%20SubscriptionType%2C%20%24type%3A%20PageType%29%20%7B%0A%20%20page%28id%3A%20%24id%2C%20filter%3A%20%7BsubscriptionType%3A%20%24subscriptionType%2C%20type%3A%20%24type%7D%29%20%7B%0A%20%20%20%20...pageCollection%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0Afragment%20pageCollection%20on%20Page%20%7B%0A%20%20name%0A%20%20identifier%0A%20%20origemId%0A%20%20productId%0A%20%20premiumHighlight%20%7B%0A%20%20%20%20headline%0A%20%20%20%20fallbackHeadline%0A%20%20%20%20buttonText%0A%20%20%20%20callText%0A%20%20%20%20highlightId%0A%20%20%20%20highlight%20%7B%0A%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%7D%0A%20%20%20%20fallbackCallText%0A%20%20%20%20fallbackHighlightId%0A%20%20%20%20fallbackHighlight%20%7B%0A%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20offerItems%20%7B%0A%20%20%20%20...%20on%20PageOffer%20%7B%0A%20%20%20%20%20%20title%0A%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20playlistEnabled%0A%20%20%20%20%20%20navigation%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20URLNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20url%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20CategoriesPageNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20identifier%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20offerId%0A%20%20%20%20%20%20genericOffer%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20Offer%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20userBased%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20RecommendedOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20PageHighlight%20%7B%0A%20%20%20%20%20%20callText%0A%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20highlightId%0A%20%20%20%20%20%20fallbackCallText%0A%20%20%20%20%20%20fallbackHeadline%0A%20%20%20%20%20%20fallbackHighlightId%0A%20%20%20%20%20%20leftAligned%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20highlightOffer%20on%20Highlight%20%7B%0A%20%20id%0A%20%20contentType%0A%20%20contentId%0A%20%20contentItem%20%7B%0A%20%20%20%20...%20on%20Video%20%7B%0A%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20kind%0A%20%20%20%20%20%20broadcast%20%7B%0A%20%20%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20Title%20%7B%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20type%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20headlineText%0A%20%20headlineImage%0A%20%20highlightImage%20%7B%0A%20%20%20%20mobile%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20offerImage%20%7B%0A%20%20%20%20mobile%0A%20%20%20%20web%0A%20%20%7D%0A%7D'
+    query = 'query%20getPage%28%24id%3A%20ID%21%2C%20%24subscriptionType%3A%20SubscriptionType%2C%20%24type%3A%20PageType%29%20%7B%0A%20%20page%28id%3A%20%24id%2C%20filter%3A%20%7BsubscriptionType%3A%20%24subscriptionType%2C%20type%3A%20%24type%7D%29%20%7B%0A%20%20%20%20...pageCollection%0A%20%20%20%20__typename%0A%20%20%7D%0A%7D%0Afragment%20pageCollection%20on%20Page%20%7B%0A%20%20name%0A%20%20identifier%0A%20%20origemId%0A%20%20productId%0A%20%20premiumHighlight%20%7B%0A%20%20%20%20headline%0A%20%20%20%20fallbackHeadline%0A%20%20%20%20buttonText%0A%20%20%20%20callText%0A%20%20%20%20highlightId%0A%20%20%20%20highlight%20%7B%0A%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%7D%0A%20%20%20%20fallbackCallText%0A%20%20%20%20fallbackHighlightId%0A%20%20%20%20fallbackHighlight%20%7B%0A%20%20%20%20%20%20...highlightOffer%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20offerItems%20%7B%0A%20%20%20%20...%20on%20PageOffer%20%7B%0A%20%20%20%20%20%20title%0A%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20playlistEnabled%0A%20%20%20%20%20%20navigation%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20URLNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20url%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20CategoriesPageNavigation%20%7B%0A%20%20%20%20%20%20%20%20%20%20identifier%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20offerId%0A%20%20%20%20%20%20genericOffer%20%7B%0A%20%20%20%20%20%20%20%20...%20on%20Offer%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20userBased%0A%20%20%20%20%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20...%20on%20RecommendedOffer%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20PageHighlight%20%7B%0A%20%20%20%20%20%20callText%0A%20%20%20%20%20%20componentType%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20highlightId%0A%20%20%20%20%20%20fallbackCallText%0A%20%20%20%20%20%20fallbackHeadline%0A%20%20%20%20%20%20fallbackHighlightId%0A%20%20%20%20%20%20leftAligned%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20highlightOffer%20on%20Highlight%20%7B%0A%20%20id%0A%20%20contentType%0A%20%20contentId%0A%20%20contentItem%20%7B%0A%20%20%20%20...%20on%20Video%20%7B%0A%20%20%20%20%20%20availableFor%0A%20%20%20%20%20%20serviceId%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20kind%0A%20%20%20%20%20%20broadcast%20%7B%0A%20%20%20%20%20%20%20%20mediaId%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20title%20%7B%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20Title%20%7B%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20type%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20headlineText%0A%20%20headlineImage%0A%20%20highlightImage%20%7B%0A%20%20%20%20mobile%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20offerImage%20%7B%0A%20%20%20%20mobile%0A%20%20%20%20web%0A%20%20%7D%0A%7D'
     variables = '{{"id":"{id}"{type}}}'.format(id=id, type=type_str)
     page = request_query(query, variables).get('data', {}).get('page', {})
 
@@ -160,7 +184,7 @@ def filter_offers(item):
 def is_valid_highlight(premium):
     # content_type = "VIDEO", "SIMULCAST", "BACKGROUND"
 
-    ignored_content_types = ['BACKGROUND', 'SIMULCAST']
+    ignored_content_types = ['BACKGROUND', 'SIMULCAST', 'SUBSCRIPTIONSERVICE']
 
     label = None
     plot = None
@@ -206,6 +230,11 @@ def get_page_offers(offers, premium, art=None, type=None):
         }
 
     for item in offers:
+        if not control.globoplay_ignore_channel_authorization():
+            service_id = item.get('genericOffer', {}).get('serviceId')
+            if service_id and not auth_helper.is_service_allowed(int(service_id)):
+                continue
+
         yield {
                 'handler': __name__,
                 'method': get_offer.__name__,
@@ -319,7 +348,7 @@ def __filter_plus(item):
 def get_poster_offer(id, page=1, per_page=PAGE_SIZE):
     control.log('get_poster_offer: %s | page: %s' % (id, page))
 
-    query = 'query%20getOffer%28%24id%3A%20ID%21%2C%20%24page%3A%20Int%2C%20%24perPage%3A%20Int%2C%20%24context%3A%20RecommendedOfferContextInput%29%20%7B%0A%20%20genericOffer%28id%3A%20%24id%29%20%7B%0A%20%20%20%20...%20on%20Offer%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20userBased%0A%20%20%20%20%20%20paginatedItems%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20perPage%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20...titleHome%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20RecommendedOffer%20%7B%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20items%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20context%3A%20%24context%29%20%7B%0A%20%20%20%20%20%20%20%20customTitle%0A%20%20%20%20%20%20%20%20abExperiment%20%7B%0A%20%20%20%20%20%20%20%20%20%20experiment%0A%20%20%20%20%20%20%20%20%20%20alternative%0A%20%20%20%20%20%20%20%20%20%20trackId%0A%20%20%20%20%20%20%20%20%20%20convertUrl%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20...titleHome%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20perPage%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20titleHome%20on%20Title%20%7B%0A%20%20originVideoId%0A%20%20titleId%0A%20%20type%0A%20%20originProgramId%0A%20%20headline%0A%20%20originalHeadline%0A%20%20description%0A%20%20slug%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20releaseYear%0A%20%20format%0A%20%20countries%0A%20%20genresNames%0A%20%20directorsNames%0A%20%20artDirectorsNames%0A%20%20authorsNames%0A%20%20castNames%0A%20%20screenwritersNames%0A%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20poster%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%7D'
+    query = 'query%20getOffer%28%24id%3A%20ID%21%2C%20%24page%3A%20Int%2C%20%24perPage%3A%20Int%2C%20%24context%3A%20RecommendedOfferContextInput%29%20%7B%0A%20%20genericOffer%28id%3A%20%24id%29%20%7B%0A%20%20%20%20...%20on%20Offer%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20userBased%0A%20%20%20%20%20%20paginatedItems%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%29%20%7B%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20perPage%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20...titleHome%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20...%20on%20RecommendedOffer%20%7B%0A%20%20%20%20%20%20contentType%0A%20%20%20%20%20%20items%28page%3A%20%24page%2C%20perPage%3A%20%24perPage%2C%20context%3A%20%24context%29%20%7B%0A%20%20%20%20%20%20%20%20customTitle%0A%20%20%20%20%20%20%20%20abExperiment%20%7B%0A%20%20%20%20%20%20%20%20%20%20experiment%0A%20%20%20%20%20%20%20%20%20%20alternative%0A%20%20%20%20%20%20%20%20%20%20trackId%0A%20%20%20%20%20%20%20%20%20%20convertUrl%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20resources%20%7B%0A%20%20%20%20%20%20%20%20%20%20...titleHome%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20page%0A%20%20%20%20%20%20%20%20perPage%0A%20%20%20%20%20%20%20%20hasNextPage%0A%20%20%20%20%20%20%20%20nextPage%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20titleHome%20on%20Title%20%7B%0A%20%20originVideoId%0A%20%20titleId%0A%20%20type%0A%20%20originProgramId%0A%20%20headline%0A%20%20originalHeadline%0A%20%20description%0A%20%20slug%0A%20%20contentRating%0A%20%20contentRatingCriteria%0A%20%20releaseYear%0A%20%20format%0A%20%20countries%0A%20%20genresNames%0A%20%20directorsNames%0A%20%20artDirectorsNames%0A%20%20authorsNames%0A%20%20castNames%0A%20%20screenwritersNames%0A%20%20cover%20%7B%0A%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20poster%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20logo%20%7B%0A%20%20%20%20web%0A%20%20%7D%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20slug%0A%20%20%7D%0A%20%20serviceId%0A%7D'
     variables = '{{"id":"{id}","page":{page},"perPage":{perPage}}}'.format(id=id, page=page, perPage=per_page)
 
     generic_offer = request_query(query, variables).get('data', {}).get('genericOffer', {}) or {}
@@ -327,7 +356,14 @@ def get_poster_offer(id, page=1, per_page=PAGE_SIZE):
 
     custom_title = items.get('customTitle')
 
-    for resource in items.get('resources', []) or []:
+    resources = items.get('resources', []) or []
+
+    if not control.globoplay_ignore_channel_authorization():
+        service_ids = [item.get('serviceId') for item in resources]
+        authorized_ids = get_authorized_services(service_ids)
+        resources = [item for item in resources if item.get('serviceId') in authorized_ids]
+
+    for resource in resources:
         playable = True if resource.get('originVideoId') else False
         yield {
             'handler': PLAYER_HANDLER if playable else __name__,
@@ -361,7 +397,11 @@ def get_poster_offer(id, page=1, per_page=PAGE_SIZE):
             }
         }
 
-    if items.get('hasNextPage', False):
+    if items.get('hasNextPage', False) and items.get('nextPage') and items.get('nextPage') > page:
+        if not resources:
+            yield from get_poster_offer(id, items.get('nextPage'), per_page)
+            return
+
         yield {
             'handler': __name__,
             'method': get_poster_offer.__name__,
@@ -1080,7 +1120,7 @@ def search(term, page=1):
     if not term:
         return
 
-    query = 'query%20search%28%24query%3A%20String%21%2C%20%24page%3A%20Int%29%20%7B%0A%20%20search%20%7B%0A%20%20%20%20titles%28query%3A%20%24query%2C%20page%3A%20%24page%29%20%7B%0A%20%20%20%20%20%20...titlesCollection%0A%20%20%20%20%7D%0A%20%20%20%20videos%28query%3A%20%24query%2C%20page%3A%20%24page%29%20%7B%0A%20%20%20%20%20%20...videosCollection%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20titlesCollection%20on%20TitleCollection%20%7B%0A%20%20page%0A%20%20perPage%0A%20%20hasNextPage%0A%20%20nextPage%0A%20%20total%0A%20%20resources%20%7B%0A%20%20%20%20id%0A%20%20%20%20titleId%0A%20%20%20%20slug%0A%20%20%20%20headline%0A%20%20%20%20originalHeadline%0A%20%20%20%20description%0A%20%20%20%20originVideoId%0A%20%20%20%20originProgramId%0A%20%20%20%20type%0A%20%20%20%20format%0A%20%20%20%20contentRating%0A%20%20%20%20contentRatingCriteria%0A%20%20%20%20releaseYear%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%7D%0A%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20countries%0A%20%20%20%20genresNames%0A%20%20%20%20directorsNames%0A%20%20%20%20artDirectorsNames%0A%20%20%20%20authorsNames%0A%20%20%20%20castNames%0A%20%20%20%20screenwritersNames%0A%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20videosCollection%20on%20VideoCollection%20%7B%0A%20%20page%0A%20%20perPage%0A%20%20hasNextPage%0A%20%20nextPage%0A%20%20total%0A%20%20resources%20%7B%0A%20%20%20%20id%0A%20%20%20%20kind%0A%20%20%20%20headline%0A%20%20%20%20liveThumbnail%0A%20%20%20%20thumb%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20originalHeadline%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20originVideoId%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%7D%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20availableFor%0A%20%20%20%20duration%0A%20%20%20%20formattedDuration%0A%20%20%20%20exhibitedAt%0A%20%20%7D%0A%7D'
+    query = 'query%20search%28%24query%3A%20String%21%2C%20%24page%3A%20Int%29%20%7B%0A%20%20search%20%7B%0A%20%20%20%20titles%28query%3A%20%24query%2C%20page%3A%20%24page%29%20%7B%0A%20%20%20%20%20%20...titlesCollection%0A%20%20%20%20%7D%0A%20%20%20%20videos%28query%3A%20%24query%2C%20page%3A%20%24page%29%20%7B%0A%20%20%20%20%20%20...videosCollection%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0Afragment%20titlesCollection%20on%20TitleCollection%20%7B%0A%20%20page%0A%20%20perPage%0A%20%20hasNextPage%0A%20%20nextPage%0A%20%20total%0A%20%20resources%20%7B%0A%20%20%20%20id%0A%20%20%20%20titleId%0A%20%20%20%20slug%0A%20%20%20%20headline%0A%20%20%20%20originalHeadline%0A%20%20%20%20description%0A%20%20%20%20originVideoId%0A%20%20%20%20originProgramId%0A%20%20%20%20type%0A%20%20%20%20format%0A%20%20%20%20contentRating%0A%20%20%20%20contentRatingCriteria%0A%20%20%20%20releaseYear%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%7D%0A%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20web%0A%20%20%20%20%7D%0A%20%20%20%20countries%0A%20%20%20%20genresNames%0A%20%20%20%20directorsNames%0A%20%20%20%20artDirectorsNames%0A%20%20%20%20authorsNames%0A%20%20%20%20castNames%0A%20%20%20%20screenwritersNames%0A%20%20%20%20subset%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20serviceId%0A%20%20%7D%0A%7D%0Afragment%20videosCollection%20on%20VideoCollection%20%7B%0A%20%20page%0A%20%20perPage%0A%20%20hasNextPage%0A%20%20nextPage%0A%20%20total%0A%20%20resources%20%7B%0A%20%20%20%20id%0A%20%20%20%20kind%0A%20%20%20%20headline%0A%20%20%20%20liveThumbnail%0A%20%20%20%20thumb%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20headline%0A%20%20%20%20%20%20%20%20originalHeadline%0A%20%20%20%20%20%20%20%20description%0A%20%20%20%20%20%20%20%20originVideoId%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20type%0A%20%20%20%20%20%20%20%20format%0A%20%20%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20%20%20%20%20id%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20poster%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%7D%0A%20%20%20%20channel%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20slug%0A%20%20%20%20%7D%0A%20%20%20%20availableFor%0A%20%20%20%20duration%0A%20%20%20%20formattedDuration%0A%20%20%20%20exhibitedAt%0A%20%20%20%20serviceId%0A%20%20%20%20availableFor%0A%20%20%7D%0A%7D'
     variables = '{{"query":"{term}","page":{page}}}'.format(term=term, page=page)
 
     response = request_query(query, variables).get('data', {}).get('search', {})
@@ -1089,7 +1129,14 @@ def search(term, page=1):
 
     provider = u'Globoplay'
 
-    for title in titles.get('resources', []):
+    resources = titles.get('resources', [])
+
+    if not control.globoplay_ignore_channel_authorization():
+        service_ids = [item.get('serviceId') for item in resources]
+        authorized_ids = get_authorized_services(service_ids)
+        resources = [item for item in resources if item.get('serviceId') in authorized_ids]
+
+    for title in resources:
         playable = True if title.get('originVideoId') else False
         yield {
                 'handler': PLAYER_HANDLER if playable else __name__,
@@ -1099,7 +1146,7 @@ def search(term, page=1):
                 'IsPlayable': playable,
                 'label': title.get('headline', ''),
                 'title': title.get('headline', ''),
-                'studio': provider, #title.get('channel', {}).get('name', provider),
+                'studio': auth_helper.get_service_name(title.get('serviceId')),  #provider, #title.get('channel', {}).get('name', provider),
                 'year': title.get('releaseYear', ''),
                 'originaltitle': title.get('originalHeadline', ''),
                 'country': title.get('countries', []),
@@ -1123,7 +1170,14 @@ def search(term, page=1):
 
     videos = response.get('videos', {})
 
-    for video in videos.get('resources', []):
+    resources = videos.get('resources', [])
+
+    if not control.globoplay_ignore_channel_authorization():
+        service_ids = [item.get('serviceId') for item in resources]
+        authorized_ids = get_authorized_services(service_ids)
+        resources = [item for item in resources if item.get('serviceId') in authorized_ids and auth_helper.is_available_for(item.get('availableFor'))]
+
+    for video in resources:
         title = video.get('title', {})
         yield {
                 'handler': PLAYER_HANDLER,
@@ -1134,7 +1188,7 @@ def search(term, page=1):
                 'label': video.get('headline', ''),
                 'title': video.get('headline', ''),
                 'tvshowtitle': title.get('headline', ''),
-                'studio': (title.get('channel', {}) or {}).get('name', provider),
+                'studio': auth_helper.get_service_name(video.get('serviceId')),  #(title.get('channel', {}) or {}).get('name', provider),
                 'year': title.get('releaseYear', ''),
                 'originaltitle': title.get('originalHeadline', ''),
                 'country': title.get('countries', []),

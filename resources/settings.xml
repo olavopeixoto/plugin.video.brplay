@@ -9,10 +9,10 @@
 		<setting id="globosat_username" type="text" label="31110" default="" visible="eq(-2,true)+eq(-1,false)" subsetting="true" />
 		<setting id="globosat_password" type="text" option="hidden" label="31109" default="" visible="eq(-3,true)+eq(-2,false)" subsetting="true" />
 		<setting id="globosat_geofence" type="select" label="31209" lvalues="31208|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137|31138|31139" default="0" visible="eq(-4,true)" subsetting="true" />
-		<setting id="globosat_ignore_channel_authorization" type="bool" label="33403" default="true" visible="eq(-5,true)" subsetting="true" />
+		<setting id="globosat_ignore_channel_authorization" type="bool" label="33403" default="false" visible="eq(-5,true)" subsetting="true" />
 		<setting id="globosat_cdn" type="select" label="CDN" values="Auto|Globo|Akamai|Verizon" default="Auto" visible="eq(-6,true)" subsetting="true" />
 		<!-- 33401 = Show Adult Content -->
-		<setting id="show_adult" type="bool" label="33401" default="true" visible="eq(-7,true)" subsetting="true" />
+		<setting id="show_adult" type="bool" label="33401" default="true" visible="false" subsetting="true" />
 		<setting id="globosat_credentials" type="text"  default="" visible="false" />
 
 		<!-- 31100 = Globo Play -->
@@ -55,18 +55,16 @@
 		<setting id="globoplay_available" type="bool" label="31101" default="false" />
 		<setting id="globoplay_username" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="globoplay_password" type="text" option="hidden" label="31109" visible="eq(-2,true)" enable="!eq(-1,)" default="" subsetting="true" />
-		<setting id="show_globo_international" type="bool" label="31108" default="false" visible="eq(-3,true)" subsetting="true" />
+		<setting id="globoplay_tenant" type="select" label="31108" default="1" visible="eq(-3,true)" subsetting="true" lvalues="33103|34164|34168|34165|34166|34167" />
 		<!--<setting id="globo_affiliate" type="enum" label="31111" lvalues="31116|31112|31113|31114|31115|31117|31118|31119|31120|31121|31122|31123|31124|31125|31126|31127|31128|31129|31130|31131|31132|31133|31134|31135|31136|31137" default="1" />-->
 		<!-- Internacional, Rio de Janeiro|Sao Paulo|Brasilia|Belo Horizonte|Recife|Manaus|Rio Branco|Boa Vista|Porto Velho|Macapa|Goiania|Belem|Salvador|Florianopolis|Sao Luis|Vitoria -->
-		<setting id="globo_affiliate" type="select" label="31111" lvalues="31116|34112|33103|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135|31126|31119|31123|31137|31125" default="1" visible="eq(-4,true)" subsetting="true" />
-		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)+eq(-5,true)" subsetting="true" />
-		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-6,true)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
-		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-7,true)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
-		<setting id="globoplay_ignore_channel_authorization" type="bool" label="33403" default="true" visible="eq(-8,true)" subsetting="true" />
-		<setting id="globoplay_enable_mais_canais" type="bool" label="34147" default="true" visible="eq(-1,true)+eq(-9,true)+eq(-19,false)" subsetting="true" />
-		<setting id="globo_cdn" type="select" label="CDN" values="Auto|Globo|Akamai|Verizon" default="Auto" visible="eq(-10,true)" subsetting="true" />
-		<setting id="globoplay_credentials" type="text"  default="" visible="false" />
-		<setting id="globoplay_user_data" type="text"  default="" visible="false" />
+		<setting id="globo_affiliate" type="select" label="31111" lvalues="31116|34112|33103|31112|31113|31114|31115|31117|31129|31133|31138|31139|31131|31127|31130|31118|31124|31135|31126|31119|31123|31137|31125|31136|31120|31134|31128|31122|31132" default="1" visible="eq(-4,true)+eq(-1,1)" subsetting="true" />
+		<setting id="use_custom_affiliate" type="bool" label="31211" default="false" visible="eq(-1,0)+eq(-5,true)+eq(-2,1)" subsetting="true" />
+		<setting id="custom_affiliate_latitude" type="text" label="34110" default="" visible="lt(-2,2)+eq(-6,true)+eq(-3,1)" enable="eq(-2,1)|eq(-1,true)" subsetting="true" />
+		<setting id="custom_affiliate_longitude" type="text" label="34111" default="" visible="lt(-3,2)+eq(-7,true)+eq(-4,1)" enable="eq(-3,1)|eq(-2,true)" subsetting="true" />
+		<setting id="globoplay_ignore_channel_authorization" type="bool" label="33403" default="false" visible="eq(-8,true)" subsetting="true" />
+		<setting id="globoplay_enable_mais_canais" type="bool" label="34147" default="false" visible="eq(-1,true)+eq(-9,true)+eq(-19,false)" subsetting="true" />
+		<setting id="globo_cdn" type="select" label="CDN" values="Auto|Globo|Akamai|Verizon" default="Auto" visible="eq(-10,true)" enable="true" subsetting="true" />
 		<setting id="globoplay_instance_id" type="text"  default="" visible="false" />
 
 		<setting type="sep" />
@@ -99,16 +97,6 @@
 		<setting id="nowonline_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
 		<setting id="nowonline_device_id" type="text" label="Device ID" default="" visible="eq(-3,true)" enable="false" subsetting="true" />
 		<setting id="nowonline_credentials" type="text"  default="" visible="false" enable="false" subsetting="true" />
-
-		<setting type="sep" />
-
-		<setting type="lsep" label="Telecine Play"/>
-		<setting id="telecine_available" type="bool" label="34131" default="false" />
-		<setting id="telecine_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
-		<setting id="telecine_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
-		<setting id="telecine_provider" type="select" label="34124" default="Oi" values="Oi|Claro Net Tv|Sky Brasil|Vivo Banda Larga ou TV|Vivo Celular|Claro tv|Algar Telecom|Multiplay Telecom|TCM Telecom|TVN|Amigo TV|TV Alphaville|NET Angra|Cabonnet|VerTv||Conecta|Net Foz do Iguaçu|Super Cabo|Conectcor|Life|Valenet|Oopstv|Desktop|Megabit|NGT|Vero|Diatel|Tv cabo" visible="eq(-3,true)" subsetting="true" />
-		<setting id="telecine_device_id" type="text"  label="Device ID" default="" visible="eq(-4,true)" enable="false" subsetting="true" />
-		<setting id="telecine_credentials" type="text"  default="" visible="false" subsetting="true" />
 
 		<setting type="sep" />
 
@@ -164,11 +152,6 @@
 
 	<!-- 32310 = General -->
 	<category label="32310">
-
-		<setting type="lsep" label="Telecine Play"/>
-
-		<setting id="telecine_use_pagination" type="bool" label="33402" default="true"/>
-		<setting type="sep" />
 
 		<!-- 33501 = Clear Cache -->
 		<!-- 33502 = Addon Maintenance -->
