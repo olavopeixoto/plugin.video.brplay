@@ -97,8 +97,7 @@ def get_carousel(channel='Brazil', platform='webdesktop', page=1, lang='pt'):
             'lang': lang,
             'page': page + 1,
             'art': {
-                'icon': LOGO,
-                'thumb': LOGO,
+                'poster': control.addonNext(),
                 'fanart': FANART
             },
             'properties': {
@@ -160,8 +159,7 @@ def get_carousel_item(item_id, channel='Brazil', platform='webdesktop', lang='pt
             'lang': lang,
             'page': page + 1,
             'art': {
-                'icon': LOGO,
-                'thumb': LOGO,
+                'poster': control.addonNext(),
                 'fanart': FANART
             },
             'properties': {
@@ -204,8 +202,7 @@ def get_categories(page=1, channel='Brazil', platform='webdesktop', lang='pt'):
             'lang': lang,
             'page': page + 1,
             'art': {
-                'icon': LOGO,
-                'thumb': LOGO,
+                'poster': control.addonNext(),
                 'fanart': FANART
             },
             'properties': {
@@ -292,8 +289,7 @@ def get_category(item_id, channel, page=1, platform='webdesktop', lang='pt'):
             'lang': lang,
             'page': page + 1,
             'art': {
-                'icon': LOGO,
-                'thumb': LOGO,
+                'poster': control.addonNext(),
                 'fanart': FANART
             },
             'properties': {
@@ -354,8 +350,7 @@ def get_home_highlights(page=1, channel='Brazil', platform='webdesktop', lang='p
             'lang': lang,
             'page': page + 1,
             'art': {
-                'icon': LOGO,
-                'thumb': LOGO,
+                'poster': control.addonNext(),
                 'fanart': FANART
             },
             'properties': {

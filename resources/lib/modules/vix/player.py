@@ -68,24 +68,24 @@ class Player(xbmc.Player):
         item.setProperty('IsPlayable', 'true')
         item.setInfo(type='Video', infoLabels=control.filter_info_labels(meta))
 
-        # item.setContentLookup(False)
+        item.setContentLookup(False)
 
-        # if parsed_url.path.endswith(".mpd"):
-        #     mime_type = 'application/dash+xml'
-        #     item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-        #     if self.isLive:
-        #         item.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
-        #
-        # else:
-        #     mime_type = 'application/vnd.apple.mpegurl'
-        #     item.setProperty('inputstream.adaptive.manifest_type', 'hls')
-        #
-        # if mime_type:
-        #     item.setMimeType(mime_type)
-        #     control.log("MIME TYPE: %s" % repr(mime_type))
-        #
-        # if control.is_inputstream_available():
-        #     item.setProperty('inputstream', 'inputstream.adaptive')
+        if parsed_url.path.endswith(".mpd"):
+            mime_type = 'application/dash+xml'
+            item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
+            if self.isLive:
+                item.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
+
+        else:
+            mime_type = 'application/vnd.apple.mpegurl'
+            item.setProperty('inputstream.adaptive.manifest_type', 'hls')
+
+        if mime_type:
+            item.setMimeType(mime_type)
+            control.log("MIME TYPE: %s" % repr(mime_type))
+
+        if control.is_inputstream_available():
+            item.setProperty('inputstream', 'inputstream.adaptive')
 
         control.resolve(int(sys.argv[1]), True, item)
 
