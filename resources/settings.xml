@@ -111,6 +111,13 @@
 		<setting id="pluto_available" type="bool" label="34150" default="true" subsetting="true" />
 		<setting id="pluto_sid" type="text"  default="" visible="false" />
 		<setting id="pluto_did" type="text"  default="" visible="false" />
+
+		<setting type="sep" />
+
+		<setting type="lsep" label="VIX TV"/>
+		<setting id="vix_available" type="bool" label="34172" default="true" subsetting="true" />
+		<setting id="vix_uid" type="text"  default="" visible="false" />
+		<setting id="vix_jwt" type="text"  default="" visible="false" />
 		<setting type="sep" />
 	</category>
 

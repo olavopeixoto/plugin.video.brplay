@@ -7,6 +7,7 @@ from resources.lib.modules.tntplay import scraper_vod as tnt_vod
 from resources.lib.modules.netnow import scraper_vod as netnow
 from resources.lib.modules.oiplay import scraper_vod as oiplay
 from resources.lib.modules.pluto import scraper_vod as pluto
+from resources.lib.modules.vix import scraper_vod as vix
 from resources.lib.modules import workers
 from itertools import cycle, islice, chain
 
@@ -32,6 +33,9 @@ def get_vod_channels_directory():
 
     if control.is_pluto_available():
         channels.extend(pluto.get_channels())
+
+    if control.is_vix_available():
+        channels.extend(vix.get_channels())
 
     for channel in channels:
         channel.update({

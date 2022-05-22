@@ -14,6 +14,8 @@ import xbmcplugin
 import xbmcgui
 import xbmcvfs
 
+getLanguage = xbmc.getLanguage
+
 lang = xbmcaddon.Addon().getLocalizedString
 
 lang2 = xbmc.getLocalizedString
@@ -291,7 +293,8 @@ def is_vod_available():
            or is_tntplay_available() \
            or is_nowonline_available() \
            or is_oiplay_available() \
-           or is_pluto_available()
+           or is_pluto_available() \
+           or is_vix_available()
 
 
 def is_globosat_available():
@@ -352,6 +355,10 @@ def is_sbt_available():
 
 def is_pluto_available():
     return setting('pluto_available') == 'true'
+
+
+def is_vix_available():
+    return setting('vix_available') == 'true'
 
 
 def getKodiVersion():

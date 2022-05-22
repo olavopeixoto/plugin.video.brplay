@@ -656,3 +656,15 @@ msgstr "Brasil Beta"
 msgctxt "#34169"
 msgid "Noveller Home"
 msgstr "Início Noveleiros"
+
+msgctxt "#34170"
+msgid "Categories"
+msgstr "Categorias"
+
+msgctxt "#34171"
+msgid "Contents"
+msgstr "Conteúdo"
+
+msgctxt "#34172"
+msgid "Enable VIX TV"
+msgstr "Habilitar VIX TV"

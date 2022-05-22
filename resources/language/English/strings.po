@@ -656,3 +656,15 @@ msgstr ""
 msgctxt "#34169"
 msgid "Noveller Home"
 msgstr ""
+
+msgctxt "#34170"
+msgid "Categories"
+msgstr ""
+
+msgctxt "#34171"
+msgid "Contents"
+msgstr ""
+
+msgctxt "#34172"
+msgid "Enable VIX TV"
+msgstr ""

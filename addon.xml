@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-	<addon id="plugin.video.brplay" version="2.1.0" name="BR play" provider-name="brplayer">
+	<addon id="plugin.video.brplay" version="2.2.0" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -14,8 +14,8 @@
 	<extension point="xbmc.addon.metadata">
 		<summary lang="en_GB">Brazilian video streaming services for subscribers</summary>
 		<summary lang="pt_BR">Serviços brasileiros de streaming de video para assinantes</summary>
-		<description lang="en_GB">Globoplay, Canais Globo, Telecine, Oi Play, Now Online, TNT Play, Pluto TV and premium channels on Kodi</description>
-		<description lang="pt_BR">Globoplay, Canais Globo, Telecine, Oi Play, Now Online, TNT Play, Pluto TV entre outros serviços no Kodi</description>
+		<description lang="en_GB">Globoplay, Canais Globo, Telecine, Oi Play, Now Online, TNT Play, Pluto TV, VIX TV and premium channels on Kodi</description>
+		<description lang="pt_BR">Globoplay, Canais Globo, Telecine, Oi Play, Now Online, TNT Play, Pluto TV, VIX TV entre outros serviços no Kodi</description>
 		<disclaimer lang="en_GB">Some parts of this addon may not be legal in your country of residence - please check with your local laws before installing.</disclaimer>
 		<disclaimer lang="pt_BR">Partes deste addon podem não ser legais no seu país de residência, por favor verifique as leis locais antes de instalar.</disclaimer>
 		<platform>all</platform>
@@ -31,6 +31,8 @@
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
 		<news>
+2.2.0
+- Added support for VIX TV Brazil
 2.1.0
 - Removed Telecine since it has been moved to Globoplay
 - Removed Sexyhot
