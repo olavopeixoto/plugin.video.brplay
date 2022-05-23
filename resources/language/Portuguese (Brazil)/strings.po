@@ -160,6 +160,110 @@ msgctxt "#31139"
 msgid "Porto Velho"
 msgstr "Porto Velho"
 
+msgctxt "#31140"
+msgid "Petrolina"
+msgstr "Petrolina"
+
+msgctxt "#31141"
+msgid "Floriano"
+msgstr "Floriano"
+
+msgctxt "#31142"
+msgid "Uberlandia"
+msgstr "Uberlândia"
+
+msgctxt "#31143"
+msgid "Juazeiro"
+msgstr "Juazeiro"
+
+msgctxt "#31144"
+msgid "Feria de Santana"
+msgstr "Feria de Santana"
+
+msgctxt "#31145"
+msgid "Cariri"
+msgstr "Cariri"
+
+msgctxt "#31146"
+msgid "Codo"
+msgstr "Codó"
+
+msgctxt "#31147"
+msgid "Imperatriz"
+msgstr "Imperatriz"
+
+msgctxt "#31148"
+msgid "Varginha"
+msgstr "Varginha"
+
+msgctxt "#31149"
+msgid "Montes Claros"
+msgstr "Montes Claros"
+
+msgctxt "#31150"
+msgid "Santarem"
+msgstr "Santarém"
+
+msgctxt "#31151"
+msgid "Caruaru"
+msgstr "Caruaru"
+
+msgctxt "#31152"
+msgid "Cabo Frio"
+msgstr "Cabo Frio"
+
+msgctxt "#31153"
+msgid "Resende"
+msgstr "Resende"
+
+msgctxt "#31154"
+msgid "Campos dos Goytacazes"
+msgstr "Campos dos Goytacazes"
+
+msgctxt "#31155"
+msgid "Mossoro"
+msgstr "Mossoró"
+
+msgctxt "#31156"
+msgid "Blumenau"
+msgstr "Blumenau"
+
+msgctxt "#31157"
+msgid "Joinville"
+msgstr "Joinville"
+
+msgctxt "#31158"
+msgid "Caxias do Sul"
+msgstr "Caxias do Sul"
+
+msgctxt "#31159"
+msgid "Campinas"
+msgstr "Campinas"
+
+msgctxt "#31160"
+msgid "Ribeirao Preto"
+msgstr "Ribeirão Preto"
+
+msgctxt "#31161"
+msgid "Taubate"
+msgstr "Taubaté"
+
+msgctxt "#31162"
+msgid "Presidente Prudente"
+msgstr "Presidente Prudente"
+
+msgctxt "#31163"
+msgid "Sorocaba"
+msgstr "Sorocaba"
+
+msgctxt "#31164"
+msgid "Santos"
+msgstr "Santos"
+
+msgctxt "#31165"
+msgid "Campina Grande"
+msgstr "Campina Grande"
+
 msgctxt "#31003"
 msgid "Proxy"
 msgstr "Proxy"
