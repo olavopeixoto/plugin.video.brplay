@@ -50,6 +50,32 @@
 		<!-- 31137 = Natal -->
 		<!-- 31138 = Boa Vista -->
 		<!-- 31139 = Porto Velho -->
+		<!-- 31140 = Petrolina -->
+		<!-- 31141 = Floriano -->
+		<!-- 31142 = Uberlandia -->
+		<!-- 31143 = Juazeiro -->
+		<!-- 31144 = Feira de Santana -->
+		<!-- 31145 = Cariri -->
+		<!-- 31146 = Codo -->
+		<!-- 31147 = Imperatriz -->
+		<!-- 31148 = Varginha -->
+		<!-- 31149 = Montes Claros -->
+		<!-- 31150 = Santarem -->
+		<!-- 31151 = Caruaru -->
+		<!-- 31152 = Cabo Frio -->
+		<!-- 31153 = Resende -->
+		<!-- 31154 = Campos dos Goytacazes -->
+		<!-- 31155 = Mossoro -->
+		<!-- 31156 = Blumenau -->
+		<!-- 31157 = Joinville -->
+		<!-- 31158 = Caxias do Sul -->
+		<!-- 31159 = Campinas -->
+		<!-- 31160 = Ribeirao Preto -->
+		<!-- 31161 = Taubate -->
+		<!-- 31162 = Presidente Prudente -->
+		<!-- 31163 = Sorocaba -->
+		<!-- 31164 = Santos -->
+		<!-- 31165 = Campina Grande -->
 		<setting type="lsep" label="Globo Play"/>
 
 		<setting id="globoplay_available" type="bool" label="31101" default="false" />
