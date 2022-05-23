@@ -160,6 +160,110 @@ msgctxt "#31139"
 msgid "Porto Velho"
 msgstr ""
 
+msgctxt "#31140"
+msgid "Petrolina"
+msgstr ""
+
+msgctxt "#31141"
+msgid "Floriano"
+msgstr ""
+
+msgctxt "#31142"
+msgid "Uberlandia"
+msgstr ""
+
+msgctxt "#31143"
+msgid "Uberlandia"
+msgstr ""
+
+msgctxt "#31144"
+msgid "Feria de Santana"
+msgstr ""
+
+msgctxt "#31145"
+msgid "Cariri"
+msgstr ""
+
+msgctxt "#31146"
+msgid "Codo"
+msgstr ""
+
+msgctxt "#31147"
+msgid "Imperatriz"
+msgstr ""
+
+msgctxt "#31148"
+msgid "Varginha"
+msgstr ""
+
+msgctxt "#31149"
+msgid "Montes Claros"
+msgstr ""
+
+msgctxt "#31150"
+msgid "Santarem"
+msgstr ""
+
+msgctxt "#31151"
+msgid "Caruaru"
+msgstr ""
+
+msgctxt "#31152"
+msgid "Cabo Frio"
+msgstr ""
+
+msgctxt "#31153"
+msgid "Resende"
+msgstr ""
+
+msgctxt "#31154"
+msgid "Campos dos Goytacazes"
+msgstr ""
+
+msgctxt "#31155"
+msgid "Mossoro"
+msgstr ""
+
+msgctxt "#31156"
+msgid "Blumenau"
+msgstr ""
+
+msgctxt "#31157"
+msgid "Joinville"
+msgstr ""
+
+msgctxt "#31158"
+msgid "Caxias do Sul"
+msgstr ""
+
+msgctxt "#31159"
+msgid "Campinas"
+msgstr ""
+
+msgctxt "#31160"
+msgid "Rebeirao Preto"
+msgstr ""
+
+msgctxt "#31161"
+msgid "Taubate"
+msgstr ""
+
+msgctxt "#31162"
+msgid "Presidente Prudente"
+msgstr ""
+
+msgctxt "#31163"
+msgid "Sorocaba"
+msgstr ""
+
+msgctxt "#31164"
+msgid "Santos"
+msgstr ""
+
+msgctxt "#31165"
+msgid "Campina Grande"
+msgstr ""
+
 msgctxt "#31003"
 msgid "Proxy"
 msgstr ""
