@@ -635,7 +635,7 @@ def get_ip_coordinates():
 
 def get_affiliates_by_id(id):
 
-    all_affiliates = ['Custom', 'Auto', 'Rio de Janeiro', 'Sao Paulo', 'Brasilia', 'Belo Horizonte', 'Recife', 'Manaus', 'Rio Branco', 'Boa Vista', 'Porto Velho', 'Macapa', 'Goiania', 'Belem', 'Salvador', 'Florianopolis', 'Sao Luis', 'Vitoria', 'Fortaleza', 'Porto Alegre', 'Natal', 'Curitiba', 'Joao Pessoa', 'Aracaju', 'Teresina', 'Campo Grande', 'Cuiaba', 'Palmas']
+    all_affiliates = ['Custom', 'Auto', 'Rio de Janeiro', 'Sao Paulo', 'Brasilia', 'Belo Horizonte', 'Recife', 'Manaus', 'Rio Branco', 'Boa Vista', 'Porto Velho', 'Macapa', 'Goiania', 'Belem', 'Salvador', 'Florianopolis', 'Sao Luis', 'Vitoria', 'Fortaleza', 'Porto Alegre', 'Natal', 'Curitiba', 'Joao Pessoa', 'Aracaju', 'Teresina', 'Campo Grande', 'Cuiaba', 'Palmas' 'Petrolina', 'Floriano', 'Uberlandia', 'Juazeiro', 'Feira de Santana', 'Cariri', 'Codo', 'Imperatriz', 'Varginha', 'Montes Claros', 'Santarem', 'Caruaru', 'Cabo Frio', 'Resende', 'Campos dos Goytacazes', 'Mossoro', 'Blumenau', 'Joinville', 'Caxias do Sul', 'Campinas', 'Ribeirao Preto', 'Taubate', 'Presidente Prudente', 'Sorocaba', 'Santos', 'Campina Grande']
 
     if id == 0:  # All
         return all_affiliates
