@@ -599,6 +599,58 @@ def get_coordinates(affiliate):
         code, latitude, longitude = "ROR", '3.18861', '-60.61212'
     elif affiliate == "Porto Velho":
         code, latitude, longitude = "RON", '-8.76194', '-63.90389'
+    elif affiliate == "Petrolina":
+        code, latitude, longitude = "PET", '-9.39416', '-40.50962'
+    elif affiliate == "Floriano":
+        code, latitude, longitude = "FNO", '-6.76725', '-43.02576'
+    elif affiliate == "Uberlandia":
+        code, latitude, longitude = "UBE", '-18.91130', '-48.26220'
+    elif affiliate == "Juazeiro":
+        code, latitude, longitude = "JUA", '-9.26180', '-40.30199'
+    elif affiliate == "Feria de Santana":
+        code, latitude, longitude = "FEI", '-12.27334', '-38.95560'
+    elif affiliate == "Cariri":
+        code, latitude, longitude = "CE2", '-7.14144', '-39.19209'
+    elif affiliate == "Codo":
+        code, latitude, longitude = "CDO", '-4.27184', '-43.52449'
+    elif affiliate == "Imperatriz":
+        code, latitude, longitude = "IMP", '-5.31320, '-47.28370'
+    elif affiliate == "Varginha":
+        code, latitude, longitude = "VAR", '-21.32474', '-45.25519'
+elif affiliate == "Montes Claros":
+        code, latitude, longitude = "MTC", '-16.73794', '-43.86474'
+    elif affiliate == "Santarem":
+        code, latitude, longitude = "TAP", '-2.43944', '-54.69872'
+    elif affiliate == "Caruaru":
+        code, latitude, longitude = "CRR", '-8.28139', '-35.97351'
+    elif affiliate == "Cabo Frio":
+        code, latitude, longitude = "CAB", '-22.52464', '-42.01079'
+    elif affiliate == "Resende":
+        code, latitude, longitude = "RES", '-22.28084', '-44.26499'
+    elif affiliate == "Campos dos Goytacazes":
+        code, latitude, longitude = "FLU", '-21.45164', '-41.19289'
+    elif affiliate == "Mossoro":
+        code, latitude, longitude = "NA2", '-5.18804', '-37.34415'
+    elif affiliate == "Blumenau":
+        code, latitude, longitude = "JOI", '-26.55084', '-49.03579'
+    elif affiliate == "Joinville":
+        code, latitude, longitude = "JOI", '-26.18141', '-48.50459'
+    elif affiliate == "Caxias do Sul":
+        code, latitude, longitude = "CXS", '-29.10464', '-51.10469'
+    elif affiliate == "Campinas":
+        code, latitude, longitude = "CAM", '-22.90644', '-47.06169'
+    elif affiliate == "Ribeirao Preto":
+        code, latitude, longitude = "RIB", '-21.17674', '-47.82082'
+    elif affiliate == "Taubate":
+        code, latitude, longitude = "TAU", '-23.03094', '-45.54832'
+    elif affiliate == "Presidente Prudente":
+        code, latitude, longitude = "PRP", '-22.12126', '-51.38340'
+    elif affiliate == "Sorocaba":
+        code, latitude, longitude = "SOR", '-23.50624', '-47.45592'
+    elif affiliate == "Santos":
+        code, latitude, longitude = "RON", '-23.56264', '-46.19479'
+    elif affiliate == "Campina Grande":
+        code, latitude, longitude = "RON", '-7.13514', '-35.52549'
     elif affiliate == "Auto":
         city, latitude, longitude = get_ip_coordinates()
         code = None
