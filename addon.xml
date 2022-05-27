@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-	<addon id="plugin.video.brplay" version="2.2.1" name="BR play" provider-name="brplayer">
+	<addon id="plugin.video.brplay" version="2.2.2" name="BR play" provider-name="brplayer">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
 		<import addon="script.module.requests" version="0.13.2"/>
@@ -31,6 +31,8 @@
 			<screenshot>resources/screenshots/screenshot-03.jpg</screenshot>
 		</assets>
 		<news>
+2.2.2
+- fixed globoplay and globosat geofencing playback
 2.2.1
 - added inputstream support for VIX TV
 - fixed VIX TV "more items" icon / poster

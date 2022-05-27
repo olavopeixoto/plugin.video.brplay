@@ -7,7 +7,6 @@ from . import auth_helper, get_proxy
 import requests
 from urllib.parse import urlparse
 from resources.lib.modules import hlshelper
-from resources.lib.hlsproxy.simpleproxy import MediaProxy
 from resources.lib.modules import control
 from resources.lib.modules.globo_util import get_signed_hashes
 from resources.lib.modules.globoplay import resourceshelper
@@ -66,7 +65,7 @@ class Player(xbmc.Player):
         if cdn:
             cdn = cdn.lower() if cdn.lower() != 'auto' else None
 
-        if self.isLive and meta.get('lat') and meta.get('long'):
+        if self.isLive and meta.get('lat') and meta.get('long') and meta.get('geofencing', False):
             control.log("PLAY LIVE!")
 
             latitude = meta.get('lat')
@@ -180,11 +179,7 @@ class Player(xbmc.Player):
                 mime_type, stop_event, cookies = None, None, None
 
         elif parsed_url.path.endswith(".mpd"):
-            proxy_handler = MediaProxy()
-            url = proxy_handler.resolve(url)
-            stop_event = proxy_handler.stop_event
-            mime_type = None
-            cookies = None
+            mime_type, stop_event, cookies = None, None, None
 
         else:
             mime_type, stop_event, cookies = 'video/mp4', None, None

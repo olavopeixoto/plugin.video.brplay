@@ -66,6 +66,7 @@
 		<setting id="globoplay_enable_mais_canais" type="bool" label="34147" default="false" visible="eq(-1,true)+eq(-9,true)+eq(-19,false)" subsetting="true" />
 		<setting id="globo_cdn" type="select" label="CDN" values="Auto|Globo|Akamai|Verizon" default="Auto" visible="eq(-10,true)" enable="true" subsetting="true" />
 		<setting id="globoplay_instance_id" type="text"  default="" visible="false" />
+		<setting id="play_children" type="bool"  default="false" value="false" visible="false" />
 
 		<setting type="sep" />
 

@@ -73,7 +73,7 @@ def get_live_channels():
         else:
             threads = [workers.Thread(__get_affiliate_live_channels, affiliate) for affiliate in affiliates]
             if is_globoplay_mais_canais_available():
-                threads.append(workers.Thread(get_epg_broadcast_list))
+                threads.append(workers.Thread(get_epg_broadcast_list, affiliates[0]))
             [i.start() for i in threads]
             [i.join() for i in threads]
             [live.extend(i.get_result() or []) for i in threads]
@@ -91,18 +91,28 @@ def get_live_channels():
     return filtered_channels
 
 
-def __get_affiliate_live_channels(affiliate):
-    control.log('__get_affiliate_live_channels: %s' % affiliate)
-    live_globo_id = get_globo_live_id()
+def get_affiliate_data(affiliate_name):
+    control.log('get_affiliate_data: %s' % affiliate_name)
 
-    code, latitude, longitude = control.get_coordinates(affiliate)
+    code, latitude, longitude = control.get_coordinates(affiliate_name)
 
     if code is None and latitude is not None:
         result = get_affiliate_by_coordinates(latitude, longitude)
         code = result['code'] if result and 'code' in result else None
 
     if code is None:
-        control.log('No affiliate code for: %s' % affiliate)
+        control.log('No affiliate code for: %s' % affiliate_name)
+
+    return latitude, longitude, code
+
+
+def __get_affiliate_live_channels(affiliate_name):
+    control.log('__get_affiliate_live_channels: %s' % affiliate_name)
+    live_globo_id = get_globo_live_id()
+
+    latitude, longitude, code = get_affiliate_data(affiliate_name)
+
+    if code is None:
         return []
 
     return get_broadcast_with_coordinates(live_globo_id, latitude, longitude, code)
@@ -179,6 +189,9 @@ def get_broadcast_with_coordinates(media_id, latitude, longitude, affiliate_code
         'method': PLAYSTREAM_METHOD,
         'IsPlayable': True,
         'id': media_id,
+        'lat': latitude,
+        'long': longitude,
+        'geofencing': True,
         'channel_id': channel_id,
         'service_id': service_id,
         'live': epg.get('liveBroadcast', False) or False,
@@ -219,13 +232,14 @@ def is_globoplay_mais_canais_available():
     return control.globoplay_ignore_channel_authorization() or auth_helper.is_service_allowed(auth_helper.CADUN_SERVICES.GSAT_CHANNELS)
 
 
-def get_epg_broadcast_list(date=None):
+def get_epg_broadcast_list(affiliate_name=None, date=None):
+    lat, long, affiliate_code = get_affiliate_data(affiliate_name) if affiliate_name else None, None, 'null'
     if not date:
         now = datetime.datetime.utcnow() + datetime.timedelta(hours=control.get_current_brasilia_utc_offset())
         date = now.strftime('%Y-%m-%d')
     control.log('get_epg_broadcast_list(%s)' % date)
-    variables = '{{"date":"{}"}}'.format(date)
-    query = 'query%20getEpgBroadcastList%28%24date%3A%20Date%21%29%20%7B%0A%20%20broadcasts%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20mediaId%0A%20%20media%20%7B%0A%20%20%20%20serviceId%0A%20%20%20%20liveThumbnail%0A%20%20%20%20headline%0A%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20availableFor%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20transmissionId%0A%20%20geofencing%0A%20%20geoblocked%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20color%0A%20%20%20%20name%0A%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%7D%0A%20%20epgByDate%28date%3A%20%24date%29%20%7B%0A%20%20%20%20entries%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20alternativeTime%0A%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
+    variables = '{{"date":"{}","affiliateCode":"{}"}}'.format(date, affiliate_code)
+    query = 'query%20getEpgBroadcastList%28%24date%3A%20Date%21%2C%20%24affiliateCode%3A%20String%29%20%7B%0A%20%20broadcasts%28filtersInput%3A%20%7BaffiliateCode%3A%20%24affiliateCode%7D%29%20%7B%0A%20%20%20%20...broadcastFragment%0A%20%20%7D%0A%7D%0Afragment%20broadcastFragment%20on%20Broadcast%20%7B%0A%20%20mediaId%0A%20%20media%20%7B%0A%20%20%20%20serviceId%0A%20%20%20%20liveThumbnail%0A%20%20%20%20headline%0A%20%20%20%20thumb%28size%3A%20720%29%0A%20%20%20%20availableFor%0A%20%20%20%20title%20%7B%0A%20%20%20%20%20%20slug%0A%20%20%20%20%20%20headline%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%7D%0A%20%20%7D%0A%20%20imageOnAir%28scale%3A%20X1080%29%0A%20%20transmissionId%0A%20%20geofencing%0A%20%20geoblocked%0A%20%20channel%20%7B%0A%20%20%20%20id%0A%20%20%20%20color%0A%20%20%20%20name%0A%20%20%20%20logo%28format%3A%20PNG%29%0A%20%20%7D%0A%20%20epgByDate%28date%3A%20%24date%29%20%7B%0A%20%20%20%20entries%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20metadata%0A%20%20%20%20%20%20description%0A%20%20%20%20%20%20startTime%0A%20%20%20%20%20%20endTime%0A%20%20%20%20%20%20durationInMinutes%0A%20%20%20%20%20%20liveBroadcast%0A%20%20%20%20%20%20tags%0A%20%20%20%20%20%20contentRating%0A%20%20%20%20%20%20contentRatingCriteria%0A%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20alternativeTime%0A%20%20%20%20%20%20title%7B%0A%20%20%20%20%20%20%20%20titleId%0A%20%20%20%20%20%20%20%20originProgramId%0A%20%20%20%20%20%20%20%20releaseYear%0A%20%20%20%20%20%20%20%20countries%0A%20%20%20%20%20%20%20%20directorsNames%0A%20%20%20%20%20%20%20%20castNames%0A%20%20%20%20%20%20%20%20genresNames%0A%20%20%20%20%20%20%20%20authorsNames%0A%20%20%20%20%20%20%20%20screenwritersNames%0A%20%20%20%20%20%20%20%20artDirectorsNames%0A%20%20%20%20%20%20%20%20cover%20%7B%0A%20%20%20%20%20%20%20%20%20%20landscape%28scale%3A%20X1080%29%0A%20%20%20%20%20%20%20%20%20%20portrait%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20poster%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20logo%20%7B%0A%20%20%20%20%20%20%20%20%20%20web%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D'
     response = request_query(query, variables)
     broadcasts = response['data']['broadcasts']
 
@@ -243,7 +257,7 @@ def get_epg_broadcast_list(date=None):
 
     if has_epg and not correct_date:
         date = (strptime(date, '%Y-%m-%d') + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-        yield from get_epg_broadcast_list(date)
+        yield from get_epg_broadcast_list(affiliate_code, date)
         return
 
     for broadcast in broadcasts:
@@ -318,17 +332,22 @@ def get_epg_broadcast_list(date=None):
 
         tags.extend(epg.get('tags', []) or [])
 
+        geofencing = broadcast.get('geofencing', False)
+
         yield {
             'handler': PLAYER_HANDLER,
             'method': PLAYSTREAM_METHOD,
             'IsPlayable': True,
             'id': media_id,
+            'lat': lat,
+            'long': long,
+            'geofencing': geofencing,
             'channel_id': channel_id,
             'service_id': service_id,
             'live': epg.get('liveBroadcast', False) or False,
             'livefeed': True,
             'label': label,
-            'title': title,
+            'title': label,
             # 'title': title,
             'tvshowtitle': title,
             'plot': description,
