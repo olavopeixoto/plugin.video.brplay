@@ -648,9 +648,9 @@ elif affiliate == "Montes Claros":
     elif affiliate == "Sorocaba":
         code, latitude, longitude = "SOR", '-23.50624', '-47.45592'
     elif affiliate == "Santos":
-        code, latitude, longitude = "RON", '-23.56264', '-46.19479'
+        code, latitude, longitude = "MOC", '-23.56264', '-46.19479'
     elif affiliate == "Campina Grande":
-        code, latitude, longitude = "RON", '-7.13514', '-35.52549'
+        code, latitude, longitude = "JP", '-7.13514', '-35.52549'
     elif affiliate == "Auto":
         city, latitude, longitude = get_ip_coordinates()
         code = None
