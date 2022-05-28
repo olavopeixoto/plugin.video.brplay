@@ -76,7 +76,7 @@ def generate_device_id():
     import uuid
     import hashlib
 
-    return 'TNTGO_LATAM_BR_%s' % str(hashlib.sha256(uuid.uuid4().hex).hexdigest())
+    return 'TNTGO_LATAM_BR_%s' % str(hashlib.sha256(uuid.uuid4().hex.encode()).hexdigest())
 
 
 def logout(platform='PCTV'):

@@ -5,8 +5,6 @@ import sys
 from urllib.parse import urlparse
 from urllib.parse import urlencode
 import resources.lib.modules.control as control
-# from resources.lib.modules import hlshelper
-from resources.lib.hlsproxy.simpleproxy import MediaProxy
 import requests
 import xbmc
 from .auth import get_token, get_device_id, logout
@@ -14,7 +12,7 @@ import traceback
 
 LANGUAGE = control.lang(34125)
 
-proxy = None  # control.proxy_url
+proxy = control.proxy_url
 proxy = None if proxy is None or proxy == '' else {
     'http': proxy,
     'https': proxy,
@@ -69,9 +67,11 @@ class Player(xbmc.Player):
         #     self.url = url
         #     mime_type, stop_event, cookies = None, None, None
 
-        proxy_handler = MediaProxy(control.proxy_url)
-        self.url = proxy_handler.resolve(url)
-        stop_event = proxy_handler.stop_event
+        # proxy_handler = MediaProxy(control.proxy_url)
+        # self.url = proxy_handler.resolve(url)
+        # stop_event = proxy_handler.stop_event
+        self.url = url
+        stop_event = None
         mime_type = None
         cookies = None
 
