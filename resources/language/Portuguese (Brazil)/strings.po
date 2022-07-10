@@ -668,3 +668,7 @@ msgstr "Conteúdo"
 msgctxt "#34172"
 msgid "Enable VIX TV"
 msgstr "Habilitar VIX TV"
+
+msgctxt "#34173"
+msgid "API Domain"
+msgstr "Domínio da API"

@@ -387,3 +387,51 @@ def get_geofence_video_info(video_id, latitude, longitude, credentials, cdn=None
         "credentials": credentials,
         "encrypted": hash_json.get('encrypted', False)
     }
+
+
+def get_video_session(video_id, glbid, latitude, longitude):
+    proxy = control.proxy_url
+    proxy = None if proxy is None or proxy == '' else {
+        'http': proxy,
+        'https': proxy,
+    }
+
+    player = 'androidtv_hdr'
+
+    url = 'https://playback.video.globo.com/v2/video-session'
+    payload = {
+        "player_type": player,
+        "video_id": str(video_id),
+        "quality": "max",
+        'lat': latitude,
+        'long': longitude,
+        "content_protection": "widevine"
+    }
+    headers = {
+        "Authorization": "Bearer " + glbid
+    }
+
+    response = requests.post(url, json=payload, headers=headers, proxies=proxy).json()
+
+    metadata = response.get('metadata') or {}
+    sources = response.get('sources') or []
+    source = sources[0] if len(sources) > 0 else {}
+    resource = response.get('resource')
+
+    return {
+        "id": video_id,
+        "title": metadata.get("title"),
+        "category": metadata.get('type'),
+        "subscriber_only": metadata.get('subscriber_only'),
+        "channel": metadata.get('channel'),
+        "player": player,
+        "url": source.get("url_template"),
+        "query_string_template": None,
+        "thumbUri": response.get('thumbs_preview_base_url'),
+        "hash_token": source.get('token'),
+        "user": None,
+        "encrypted": metadata.get('encrypted'),
+        "drm_scheme": 'com.widevine.alpha' if metadata.get('encrypted') else None,
+        "protection_url": ((resource.get('content_protection') or {}).get('server') or '').replace(DEVICE_ID_KEY, DEVICE_ID),
+        'cdn': source.get('cdn')
+    }

@@ -5,7 +5,9 @@ from . import auth_helper
 
 
 def request_query(query, variables, force_refresh=False, retry=3, use_cache=True):
-    url = 'https://products-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=quote_plus(variables))
+    domain = control.setting('globo_api_domain')
+
+    url = 'https://{domain}/graphql?query={query}&variables={variables}'.format(domain=domain, query=query, variables=quote_plus(variables))
     return request_url(url, force_refresh, retry, use_cache)
 
 

@@ -18,7 +18,7 @@ import threading
 
 HISTORY_URL_API = 'https://api.vod.globosat.tv/globosatplay/watch_history.json?token=%s'
 PLAYER_SLUG = 'android'
-PLAYER_VERSION = '1.1.24'
+PLAYER_VERSION = '3.24.0'
 GLOBOSAT_API_AUTHORIZATION = 'token b4b4fb9581bcc0352173c23d81a26518455cc521'
 
 
@@ -42,37 +42,28 @@ class Player(xbmc.Player):
 
         self.isLive = meta.get('livefeed', False)
 
-        cdn = control.setting('globosat_cdn')
-        if cdn:
-            cdn = cdn.lower() if cdn.lower() != 'auto' else None
+        # cdn = control.setting('globosat_cdn')
+        # if cdn:
+        #     cdn = cdn.lower() if cdn.lower() != 'auto' else None
+        #
+        # if meta.get('geofencing') and meta.get('lat') and meta.get('long'):
+        #     control.log('Selecting Geo Fencing Video - lat: %s | long: %s' % (meta.get('lat'), meta.get('long')))
+        #     info = resourceshelper.get_geofence_video_info(id, meta.get('lat'), meta.get('long'), auth_helper.get_credentials(), cdn)
+        # elif not meta.get('router', True) or cdn:
+        #     control.log('Selecting video using Playlist')
+        #     info = resourceshelper.get_video_info(id, cdn=cdn)
+        # else:
+        #     control.log('Selecting video using Router')
+        #     info = resourceshelper.get_video_router(id, self.isLive, cdn)
+        #     if not info:
+        #         info = resourceshelper.get_video_info(id, cdn=cdn)
 
-        if meta.get('geofencing') and meta.get('lat') and meta.get('long'):
-            control.log('Selecting Geo Fencing Video - lat: %s | long: %s' % (meta.get('lat'), meta.get('long')))
-            info = resourceshelper.get_geofence_video_info(id, meta.get('lat'), meta.get('long'), auth_helper.get_credentials(), cdn)
-        elif not meta.get('router', True) or cdn:
-            control.log('Selecting video using Playlist')
-            info = resourceshelper.get_video_info(id, cdn=cdn)
-        else:
-            control.log('Selecting video using Router')
-            info = resourceshelper.get_video_router(id, self.isLive, cdn)
-            if not info:
-                info = resourceshelper.get_video_info(id, cdn=cdn)
+        control.log('Selecting video using session api')
+        info = resourceshelper.get_video_session(id, auth_helper.get_credentials().get('GLBID'), meta.get('lat'), meta.get('long'))
 
         control.log("INFO: %s" % repr(info))
 
         if not info or info is None or 'channel' not in info:
-            return
-
-        try:
-            hash_token = info.get('hash_token')
-            user = info.get('user')
-
-            if not hash_token:
-                control.log('Signing resource: %s' % info['resource_id'])
-                hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'], cdn)
-        except Exception as ex:
-            control.log(traceback.format_exc(), control.LOGERROR)
-            control.log("PLAYER ERROR: %s" % repr(ex))
             return
 
         encrypted = 'encrypted' in info and info['encrypted']
@@ -81,17 +72,32 @@ class Player(xbmc.Player):
             control.okDialog(control.lang(31200), control.lang(34103))
             return
 
-        query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
+        url = info['url']
 
-        query_string = query_string % {
-            'hash': hash_token,
-            'key': 'app',
-            'openClosed': 'F' if info['subscriber_only'] and user else 'A',
-            'user': user if info['subscriber_only'] and user else '',
-            'token': hash_token
-        }
+        if info.get('query_string_template'):
+            try:
+                hash_token = info.get('hash_token')
+                user = info.get('user')
 
-        url = '?'.join([info['url'], query_string])
+                if not hash_token:
+                    control.log('Signing resource: %s' % info['resource_id'])
+                    hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'], cdn)
+            except Exception as ex:
+                control.log(traceback.format_exc(), control.LOGERROR)
+                control.log("PLAYER ERROR: %s" % repr(ex))
+                return
+
+            query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
+
+            query_string = query_string % {
+                'hash': hash_token,
+                'key': 'app',
+                'openClosed': 'F' if info['subscriber_only'] and user else 'A',
+                'user': user if info['subscriber_only'] and user else '',
+                'token': hash_token
+            }
+
+            url = '?'.join([info['url'], query_string])
 
         control.log("live media url: %s" % url)
 

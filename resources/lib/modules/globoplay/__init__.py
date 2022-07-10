@@ -8,8 +8,9 @@ from . import auth_helper
 
 def request_query(query, variables, force_refresh=False, timeout_hour=1, retry=3):
     proxy = get_proxy()
+    domain = control.setting('globo_api_domain')
 
-    url = 'https://cloud-jarvis.globo.com/graphql?query={query}&variables={variables}'.format(query=query, variables=quote_plus(variables))
+    url = 'https://{domain}/graphql?query={query}&variables={variables}'.format(domain=domain, query=query, variables=quote_plus(variables))
     headers = get_headers()
 
     control.log('{} - GET {}'.format('Globoplay', url))
@@ -115,3 +116,15 @@ def discover_tenant():
     tenant = match.group(1)
 
     return tenant
+
+
+def get_affiliates():
+    query = 'query%20getAffiliateStates%20%7B%0A%20%20%20%20%20%20affiliate%20%7B%0A%20%20%20%20%20%20%20%20affiliateStates%20%7B%0A%20%20%20%20%20%20%20%20%20%20acronym%0A%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20regions%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20affiliateName%0A%20%20%20%20%20%20%20%20%20%20%20%20affiliateCode%0A%20%20%20%20%20%20%20%20%20%20%20%20name%0A%20%20%20%20%20%20%20%20%20%20%20%20slug%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D'
+
+    response = request_query(query, {})
+
+    data = response.get('data', {}) or {}
+    affiliate = data.get('affiliate', {}) or {}
+    affiliate_states = affiliate.get('affiliateStates', []) or []
+
+    return affiliate_states

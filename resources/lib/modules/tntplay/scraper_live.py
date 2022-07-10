@@ -96,18 +96,20 @@ def get_live_channels():
 
         tags = [program_time_desc]
 
+        label = u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]"
+
         results.append({
             'handler': PLAYER_HANDLER,
             'method': player.Player.playlive.__name__,
             'id': channel.get('channelId', ''),
             'IsPlayable': True,
             'livefeed': True,
-            'label': u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]",
-            'title': u"[B]" + channel_name + u"[/B][I] - " + program_name + u"[/I]",
-            'studio': 'TNT Play',
-            'tag': tags,
+            'label': label,
+            'title': label,
             # 'title': subtitle,
             # 'originaltitle': details.get('originalTitle'),
+            'studio': 'TNT Play',
+            'tag': tags,
             'tvshowtitle': title,
             'sorttitle': program_name,
             'channel_id': channel.get('channelId', ''),

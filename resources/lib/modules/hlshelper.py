@@ -91,7 +91,7 @@ def pick_bandwidth(url):
         options = [option_auto, option_adaptive_downloader, option_adaptive_redirect, option_manual]
         dialog = xbmcgui.Dialog()
         bandwidth_option = dialog.select(control.lang(34010), options)
-        if bandwidth_option<0:
+        if bandwidth_option < 0:
             return None, None, None, None
         elif bandwidth_option == 0:
             bandwidth_setting = 'Auto'
@@ -106,9 +106,9 @@ def pick_bandwidth(url):
 
     if bandwidth_setting == 'Auto':
         if control.isJarvis:
-            cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
+            cookie_jar = cookielib.MozillaCookieJar(control.cookieFile)
             cookie_jar.clear()
-            cookie_jar.save(control.cookieFile, None, None)
+            cookie_jar.save(control.cookieFile, False, False)
         return url, None, None, None
 
     if bandwidth_setting == 'Adaptive':
@@ -150,7 +150,7 @@ def pick_bandwidth(url):
         options = options + [b['bandwidth'] for b in bandwidth_options]
         dialog = xbmcgui.Dialog()
         bandwidth = dialog.select(control.lang(34010), options)
-        if bandwidth<0:
+        if bandwidth < 0:
             return None, None, None, None
     else:
         if bandwidth_setting == 'Max':
@@ -166,11 +166,11 @@ def pick_bandwidth(url):
     if control.isJarvis:
         url = playlist.playlists[bandwidth_options[bandwidth]['index']].absolute_uri
 
-        cookie_jar = cookielib.MozillaCookieJar(control.cookieFile, None, None)
+        cookie_jar = cookielib.MozillaCookieJar(control.cookieFile)
         cookie_jar.clear()
         for cookie in cookies:
             cookie_jar.set_cookie(cookie)
-        cookie_jar.save(control.cookieFile, None, None)
+        cookie_jar.save(control.cookieFile, False, False)
     else:
         url = '%s|Cookie=%s' % (playlist.playlists[bandwidth_options[bandwidth]['index']].absolute_uri, cookies_str)
 
