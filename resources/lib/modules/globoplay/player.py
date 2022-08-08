@@ -82,39 +82,19 @@ class Player(xbmc.Player):
             item, self.url, stop_event = self.__get_list_item(meta, info)
 
         else:
-            if not meta.get('router', True) or cdn:
-                info = resourceshelper.get_video_info(id, children_id, cdn)
-            else:
-                info = resourceshelper.get_video_router(id, self.isLive, cdn)
-                if not info:
-                    info = resourceshelper.get_video_info(id, children_id, cdn)
+            control.log('Selecting video using session api')
+            info = resourceshelper.get_video_session(id, auth_helper.get_credentials().get('GLBID'), meta.get('lat'),
+                                                     meta.get('long'))
 
             if info is None:
                 return
 
-            if 'resource_id' not in info:
-                control.log("PLAY CHILDREN!")
-                items = []
-                xbmc.PlayList(1).clear()
-                first = True
-                for i in info:
-                    hash_token, user, self.credentials = self.sign_resource(i['resource_id'], i['id'], i['player'], i['version'], cdn=i['cdn'])
-                    i['hash'] = hash_token
-                    i['user'] = user
-                    item, url, stop_event = self.__get_list_item(meta, i, False)
-                    if first:
-                        self.url = url
-                        first = False
-                    items.append(item)
-                    control.log("PLAYLIST ITEM URL: %s" % url)
-                    xbmc.PlayList(1).add(url, item)
-                item = items[0]
-            else:
-                control.log("PLAY SINGLE RESOURCE!")
-                hash_token, user, self.credentials = self.sign_resource(info['resource_id'], info["id"], info['player'], info['version'], meta['anonymous'] if 'anonymous' in meta else False, cdn=info['cdn'])
-                info['hash'] = hash_token
-                info['user'] = user
-                item, self.url, stop_event = self.__get_list_item(meta, info)
+            if 'error' in info:
+                control.infoDialog(info['error'], icon='ERROR')
+                return
+
+            control.log("PLAY SINGLE RESOURCE!")
+            item, self.url, stop_event = self.__get_list_item(meta, info)
 
         self.offset = float(meta['milliseconds_watched']) / 1000.0 if 'milliseconds_watched' in meta else 0
 
@@ -154,20 +134,23 @@ class Player(xbmc.Player):
         control.log("Done playing. Quitting...")
 
     def __get_list_item(self, meta, info, pick_bandwidth=True):
-        hash_token = info['hash']
-        user = info['user']
+        if 'hash' in info and 'user' in info and 'query_string_template' in info and info['query_string_template']:
+            hash_token = info['hash']
+            user = info['user']
 
-        query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
+            query_string = re.sub(r'{{(\w*)}}', r'%(\1)s', info['query_string_template'])
 
-        query_string = query_string % {
-            'hash': hash_token,
-            'key': 'app',
-            'openClosed': 'F' if info['subscriber_only'] and user else 'A',
-            'user': user if info['subscriber_only'] and user else '',
-            'token': hash_token
-        }
+            query_string = query_string % {
+                'hash': hash_token,
+                'key': 'app',
+                'openClosed': 'F' if info['subscriber_only'] and user else 'A',
+                'user': user if info['subscriber_only'] and user else '',
+                'token': hash_token
+            }
 
-        url = '?'.join([info['url'], query_string])
+            url = '?'.join([info['url'], query_string])
+        else:
+            url = info['url']
 
         control.log("live media url: %s" % url)
 

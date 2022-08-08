@@ -411,7 +411,15 @@ def get_video_session(video_id, glbid, latitude, longitude):
         "Authorization": "Bearer " + glbid
     }
 
-    response = requests.post(url, json=payload, headers=headers, proxies=proxy).json()
+    httpRresponse = requests.post(url, json=payload, headers=headers, proxies=proxy)
+
+    response = httpRresponse.json()
+
+    if not httpRresponse.ok:
+        return {
+            "id": video_id,
+            "error": response.get('code')
+        }
 
     metadata = response.get('metadata') or {}
     sources = response.get('sources') or []

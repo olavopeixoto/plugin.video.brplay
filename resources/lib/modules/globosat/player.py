@@ -80,7 +80,7 @@ class Player(xbmc.Player):
                 user = info.get('user')
 
                 if not hash_token:
-                    control.log('Signing resource: %s' % info['resource_id'])
+                    control.log('Signing resource: %s' % info.get('resource_id'))
                     hash_token, user, credentials = self.sign_resource(info['provider_id'], info['resource_id'], id, info['player'], info['version'], cdn)
             except Exception as ex:
                 control.log(traceback.format_exc(), control.LOGERROR)
@@ -107,9 +107,11 @@ class Player(xbmc.Player):
         if parsed_url.path.endswith(".m3u8"):
             self.url, mime_type, stop_event, cookies = hlshelper.pick_bandwidth(url)
         elif parsed_url.path.endswith(".mpd") and not self.isLive:
-            proxy_handler = MediaProxy()
-            self.url = proxy_handler.resolve(url)
-            stop_event = proxy_handler.stop_event
+            # proxy_handler = MediaProxy()
+            # self.url = proxy_handler.resolve(url)
+            # stop_event = proxy_handler.stop_event
+            self.url = url
+            stop_event = None
             mime_type = None
             cookies = None
         else:
