@@ -9,12 +9,23 @@ from json import JSONEncoder
 import pickle
 import resources.lib.modules.control as control
 import base64
-from .private_data import get_user, get_password
+from .private_data import get_user, get_password, get_device_id
 import traceback
 import urllib.parse as urlparse
 unicode = str
 
-ACCESS_TOKEN_URL = 'https://apim.oi.net.br/connect/oauth2/token_endpoint/access_token'
+proxy = control.proxy_url
+proxy = None if proxy is None or proxy == '' else {
+    'http': proxy,
+    'https': proxy,
+}
+
+DEVICE_ID = get_device_id()
+
+DEVICE_BRAND = 'Google'
+DEVICE_MODEL = 'Chrome/105.0.0.0'
+
+ACCESS_TOKEN_URL = 'https://apim.oi.net.br/app/oiplay/ummex/v1/oauth/token'
 
 PROFILES_URL = 'https://apim.oi.net.br/app/oiplay/oapi/v1/users/accounts/{account}/list?useragent=web&deviceId={deviceid}'
 
@@ -47,7 +58,7 @@ def get_account_details(account, deviceid, token):
     url = PROFILES_URL.format(account=account, deviceid=deviceid)
 
     control.log('GET %s' % url)
-    response_full = requests.get(url, headers=headers)
+    response_full = requests.get(url, headers=headers, proxies=proxy)
 
     control.log(response_full.content)
 
@@ -83,23 +94,24 @@ def gettoken(force_new=False):
         response = __login(user, password)
     else:
         settings_data = control.setting('oiplay_access_token_response')
-        refresh_token = None
+        access_token = None
         if settings_data:
             try:
                 auth_json = json.loads(settings_data, object_hook=as_python_object)
-                refresh_token = auth_json['refresh_token']
+                access_token = auth_json['access_token']
 
                 if auth_json['date'] + datetime.timedelta(seconds=auth_json['expires_in']) > datetime.datetime.utcnow():
                     control.log('ACCESS TOKEN FROM FILE: ' + auth_json['access_token'])
-                    id_token = auth_json.get('id_token')
-                    return auth_json['access_token'], get_account_id(id_token)
+                    user_info = auth_json.get('userInfo', {}) or {}
+                    account = user_info.get('cpfcnpj')
+                    return auth_json['access_token'], account
             except:
                 control.log(traceback.format_exc(), control.LOGERROR)
 
-        if not refresh_token:
+        if not access_token:
             response = __login(user, password)
         else:
-            success, response = __refresh_token(refresh_token)
+            success, response = __refresh_token(access_token)
 
             if not success:
                 response = __login(user, password)
@@ -110,40 +122,33 @@ def gettoken(force_new=False):
 
     control.setSetting('oiplay_access_token_response', json.dumps(response, cls=PythonObjectEncoder))
 
-    id_token = response.get('id_token')
+    user_info = auth_json.get('userInfo', {}) or {}
+    account = user_info.get('cpfcnpj')
 
-    return response['access_token'], get_account_id(id_token)
-
-
-def get_account_id(id_token):
-    jwt = id_token.split('.')
-    jwt_base64_string = jwt[1] + '====='
-    jwt_json_string = base64.decodebytes(str.encode(jwt_base64_string))
-    account_id = json.loads(jwt_json_string).get('cpfcnpj')
-
-    return account_id
+    return response['access_token'], account
 
 
-def __refresh_token(refresh_token):
+def __refresh_token(access_token):
 
     control.log('REFRESH TOKEN')
 
     body = {
-        'client_id': 'e722caf1-7c47-4398-ac7f-f75a5f843906',
-        'client_secret': 'b1e75e98-0833-4c67-aed7-9f1f232c8e0f',
-        'grant_type': 'refresh_token',
-        'refresh_token': str(refresh_token)
+        "device_id": DEVICE_ID
     }
 
     control.log(body)
 
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'User-Agent': 'OiPlay-Store/5.1.1 (iPhone; iOS 13.3.1; Scale/3.00)'
+        'X-Forwarded-For': '177.2.105.143',
+        'User-Agent': 'OiPlay-Store/5.9.0 (iPhone; iOS 15.6.1; Scale/3.00)',
+        'Authorization': 'Bearer %s' % access_token
     }
 
-    response = requests.post(ACCESS_TOKEN_URL, json=body, headers=headers)
+    control.log(headers)
+
+    response = requests.post(ACCESS_TOKEN_URL, json=body, headers=headers, proxies=proxy)
 
     # response.raise_for_status()
 
@@ -161,61 +166,55 @@ def __login(user, password):
 
     session = requests.session()
 
-    url = 'https://apim.oi.net.br/oic?state=eyJzdGF0ZSI6InN0YXRlIiwidGFyZ2V0X3VyaSI6Ii9kby1sb2dpbiJ9&client_id=e722caf1-7c47-4398-ac7f-f75a5f843906&response_type=code&scope=openid%20customer_info%20oob&redirect_uri=https://oiplay.tv/login'
+    url = 'https://apim.oi.net.br/oauth/oi/authorize?state=csrf_oiplay&client_id=31a0c8f7-aef3-45c2-8812-8f7c6ce87411&response_type=code&scope=openid%20customer_info%20oob%20oiplay&redirect_uri=https://oiplay.tv/login'
 
-    response = session.get(url)
+    response = session.get(url, proxies=proxy)
 
     url = re.findall(r'action="([^"]+)"', response.content.decode('utf-8'))[0]
 
     url = 'https://logintv.oi.com.br' + url
 
-    session.post(url)
+    response = session.post(url, proxies=proxy)
 
-    url_login = 'https://logintv.oi.com.br/nidp/wsfed/ep?sid=0'
+    html = BeautifulSoup(response.content, features="html.parser")
+
+    url_login = html.find('form')['action']
 
     response = session.post(url_login, data={
         'option': 'credential',
-        'urlRedirect': 'https://logintv.oi.com.br/nidp/wsfed/ep?sid=0',
+        'urlRedirect': url_login,
         'Ecom_User_ID': user,
         'Ecom_Password': password
-    })
+    }, proxies=proxy)
 
-    # control.log(response.content)
+    response.raise_for_status()
 
     url = re.findall(r"window.location.href='([^']+)';", response.content.decode('utf-8'))[0]
 
     control.log('GET %s' % url)
 
-    response = session.get(url)
+    response = session.get(url, proxies=proxy)
 
-    html = BeautifulSoup(response.content, features="html.parser")
+    response.raise_for_status()
 
-    url = html.find('form')['action']
-
-    inputs = html.findAll('input')
-
-    post = {}
-
-    for input in inputs:
-        post[input['name']] = input['value']
-
-    response = session.post(url, data=post, allow_redirects=False)
-
-    url_parsed = urlparse.urlparse(response.headers['Location'])
+    url_parsed = urlparse.urlparse(response.url)
 
     qs = urlparse.parse_qs(url_parsed.query)
 
-    code = qs['code']
+    code = qs['code'][0]
 
     post = {
-        'client_id': 'e722caf1-7c47-4398-ac7f-f75a5f843906',
-        'client_secret': 'b1e75e98-0833-4c67-aed7-9f1f232c8e0f',
-        'code': code,
-        'grant_type': 'authorization_code',
-        'redirect_uri': 'https://oiplay.tv/login'
+        "brand": DEVICE_BRAND,
+        "code": code,
+        "device_id": DEVICE_ID,
+        "grant_type": "authorization_code",
+        "model": DEVICE_MODEL,
+        "serial": DEVICE_ID
     }
 
-    token_response = session.post(ACCESS_TOKEN_URL, data=post)
+    token_response = session.post(ACCESS_TOKEN_URL, json=post, proxies=proxy)
+
+    token_response.raise_for_status()
 
     return json.loads(token_response.content, object_hook=as_python_object)
 

@@ -74,7 +74,8 @@
 		<setting id="oiplay_available" type="bool" label="34113" default="false" />
 		<setting id="oiplay_account" type="text" label="31110" default="" visible="eq(-1,true)" enable="eq(-1,true)" subsetting="true" />
 		<setting id="oiplay_password" type="text" option="hidden" label="31109" enable="!eq(-1,)" default="" visible="eq(-2,true)" subsetting="true" />
-		<setting id="oiplay_default_profile" type="text" label="34139"  default="" visible="eq(-3,true)" enable="false" subsetting="true" />
+		<setting id="oiplay_cepCode" type="text" label="34174"  default="20000" visible="eq(-3,true)" enable="true" subsetting="true" />
+		<setting id="oiplay_default_profile" type="text" label="34139"  default="" visible="eq(-4,true)" enable="false" subsetting="true" />
 		<setting id="oiplay_access_token_response" type="text"  default="" visible="false" />
 		<setting id="oiplay_device_id" type="text"  default="" visible="false" />
 		<setting id="oiplay_liveOTTChannelMap" type="text"  default="" visible="false" />

@@ -18,9 +18,15 @@ class Player(xbmc.Player):
         self.stopPlayingEvent = None
         self.url = None
         self.isLive = False
-        self.token = None
-        self.video_id = None
         self.offset = 0.0
+        self.stream_token = None
+        self.content_id = None
+        self.access_token = None
+        self.profile = None
+        self.account = None
+        self.device_id = None
+        self.provider = None
+        self.play_time = 0
 
     def playlive(self, id, meta):
 
@@ -32,6 +38,10 @@ class Player(xbmc.Player):
 
         provider = meta.get('provider')
         self.isLive = meta.get('livefeed', False)
+
+        self.content_id = id
+
+        self.provider = provider
 
         data = self.individualize(self.isLive, id, provider)
 
@@ -47,6 +57,8 @@ class Player(xbmc.Player):
             return
 
         url = data['individualization']['url']
+
+        self.stream_token = data['token']['token']
 
         # info = data.get('token', {}).get('cmsChannelItem') or data.get('token', {}).get('cmsContentItem')
 
@@ -117,21 +129,22 @@ class Player(xbmc.Player):
         self.stopPlayingEvent.clear()
 
         first_run = True
-        # last_time = 0.0
+        last_time = 0.0
         while not self.stopPlayingEvent.isSet():
             if control.monitor.abortRequested():
                 control.log("Abort requested")
+                self.stream_control(4)
                 break
 
             if self.isPlaying():
+                self.play_time = int(self.getTime())
                 if first_run:
                     self.showSubtitles(False)
                     first_run = False
-                # if not self.isLive:
-                #     current_time = self.getTime()
-                #     if current_time - last_time > 5 or (last_time == 0 and current_time > 1):
-                #         last_time = current_time
-                #         self.save_video_progress(self.token, self.video_id, current_time)
+                current_time = self.getTime()
+                if current_time - last_time > 60:
+                    last_time = current_time
+                    self.stream_control(5)
             control.sleep(1000)
 
         if stopEvent:
@@ -140,19 +153,49 @@ class Player(xbmc.Player):
 
         control.log("Done playing. Quitting...")
 
+    # Event Types
+    # 1 - Load
+    # 2 - Start
+    # 5 - Continue (Refresh)
+    # 4 - Stop
+    def stream_control(self, event_type):
+
+        control.log("stream_control: %s" % event_type)
+
+        headers = {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer %s' % self.access_token,
+            'X-Forwarded-For': '177.2.105.143',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36'
+        }
+
+        if self.isLive:
+            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/stream-control?eventTypeId=%s&token=%s' % (self.account, self.profile, self.content_id, event_type, self.stream_token)
+        else:
+            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/content/%s/stream-control?eventTypeId=%s&token=%s&bookmarkPosition=%s' % (
+                self.account, self.profile, self.content_id, event_type, self.stream_token, 0 if event_type < 3 else self.play_time)
+
+        control.log(url)
+
+        response = requests.get(url, headers=headers)
+
+        control.log("stream_control response (%s): %s" % (response.status_code, response.content))
+
     def onPlayBackStarted(self):
         # Will be called when xbmc starts playing a file
         control.log("Playback has started!")
+        self.stream_control(2)
         # if self.offset > 0: self.seekTime(float(self.offset))
 
     def onPlayBackEnded(self):
         # Will be called when xbmc stops playing a file
         control.log("setting event in onPlayBackEnded ")
+        self.stream_control(4)
 
     def onPlayBackStopped(self):
         # Will be called when user stops xbmc playing a file
         control.log("setting event in onPlayBackStopped")
-
+        self.stream_control(4)
         if self.stopPlayingEvent:
             self.stopPlayingEvent.set()
 
@@ -162,18 +205,26 @@ class Player(xbmc.Player):
         device_id = get_device_id()
         profile = get_default_profile(account, device_id, token)
 
+        self.access_token = token
+        self.profile = profile
+        self.account = account
+        self.device_id = device_id
+
         useragent = 'ios' if format == 'm3u8' else 'web'
 
+        cep_code = control.setting('oiplay_cepCode')
+
         if is_live:
-            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/individualize?deviceId=%s&tablet=false&useragent=%s' % (account, profile, content_id, device_id, 'ios' if format == 'm3u8' else 'web')
+            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/%s/profiles/%s/live/%s/individualize?deviceId=%s&trailer=false&tablet=false&useragent=%s&cepCode=%s' % (account, profile, content_id, device_id, 'ios' if format == 'm3u8' else 'web', cep_code)
         else:
-            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/{account}/profiles/{profile}/content/{content}/{provider}/individualize?deviceId={deviceId}&tablet=false&useragent={useragent}'.format(account=account, profile=profile, content=content_id, provider=provider, deviceId=device_id, useragent=useragent)
+            url = 'https://apim.oi.net.br/app/oiplay/oapi/v1/media/accounts/{account}/profiles/{profile}/content/{content}/{provider}/individualize?deviceId={deviceId}&tablet=false&trailer=false&useragent={useragent}&cep_code={cepCode}'.format(account=account, profile=profile, content=content_id, provider=provider, deviceId=device_id, useragent=useragent, cepCode=cep_code)
 
         headers = {
             'Accept': 'application/json',
-            'X-Forwarded-For': '189.1.125.97',
-            'User-Agent': 'OiPlay-Store/5.1.1 (iPhone; iOS 13.3.1; Scale/3.00)' if format == 'm3u8' else 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36',
-            'Authorization': 'Bearer ' + token
+            'X-Forwarded-For': '177.2.105.143',
+            'User-Agent': 'OiPlay-Store/5.9.0 (iPhone; iOS 15.6.1; Scale/3.00)' if format == 'm3u8' else 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36',
+            'Authorization': 'Bearer %s' % token,
+            'Accept-Encoding': 'gzip, deflate, br'
         }
 
         control.log('OIPLAY GET ' + url)

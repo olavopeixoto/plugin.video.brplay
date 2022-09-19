@@ -672,3 +672,7 @@ msgstr ""
 msgctxt "#34173"
 msgid "API Domain"
 msgstr ""
+
+msgctxt "#34174"
+msgid "Cep Code"
+msgstr ""
