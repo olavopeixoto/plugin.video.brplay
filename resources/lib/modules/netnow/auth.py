@@ -30,18 +30,18 @@ def validate_login(credentials, do_request=True):
         return True
 
     header = {
-        'referer': 'https://www.nowonline.com.br/',
+        'referer': 'https://www.clarotvmais.com.br/',
     }
 
     if PLATFORM == 'PCTV':
         xsrf = credentials['headers']['X-Xsrf-Token']
         header['x-xsrf-token'] = xsrf
         header['User_Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.80 Safari/537.36'
-        url = 'https://www.nowonline.com.br/AGL/1.1/R/ENG/{platform}/ALL/NET/USER/SESSIONS'.format(platform=PLATFORM)
+        url = 'https://www.clarotvmais.com.br/AGL/1.1/R/ENG/{platform}/ALL/NET/USER/SESSIONS'.format(platform=PLATFORM)
     else:
         device_id = credentials['deviceId']
         header['User_Agent'] = 'NETNow/10.10.06 (br.com.netcombo.now.iphone; build:4; iOS 14.0.1) Alamofire/4.5.1'
-        url = 'https://www.nowonline.com.br/AGL/1.1/R/ENG/{platform}/ALL/NET/USER/SESSIONS?accountDeviceIdType=DEVICEID&accountDeviceId={deviceId}'.format(platform=PLATFORM, deviceId=device_id)
+        url = 'https://www.clarotvmais.com.br/AGL/1.1/R/ENG/{platform}/ALL/NET/USER/SESSIONS?accountDeviceIdType=DEVICEID&accountDeviceId={deviceId}'.format(platform=PLATFORM, deviceId=device_id)
 
     avs_cookie = credentials['cookies']['avs_cookie']
     login_info = credentials['cookies']['LoginInfo']
@@ -80,10 +80,10 @@ def login(validate=True):
     username = control.setting('nowonline_account')
     password = control.setting('nowonline_password')
 
-    url = 'https://www.nowonline.com.br/AGL/1.1/R/ENG/{platform}/ALL/NET/USER/SESSIONS'.format(platform=PLATFORM)
+    url = 'https://www.clarotvmais.com.br/AGL/1.1/R/ENG/{platform}/ALL/NET/USER/SESSIONS'.format(platform=PLATFORM)
 
     header = {
-        'referer': 'https://www.nowonline.com.br/'
+        'referer': 'https://www.clarotvmais.com.br/'
     }
 
     data = {
@@ -155,7 +155,7 @@ def get_request_data(validate=False):
     xsrf = credentials['headers']['X-Xsrf-Token']
 
     headers = {
-        'referer': 'https://www.nowonline.com.br/'
+        'referer': 'https://www.clarotvmais.com.br/'
     }
 
     if PLATFORM == 'PCTV':
